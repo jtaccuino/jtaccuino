@@ -14,6 +14,13 @@ plugins {
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
+
+    // JPRO artifacts
+    repositories {
+        maven {
+            url "https://sandec.jfrog.io/artifactory/repo"
+        }
+    }
 }
 
 ext {
@@ -61,6 +68,8 @@ dependencies {
 
     implementation 'jakarta.json.bind:jakarta.json.bind-api:3.0.0'
 
+    implementation 'one.jpro.platform:jpro-mdfx:0.2.7-SNAPSHOT'
+
     runtimeOnly 'org.eclipse:yasson:3.0.3'
 }
 
@@ -84,7 +93,7 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = 'jsci.experiment.App'
+    mainClass = 'org.jtaccuino.App'
 }
 
 compileJava {

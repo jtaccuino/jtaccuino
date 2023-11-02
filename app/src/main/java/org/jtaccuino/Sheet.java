@@ -3,42 +3,96 @@ package org.jtaccuino;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.Node;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
 import org.jtaccuino.jshell.ReactiveJShell;
 
 public class Sheet extends Control {
 
-    private ReactiveJShell reactiveJShell;
+    private SimpleObjectProperty<ReactiveJShell> reactiveJShellProperty = new SimpleObjectProperty<>();
     private final UUID uuid;
+    private int counter = 0;
 
-    final ObservableList<Cell> cells = FXCollections.observableArrayList();
+    private final ObservableList<CellData> cells = FXCollections.observableArrayList();
 
     public static Sheet of(Notebook notebook) {
         var s = new Sheet();
-        notebook.cells().stream().map(c -> Cell.of(c.cell_type(), c.source())).forEach(s::addCell);
+        notebook.cells().stream().map(c -> CellData.of(c.cell_type(), c.source())).forEach(s::addCell);
         return s;
     }
 
     public static Sheet of() {
         var s = new Sheet();
-        s.addCell(new Cell("java", null));
+        s.addCell(new CellData("java", null));
         return s;
     }
 
     private Sheet() {
-        uuid = initShell();
+        uuid = UUID.randomUUID();
+        reactiveJShellProperty.set(ReactiveJShell.create());
+        initShell();
     }
 
-    public void addCell(Cell cell) {
+    public void addCell(CellData cell) {
         cells.add(cell);
     }
 
-    public ObservableList<Cell> getCells() {
+    public ObservableList<CellData> getCells() {
         return cells;
+    }
+    
+    public void execute() {
+        ((SheetSkin) getSkin()).execute();
+    }
+    
+    public void resetAndExecute() {
+        getReactiveJShell().shudown();
+        reactiveJShellProperty.set(ReactiveJShell.create());
+        initShell();
+        execute();
+    }
+
+    public void moveFocusToNextCell(Cell currentCell) {
+        ((SheetSkin) getSkin()).moveFocusToNextCell(currentCell);
+    }
+
+    public ReactiveJShell getReactiveJShell() {
+        return reactiveJShellProperty.get();
+    }
+    
+    public ReadOnlyObjectProperty<ReactiveJShell> reactiveJShellProperty() {
+        return reactiveJShellProperty;
+    }
+
+    public void ensureCellVisible(Node node) {
+        ((SheetSkin) getSkin()).scrollTo(node);
+    }
+
+    public void insertCellAfter(Sheet.Cell currentCell) {
+        ((SheetSkin) getSkin()).insertCellAfter(currentCell);
+    }
+
+    public void insertCellBefore(Sheet.Cell currentCell) {
+        ((SheetSkin) getSkin()).insertCellBefore(currentCell);
+    }
+
+    public void removeCell(Sheet.Cell currentCell) {
+        ((SheetSkin) getSkin()).removeCell(currentCell);
+    }
+
+    public void moveCellUp(Sheet.Cell currentCell) {
+        ((SheetSkin) getSkin()).moveCellUp(currentCell);
+    }
+
+    public void moveCellDown(Sheet.Cell currentCell) {
+        ((SheetSkin) getSkin()).moveCellDown(currentCell);
     }
 
     public Notebook toNotebook() {
@@ -46,35 +100,32 @@ public class Sheet extends Control {
         return new Notebook(Map.of(), 4, 4, nbCells);
     }
 
-    private UUID initShell() {
-        reactiveJShell = ReactiveJShell.create();
-        UUID uuid = UUID.randomUUID();
-        reactiveJShell.eval("""
+    private void initShell() {
+        getReactiveJShell().eval("""
             import org.jtaccuino.ShellUtil;
             """);
-        reactiveJShell.eval("""
+        getReactiveJShell().eval("""
             public void display(javafx.scene.Node node) {
                 System.out.println("Should now display " + node + " on " + jsci_uuid);
                 ShellUtil.INSTANCE.display(node, jsci_uuid);
             }""");
 
-        reactiveJShell.eval("""
+        getReactiveJShell().eval("""
             public void addDependency(String mavenCoordinate) {
                 ShellUtil.INSTANCE.resolve(mavenCoordinate, jsci_uuid);
             }""");
-        reactiveJShell.eval("""
+        getReactiveJShell().eval("""
             import java.util.UUID;
             """);
-        reactiveJShell.eval("var jsci_uuid = UUID.fromString(\"" + uuid + "\");");
+        getReactiveJShell().eval("var jsci_uuid = UUID.fromString(\"" + uuid + "\");");
+    }
+
+    public UUID getUuid() {
         return uuid;
     }
 
-    ReactiveJShell getReactiveJShell() {
-        return reactiveJShell;
-    }
-
-    UUID getUuid() {
-        return uuid;
+    public int getNextId() {
+        return ++counter;
     }
 
     @Override
@@ -83,23 +134,27 @@ public class Sheet extends Control {
     }
 
     void close() {
-        reactiveJShell.shudown();
+        getReactiveJShell().shudown();
     }
 
-    public static class Cell {
+    public static class CellData {
 
         private final SimpleStringProperty type = new SimpleStringProperty();
         private final SimpleStringProperty source = new SimpleStringProperty();
 
-        public static Cell of(String type, String source) {
-            return new Cell(type, source);
+        public static CellData of(String type, String source) {
+            return new CellData(type, source);
         }
 
-        public static Cell empty() {
-            return new Cell(null, null);
+        public static CellData empty() {
+            return new CellData(null, null);
         }
 
-        private Cell(String type, String source) {
+        public static CellData empty(String type) {
+            return new CellData(type, null);
+        }
+
+        private CellData(String type, String source) {
             this.type.set(type);
             this.source.set(source);
         }
@@ -120,6 +175,27 @@ public class Sheet extends Control {
             return source;
         }
 
+    }
+
+    public static abstract class Cell extends Control {
+
+        private ObjectProperty<CellData> cellDataProperty = new SimpleObjectProperty<>();
+
+        public Cell(CellData cellData) {
+            cellDataProperty.set(cellData);
+        }
+
+        public CellData getCellData() {
+            return cellDataProperty.get();
+        }
+
+        public ReadOnlyObjectProperty<CellData> cellDataProperty() {
+            return cellDataProperty;
+        }
+
+        public abstract void requestFocus();
+        
+        public abstract void execute();
     }
 
 }

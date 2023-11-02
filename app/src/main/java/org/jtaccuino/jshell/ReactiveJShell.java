@@ -18,18 +18,19 @@ public class ReactiveJShell {
 
     private ExecutorService worker = Executors.newSingleThreadExecutor();
 
-    private JShell jshell = jdk.jshell.JShell.builder().executionEngine("local").build();    
-    
-    private ReactiveJShell() {}
-    
+    private JShell jshell = jdk.jshell.JShell.builder().executionEngine("local").build();
+
+    private ReactiveJShell() {
+    }
+
     public static ReactiveJShell create() {
         return new ReactiveJShell();
     }
-    
+
     public JShell getWrappedShell() {
         return jshell;
     }
-    
+
     public List<SnippetEvent> eval(String string) {
         System.out.println("Evaluating Fragment:\n" + string);
         final List<SnippetEvent> snippetEvents = new ArrayList<>();
@@ -49,8 +50,7 @@ public class ReactiveJShell {
             }
             remaining = completionInfo.remaining().replaceFirst("\\s*", "");
         } while (!remaining.isEmpty() && SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE != completionInfo.completeness());
-        if (SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE == completionInfo.completeness())
-        {
+        if (SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE == completionInfo.completeness()) {
             System.out.println(completionInfo);
         } else {
             System.out.println("Snippets:");
@@ -77,7 +77,7 @@ public class ReactiveJShell {
     public Stream<Diag> diagnose(Snippet snippet) {
         return jshell.diagnostics(snippet);
     }
-    
+
     public SourceCodeAnalysis sourceCodeAnalysis() {
         return jshell.sourceCodeAnalysis();
     }
@@ -94,7 +94,7 @@ public class ReactiveJShell {
     private static class JShellCompletableFuture<T> extends CompletableFuture<T> {
 
         Executor executor;
-        
+
         public JShellCompletableFuture(Executor executor) {
             this.executor = executor;
         }

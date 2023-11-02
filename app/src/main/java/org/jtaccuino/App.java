@@ -2,10 +2,12 @@ package org.jtaccuino;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import javafx.application.Application;
+import javafx.scene.AccessibleAction;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -100,7 +102,9 @@ public class App extends Application {
                     new ExtensionFilter("Notebook Files", "*.ipynb"),
                     new ExtensionFilter("All Files", "*.*"));
             File selectedFile = fileChooser.showSaveDialog(stage);
-            Jsonb jsonb = JsonbBuilder.create();
+            var config = new JsonbConfig();
+            config.setProperty(JsonbConfig.FORMATTING, true);
+            Jsonb jsonb = JsonbBuilder.create(config);
             try {
                 jsonb.toJson(sheet.toNotebook(), new FileWriter(selectedFile));
                 jsonb.close();
@@ -108,10 +112,19 @@ public class App extends Application {
                 throw new IllegalStateException(ex);
             }
         });
-        var toolbar = new HBox(empty, load, save);
+
+        var execute = createSVGToolbarButton("execute-notebook", "Execute Notebook", "main-toolbar-button");
+        execute.setOnAction((event) -> {
+            sheet.execute();
+        });
+        var resetAndExecute = createSVGToolbarButton("reset-execute-notebook", "Reset Shell And Execute Notebook", "main-toolbar-button");
+        resetAndExecute.setOnAction((event) -> {
+            sheet.resetAndExecute();
+        });
+        var toolbar = new HBox(empty, load, save, execute, resetAndExecute);
         HBox.setHgrow(toolbar, Priority.NEVER);
         toolbar.maxWidthProperty().bind(toolbar.prefWidthProperty());
-        toolbar.getStyleClass().add("cell-toolbar");
+        toolbar.getStyleClass().add("main-toolbar");
         return toolbar;
     }
 

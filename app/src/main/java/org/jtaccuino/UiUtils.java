@@ -2,6 +2,7 @@ package org.jtaccuino;
 
 import java.util.List;
 import javafx.scene.control.Button;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.Region;
 
@@ -16,7 +17,17 @@ public class UiUtils {
         button.setGraphic(region);
         return button;
     }
-    
+
+    public static ToggleButton createSVGToggleToolbarButton(String styleClass, String tooltip, String toolbarStyle) {
+        var button = new ToggleButton();
+        button.setTooltip(new Tooltip(tooltip));
+        button.getStyleClass().add(toolbarStyle);
+        var region = new Region();
+        region.getStyleClass().addAll("toolbar-button-graphics", styleClass);
+        button.setGraphic(region);
+        return button;
+    }
+
     public static String longestCommonPrefix(List<String> strings) {
         return switch (strings) {
             case null ->
@@ -41,6 +52,6 @@ public class UiUtils {
                 yield firstString;
             }
         };
-    }    
+    }
 
 }

@@ -52,7 +52,7 @@ public class CompletionPopupSkin implements Skin<CompletionPopup> {
                         if (!prefix.isEmpty()) {
                             onSuggestionChoosen(prefix);
                             control.hide();
-                        }                      
+                        }
                     }
                 }
                 case ENTER -> {
