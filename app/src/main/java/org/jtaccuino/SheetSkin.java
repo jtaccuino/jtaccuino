@@ -1,7 +1,21 @@
+/*
+ * Copyright 2024 JTaccuino Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.jtaccuino;
 
 import javafx.application.Platform;
-import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -11,8 +25,11 @@ import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Skin;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.Background;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import static org.jtaccuino.Sheet.CellData.Type.CODE;
 
 public class SheetSkin implements Skin<Sheet> {
 
@@ -23,25 +40,35 @@ public class SheetSkin implements Skin<Sheet> {
     private ObservableList<Sheet.Cell> cells = FXCollections.observableArrayList();
 
     private JavaCellFactory javaCellFactory = new JavaCellFactory();
+    private MarkdownCellFactory markdownCellFactory = new MarkdownCellFactory();
 
     @SuppressWarnings("this-escape")
     public SheetSkin(Sheet sheet) {
         this.sheet = sheet;
         cellBox = new VBox();
+        cellBox.setBackground(Background.fill(Color.WHITE));
         pane = new ScrollPane(cellBox);
         pane.setFitToWidth(true);
         pane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         pane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         ShellUtil.INSTANCE.register(cellBox, sheet.getReactiveJShell().getWrappedShell(), sheet.getUuid());
-        
+
         sheet.reactiveJShellProperty().addListener((observable, oldValue, newValue) -> {
             ShellUtil.INSTANCE.register(cellBox, newValue.getWrappedShell(), sheet.getUuid());
         });
         Bindings.bindContent(cellBox.getChildren(), cells);
         cells.addAll(sheet.getCells().stream()
-                .map(cellData -> javaCellFactory.createCell(cellData, cellBox, sheet)).toList());
+                .map(cellData -> {
+                    return switch (cellData.getType()) {
+                        case CODE ->
+                            javaCellFactory.createCell(cellData, cellBox, sheet);
+                        case MARKDOWN ->
+                            markdownCellFactory.createCell(cellData, cellBox, sheet);
+                    };
+                }).toList());
+        Platform.runLater(this::moveFocusToFirstCell);
     }
-    
+
     void execute() {
         cells.stream().forEach(cell -> cell.execute());
     }
@@ -53,6 +80,14 @@ public class SheetSkin implements Skin<Sheet> {
             insertCellAfter(currentCell);
         }
         Platform.runLater(() -> cells.get(indexOfNextCell).requestFocus());
+    }
+
+    public void moveFocusToFirstCell() {
+        Platform.runLater(() -> cells.getFirst().requestFocus());
+    }
+
+    public void moveFocusToLastCell() {
+        Platform.runLater(() -> cells.getLast().requestFocus());
     }
 
     public void insertCellAfter(Sheet.Cell currentCell) {
@@ -97,6 +132,26 @@ public class SheetSkin implements Skin<Sheet> {
             sheet.getCells().add(indexOfCurrentCell + 1, currentCell.getCellData());
             Platform.runLater(() -> currentCell.requestFocus());
         }
+    }
+
+    void replaceCell(Sheet.Cell currentCell, Sheet.Cell newCell) {
+        int indexOfCurrentCell = cells.indexOf(currentCell);
+        cells.remove(indexOfCurrentCell);
+        cells.add(indexOfCurrentCell, newCell);
+        Platform.runLater(() -> newCell.requestFocus());
+    }
+
+    Sheet.Cell createCell(Sheet.CellData.Type type, Sheet.CellData cellData) {
+        return switch (type) {
+            case CODE -> {
+                cellData.typeProperty().set(Sheet.CellData.Type.CODE);
+                yield javaCellFactory.createCell(cellData, cellBox, sheet);
+            }
+            case MARKDOWN -> {
+                cellData.typeProperty().set(Sheet.CellData.Type.MARKDOWN);
+                yield markdownCellFactory.createCell(cellData, cellBox, sheet);
+            }
+        };
     }
 
     void scrollTo(Node node) {
@@ -151,7 +206,7 @@ public class SheetSkin implements Skin<Sheet> {
             text.setFont(getFont());
             text.setWrappingWidth(getWidth());
             double height = text.getLayoutBounds().getHeight();
-            double newPrefHeight = Math.max(height * 1.09 + 2 * getFont().getSize(), getMinHeight());
+            double newPrefHeight = Math.max((height  + getFont().getSize())*1.1, getMinHeight());
             setPrefHeight(newPrefHeight);
             requestLayout();
         }

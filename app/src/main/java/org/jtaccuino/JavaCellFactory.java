@@ -1,7 +1,21 @@
+/*
+ * Copyright 2024 JTaccuino Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.jtaccuino;
 
 import java.util.Locale;
-import java.util.UUID;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -10,16 +24,13 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.Skin;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.skin.TextAreaSkin;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import jdk.jshell.ExpressionSnippet;
 import jdk.jshell.ImportSnippet;
@@ -27,8 +38,6 @@ import jdk.jshell.Snippet;
 import jdk.jshell.SourceCodeAnalysis;
 import jdk.jshell.StatementSnippet;
 import jdk.jshell.VarSnippet;
-import static org.jtaccuino.UiUtils.createSVGToggleToolbarButton;
-import static org.jtaccuino.UiUtils.createSVGToolbarButton;
 import org.jtaccuino.control.CompletionPopup;
 
 public class JavaCellFactory implements CellFactory {
@@ -45,13 +54,11 @@ public class JavaCellFactory implements CellFactory {
 
         private final int cellNumber;
         private final VBox parentBox;
-        private final Sheet sheet;
 
         public JavaCell(Sheet.CellData cellData, VBox parent, Sheet sheet, int cellNumber) {
-            super(cellData);
+            super(cellData, sheet);
             this.cellNumber = cellNumber;
             this.parentBox = parent;
-            this.sheet = sheet;
         }
 
         @Override
@@ -71,7 +78,7 @@ public class JavaCellFactory implements CellFactory {
 
     }
 
-    public static class JavaCellSkin implements Skin<JavaCell> {
+    public static class JavaCellSkin extends AbstractCellSkin<JavaCell> {
 
         private final JavaCell control;
 
@@ -80,8 +87,12 @@ public class JavaCellFactory implements CellFactory {
         private final SheetSkin.ResizingTextArea input;
         private final VBox outputBox;
         private final BorderPane output;
+        private final Label execResult;
+        private final Region success;
+        private final Region failure;
 
         private JavaCellSkin(JavaCell javaCell) {
+            super(javaCell);
             this.control = javaCell;
             input = new SheetSkin.ResizingTextArea();
             input.setPrefRowCount(1);
@@ -98,13 +109,23 @@ public class JavaCellFactory implements CellFactory {
             outputBox = new VBox();
             outputBox.setPadding(new Insets(5));
             output.setCenter(outputBox);
-            var toolbar = createToolbar(outputBox, this.control.sheet.getUuid(), input, output, this.control.parentBox);
+            var toolbar = createToolbar();
             toolbar.visibleProperty().bind(Bindings.or(input.focusedProperty(), toolbar.focusWithinProperty()));
-            var inputControl = new AnchorPane(input, toolbar);
+            execResult = new Label();
+            execResult.setVisible(false);
+            success = new Region();
+            success.getStyleClass().addAll("toolbar-button-graphics", "code-success");
+            failure = new Region();
+            failure.getStyleClass().addAll("toolbar-button-graphics", "code-failure");
+
+            var inputControl = new AnchorPane(input, toolbar, execResult);
             AnchorPane.setLeftAnchor(input, 0d);
             AnchorPane.setTopAnchor(input, 0d);
             AnchorPane.setRightAnchor(toolbar, 15d);
             AnchorPane.setTopAnchor(toolbar, 0d);
+            AnchorPane.setRightAnchor(execResult, 15d);
+            AnchorPane.setBottomAnchor(execResult, 2d);
+
             inputBox = new VBox(inputControl, output);
             inputBox.setPadding(new Insets(5));
             input.addEventFilter(KeyEvent.KEY_PRESSED, t -> {
@@ -127,7 +148,7 @@ public class JavaCellFactory implements CellFactory {
                     t.consume();
                 } else {
                     input.setPrefRowCount((int) input.getText().chars().filter(c -> c == '\n').count() + 1);
-                    Platform.runLater(() -> this.control.sheet.ensureCellVisible(control));
+                    Platform.runLater(() -> this.control.getSheet().ensureCellVisible(control));
                     handleSyntaxHighlighting(input.getText());
                 }
             });
@@ -142,89 +163,59 @@ public class JavaCellFactory implements CellFactory {
 
         void requestFocus() {
             input.requestFocus();
+            this.control.getSheet().ensureCellVisible(getNode());
         }
 
-        private HBox createToolbar(VBox outputBox, UUID uuid, TextArea input, BorderPane output, VBox vBox) {
-            var executeCell = createSVGToolbarButton("execute-cell", "Execute Cell", "toolbar-button");
-            executeCell.setOnAction((event) -> {
-                handleExecution();
-            });
-            var moveCellUp = createSVGToolbarButton("move-cell-up", "Move Cell Up", "toolbar-button");
-            moveCellUp.setOnAction((event) -> {
-                this.control.sheet.moveCellUp(control);
-            });
-            var moveCellDown = createSVGToolbarButton("move-cell-down", "Move Cell Down", "toolbar-button");
-            moveCellDown.setOnAction((event) -> {
-                this.control.sheet.moveCellDown(control);
-            });
-
-            var insertCellBefore = createSVGToolbarButton("insert-cell-before", "Insert Cell Before", "toolbar-button");
-            insertCellBefore.setOnAction((event) -> {
-                this.control.sheet.insertCellBefore(control);
-            });
-            var insertCellAfter = createSVGToolbarButton("insert-cell-after", "Insert Cell After", "toolbar-button");
-            insertCellAfter.setOnAction((event) -> {
-                this.control.sheet.insertCellAfter(control);
-            });
-            var deleteCell = createSVGToolbarButton("delete-cell", "Delete Cell", "toolbar-button");
-            deleteCell.setOnAction((event) -> {
-                this.control.sheet.removeCell(control);
-            });
-
-            var mdType = createSVGToggleToolbarButton("md-cell-type", "Use Markdown for Cell", "toolbar-button");
-            var javaType = createSVGToggleToolbarButton("java-cell-type", "Use Java Code for Cell", "toolbar-button");
-            final ToggleGroup toggleGroup = new ToggleGroup();
-
-            mdType.setToggleGroup(toggleGroup);
-            javaType.setToggleGroup(toggleGroup);
-            if (control.getCellData().getType().equals("java")) {
-                toggleGroup.selectToggle(javaType);
-            } else if (control.getCellData().getType().equals("markdown")) {
-                toggleGroup.selectToggle(mdType);
-            }
-
-            var hbox = new HBox(executeCell, moveCellUp, moveCellDown, insertCellBefore, insertCellAfter, deleteCell, mdType, javaType);
-            HBox.setHgrow(hbox, Priority.NEVER);
-            hbox.maxWidthProperty().bind(hbox.prefWidthProperty());
-            hbox.getStyleClass().add("cell-toolbar");
-            return hbox;
-        }
-
-        void execute() {
+        @Override
+        protected void execute() {
             handleExecution();
         }
-        
+
         private void handleExecution() {
-            System.out.println("Executing");
-            Platform.runLater(outputBox.getChildren()::clear);
-            ShellUtil.INSTANCE.setActiveOutput(outputBox);
-            this.control.sheet.getReactiveJShell().evalAsync(input.getText(), events -> {
-                events.forEach(event -> {
-                    var l = new Label(this.format(event.snippet(), event.value(), event.status()));
-                    l.setTooltip(new Tooltip(event.snippet().source()));
-                    Platform.runLater(() -> outputBox.getChildren().add(l));
-                });
-                Platform.runLater(() -> {
-                    if (!output.isVisible()) {
-                        output.setVisible(true);
-                    }
-                    if (events.stream().allMatch(event -> Snippet.Kind.ERRONEOUS != event.snippet().kind())) {
-                        Platform.runLater(() -> {
-                            this.control.sheet.moveFocusToNextCell(control);
-                        });
-                    } else {
-                        events.stream()
-                                .filter(event -> Snippet.Kind.ERRONEOUS == event.snippet().kind())
-                                .forEach(event
-                                        -> this.control.sheet.getReactiveJShell().diagnose(event.snippet())
-                                        .forEachOrdered(diag -> {
-                                            var l = new Label(diag.getMessage(Locale.getDefault()));
-                                            l.setTooltip(new Tooltip(diag.getCode()));
-                                            Platform.runLater(() -> outputBox.getChildren().add(l));
-                                        }));
-                    }
-                });
-            });
+            this.control.getSheet()
+                    .getReactiveJShell().evalAsync(
+                            () -> {
+                                ShellUtil.INSTANCE.setActiveOutput(outputBox);
+                                Platform.runLater(outputBox.getChildren()::clear);
+                            },
+                            input.getText(),
+                            evalResult -> {
+// Move this to debug ouput mode...
+//                                events.forEach(event -> {
+//                                    var l = new Label(this.format(event.snippet(), event.value(), event.status()));
+//                                    l.setTooltip(new Tooltip(event.snippet().source()));
+//                                    Platform.runLater(() -> outputBox.getChildren().add(l));
+//                                });
+                                Platform.runLater(() -> {
+                                    if (!output.isVisible()) {
+                                        output.setVisible(true);
+                                    }
+                                    if (evalResult.status().isSuccess()) {
+                                        Platform.runLater(() -> {
+                                            execResult.setGraphic(success);
+                                            execResult.setVisible(true);
+                                            this.control.getSheet().moveFocusToNextCell(control);
+                                            if (evalResult.lastValueAsString().isPresent()) {
+                                                outputBox.getChildren().add(new Label(evalResult.typeOfLastValue().get() + ": " + evalResult.lastValueAsString().get()));
+                                            }
+                                        });
+                                    } else {
+                                        evalResult.snippetEvents().stream()
+                                                .filter(event -> Snippet.Kind.ERRONEOUS == event.snippet().kind())
+                                                .forEach(event
+                                                        -> this.control.getSheet().getReactiveJShell().diagnose(event.snippet())
+                                                        .forEachOrdered(diag -> {
+                                                            var l = new Label(diag.getMessage(Locale.getDefault()));
+                                                            l.setTooltip(new Tooltip(diag.getCode()));
+                                                            Platform.runLater(() -> outputBox.getChildren().add(l));
+                                                        }));
+                                        Platform.runLater(() -> {
+                                            execResult.setGraphic(failure);
+                                            execResult.setVisible(true);
+                                        });
+                                    }
+                                });
+                            });
         }
 
         private String format(Snippet snippet, String value, Snippet.Status status) {
@@ -245,8 +236,7 @@ public class JavaCellFactory implements CellFactory {
         }
 
         private void filterCompletion(String text, int caretPos) {
-            this.control.sheet.getReactiveJShell().completionAsync(text, caretPos, result -> {
-                System.out.println("Found " + result.suggestions().size() + " possible completions");
+            this.control.getSheet().getReactiveJShell().completionAsync(text, caretPos, result -> {
                 var distinctCompletionSuggestions = result.suggestions().stream().map(SourceCodeAnalysis.Suggestion::continuation).distinct().toList();
                 distinctCompletionSuggestions.stream().forEach(System.out::println);
                 Platform.runLater(() -> completionPopup.getSuggestions().setAll(distinctCompletionSuggestions));
@@ -254,9 +244,7 @@ public class JavaCellFactory implements CellFactory {
         }
 
         private void handleTabCompletion(String text, int caretPos, Rectangle2D caretCoordiantes, Consumer<CompletionUpdate> consumer) {
-            System.out.println("Completing: " + text + " length " + text.length() + " caret: " + caretPos + " after " + text.substring(0, caretPos));
-            this.control.sheet.getReactiveJShell().completionAsync(text, caretPos, result -> {
-                System.out.println("Found " + result.suggestions().size() + " possible completions");
+            this.control.getSheet().getReactiveJShell().completionAsync(text, caretPos, result -> {
                 var distinctCompletionSuggestions = result.suggestions().stream().map(SourceCodeAnalysis.Suggestion::continuation).distinct().toList();
                 distinctCompletionSuggestions.stream().forEach(System.out::println);
                 // only one completion - just do it

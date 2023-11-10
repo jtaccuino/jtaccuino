@@ -45,6 +45,8 @@ dependencies {
     javafx group: 'org.openjfx', name: 'javafx-graphics', version: '21', classifier: javaFxPlatform
     javafx group: 'org.openjfx', name: 'javafx-fxml', version: '21', classifier: javaFxPlatform
     javafx group: 'org.openjfx', name: 'javafx-controls', version: '21', classifier: javaFxPlatform
+    javafx group: 'org.openjfx', name: 'javafx-media', version: '21', classifier: javaFxPlatform
+    javafx group: 'org.openjfx', name: 'javafx-web', version: '21', classifier: javaFxPlatform
     
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
@@ -52,6 +54,7 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     implementation "com.gluonhq:rich-text-area:1.1.1"
+    implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
 
     implementation "kr.motd.maven:os-maven-plugin:1.7.1"
 
@@ -68,8 +71,6 @@ dependencies {
 
     implementation 'jakarta.json.bind:jakarta.json.bind-api:3.0.0'
 
-    implementation 'one.jpro.platform:jpro-mdfx:0.2.7-SNAPSHOT'
-
     runtimeOnly 'org.eclipse:yasson:3.0.3'
 }
 
@@ -77,9 +78,11 @@ ext {
     getJvmModulePath = { -> (configurations.javafx).asPath}
     getJvmAdditionalModules = { ->
         [
+            'javafx.base',
             'javafx.controls',
             'javafx.fxml',
             'javafx.graphics',
+            'javafx.media'
         ].toUnique().toSorted().join(',')
     }
 }
