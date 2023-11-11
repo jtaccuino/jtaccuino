@@ -142,6 +142,7 @@ public class Sheet extends Control {
 
     public Notebook toNotebook() {
         var nbCells = cells.stream()
+                .filter(c -> !c.isEmpty())
                 .map(c -> new Notebook.Cell(c.getType().name().toLowerCase(), Map.of(), c.getSource(), List.of()))
                 .toList();
         return new Notebook(
@@ -245,6 +246,10 @@ public class Sheet extends Control {
 
         public SimpleStringProperty sourceProperty() {
             return source;
+        }
+        
+        public boolean isEmpty() {
+            return (null == source.get()) || source.get().isEmpty();
         }
 
     }
