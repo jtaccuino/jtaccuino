@@ -31,12 +31,13 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import org.jtaccuino.rta.MdUtils;
 
 public class MarkdownCellFactory implements CellFactory {
 
     @Override
-    public Sheet.Cell createCell(Sheet.CellData cellData, VBox parent, Sheet sheet) {
+    public Sheet.Cell createCell(CellData cellData, VBox parent, Sheet sheet) {
         var cell = new MarkdownCell(cellData, parent, sheet, sheet.getNextId());
         return cell;
     }
@@ -46,7 +47,7 @@ public class MarkdownCellFactory implements CellFactory {
         private final int cellNumber;
         private final VBox parentBox;
 
-        public MarkdownCell(Sheet.CellData cellData, VBox parent, Sheet sheet, int cellNumber) {
+        public MarkdownCell(CellData cellData, VBox parent, Sheet sheet, int cellNumber) {
             super(cellData, sheet);
             this.cellNumber = cellNumber;
             this.parentBox = parent;
@@ -95,6 +96,7 @@ public class MarkdownCellFactory implements CellFactory {
             inputArea.setPrefRowCount(1);
             inputArea.setPromptText("Type markdown here");
             inputArea.setId("input_" + this.control.cellNumber);
+            inputArea.setFont(Font.font("Monaspace Radon"));
             if (null != markdownCell.getCellData().getSource()) {
                 inputArea.setText(markdownCell.getCellData().getSource());
             }

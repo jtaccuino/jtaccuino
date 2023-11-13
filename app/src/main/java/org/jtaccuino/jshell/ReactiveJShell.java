@@ -22,7 +22,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.jshell.Diag;
@@ -69,6 +68,13 @@ public class ReactiveJShell {
         if (SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE == completionInfo.completeness()) {
             return new EvaluationResult(List.of(), ResultStatus.FAILURE, Optional.empty(), Optional.empty());
         }
+        
+        Optional<SnippetEvent> firstException = snippetEvents.stream().filter(event -> null != event.exception()).findFirst();
+        
+        if (firstException.isPresent()) {
+            return new EvaluationResult(snippetEvents, ResultStatus.FAILURE, Optional.empty(), Optional.empty());
+        }
+        
         if (snippetEvents.stream().allMatch(event -> Snippet.Kind.ERRONEOUS != event.snippet().kind())) {
             var lastEvent = snippetEvents.getLast();
             if (lastEvent.snippet() instanceof VarSnippet v) {

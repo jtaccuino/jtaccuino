@@ -29,7 +29,8 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
-import static org.jtaccuino.Sheet.CellData.Type.CODE;
+import javafx.scene.text.TextBoundsType;
+import static org.jtaccuino.CellData.Type.CODE;
 
 public class SheetSkin implements Skin<Sheet> {
 
@@ -92,7 +93,7 @@ public class SheetSkin implements Skin<Sheet> {
 
     public void insertCellAfter(Sheet.Cell currentCell) {
         int indexOfCurrentCell = cells.indexOf(currentCell);
-        var newCellData = Sheet.CellData.empty(currentCell.getCellData().getType());
+        org.jtaccuino.CellData newCellData = CellData.empty(currentCell.getCellData().getType());
         sheet.getCells().add(indexOfCurrentCell + 1, newCellData);
         var newCell = javaCellFactory.createCell(newCellData, cellBox, sheet);
 
@@ -101,7 +102,7 @@ public class SheetSkin implements Skin<Sheet> {
 
     public void insertCellBefore(Sheet.Cell currentCell) {
         int indexOfCurrentCell = cells.indexOf(currentCell);
-        var newCellData = Sheet.CellData.empty(currentCell.getCellData().getType());
+        org.jtaccuino.CellData newCellData = CellData.empty(currentCell.getCellData().getType());
         sheet.getCells().add(indexOfCurrentCell, newCellData);
         var newCell = javaCellFactory.createCell(newCellData, cellBox, sheet);
         cells.add(indexOfCurrentCell, newCell);
@@ -141,14 +142,14 @@ public class SheetSkin implements Skin<Sheet> {
         Platform.runLater(() -> newCell.requestFocus());
     }
 
-    Sheet.Cell createCell(Sheet.CellData.Type type, Sheet.CellData cellData) {
+    Sheet.Cell createCell(CellData.Type type, CellData cellData) {
         return switch (type) {
             case CODE -> {
-                cellData.typeProperty().set(Sheet.CellData.Type.CODE);
+                cellData.typeProperty().set(CellData.Type.CODE);
                 yield javaCellFactory.createCell(cellData, cellBox, sheet);
             }
             case MARKDOWN -> {
-                cellData.typeProperty().set(Sheet.CellData.Type.MARKDOWN);
+                cellData.typeProperty().set(CellData.Type.MARKDOWN);
                 yield markdownCellFactory.createCell(cellData, cellBox, sheet);
             }
         };
@@ -204,9 +205,12 @@ public class SheetSkin implements Skin<Sheet> {
         protected void adjustHeightToText() {
             Text text = new Text(getText());
             text.setFont(getFont());
-            text.setWrappingWidth(getWidth());
+            text.setBoundsType(TextBoundsType.VISUAL);
             double height = text.getLayoutBounds().getHeight();
-            double newPrefHeight = Math.max((height  + getFont().getSize())*1.1, getMinHeight());
+            double newPrefHeight = Math.max(
+                    Math.ceil(height / getFont().getSize()) * 1.3 * getFont().getSize() + getFont().getSize(),
+                    getMinHeight()
+            );
             setPrefHeight(newPrefHeight);
             requestLayout();
         }

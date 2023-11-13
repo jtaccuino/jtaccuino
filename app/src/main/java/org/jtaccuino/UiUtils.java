@@ -57,13 +57,10 @@ public class UiUtils {
                     char currentChar = firstString.charAt(i);
                     for (String str : strings) {
                         if (str.length() < i + 1 || str.charAt(i) != currentChar) {
-                            System.out.println("Current: " + firstString.substring(0, i));
                             yield firstString.substring(0, i);
                         }
                     }
-                    System.out.println("Current: " + firstString.substring(0, i));
                 }
-                System.out.println("Current: " + firstString);
                 yield firstString;
             }
         };

@@ -15,6 +15,7 @@
  */
 package org.jtaccuino;
 
+import org.jtaccuino.format.Notebook;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
@@ -31,6 +32,7 @@ import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import static org.jtaccuino.UiUtils.createSVGToolbarButton;
+import org.jtaccuino.format.NotebookCompat;
 
 public class App extends Application {
 
@@ -64,6 +66,17 @@ public class App extends Application {
         stage.show();
     }
 
+    private void activateNotebook(NotebookCompat notebook) {
+        sheet.close();
+        bp.setCenter(null);
+        if (null != notebook) {
+            sheet = Sheet.of(notebook);
+        } else {
+            sheet = Sheet.of();
+        }
+        bp.setCenter(sheet);
+    }
+
     private void activateNotebook(Notebook notebook) {
         sheet.close();
         bp.setCenter(null);
@@ -78,7 +91,7 @@ public class App extends Application {
     private HBox createMainToolBar(Stage stage) {
         var empty = createSVGToolbarButton("empty-notebook", "Empty Notebook", "main-toolbar-button");
         empty.setOnAction((event) -> {
-            activateNotebook(null);
+            activateNotebook((Notebook)null);
         });
 
         var load = createSVGToolbarButton("load-notebook", "Load Notebook", "main-toolbar-button");
@@ -97,7 +110,16 @@ public class App extends Application {
                     jsonb.close();
                     activateNotebook(notebook);
                 } catch (final Exception ex) {
-                    throw new IllegalStateException(ex);
+                    ex.printStackTrace();
+                    try {
+                        Jsonb jsonb = JsonbBuilder.create();
+                        var notebook = jsonb.fromJson(new FileReader(selectedFile), NotebookCompat.class);
+                        jsonb.close();
+                        activateNotebook(notebook);
+                    } catch (Exception ee) {
+                    // try compat mode 
+                        ee.printStackTrace();
+                    }
                 }
             }
         });
@@ -117,7 +139,7 @@ public class App extends Application {
                 jsonb.toJson(sheet.toNotebook(), new FileWriter(selectedFile));
                 jsonb.close();
             } catch (Exception ex) {
-                throw new IllegalStateException(ex);
+                ex.printStackTrace();
             }
         });
 

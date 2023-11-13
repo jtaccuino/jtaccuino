@@ -15,8 +15,10 @@
  */
 package org.jtaccuino;
 
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
@@ -45,7 +47,7 @@ public class JavaCellFactory implements CellFactory {
     public static JavaCellFactory INSTANCE = new JavaCellFactory();
 
     @Override
-    public Sheet.Cell createCell(Sheet.CellData cellData, VBox parent, Sheet sheet) {
+    public Sheet.Cell createCell(CellData cellData, VBox parent, Sheet sheet) {
         var cell = new JavaCell(cellData, parent, sheet, sheet.getNextId());
         return cell;
     }
@@ -55,7 +57,7 @@ public class JavaCellFactory implements CellFactory {
         private final int cellNumber;
         private final VBox parentBox;
 
-        public JavaCell(Sheet.CellData cellData, VBox parent, Sheet sheet, int cellNumber) {
+        public JavaCell(CellData cellData, VBox parent, Sheet sheet, int cellNumber) {
             super(cellData, sheet);
             this.cellNumber = cellNumber;
             this.parentBox = parent;
@@ -98,6 +100,7 @@ public class JavaCellFactory implements CellFactory {
             input.setPrefRowCount(1);
             input.setPromptText("Type code here");
             input.setId("input_" + this.control.cellNumber);
+            input.getStyleClass().add("code-editor");
             if (null != javaCell.getCellData().getSource()) {
                 input.setText(javaCell.getCellData().getSource());
             }
@@ -176,6 +179,8 @@ public class JavaCellFactory implements CellFactory {
                     .getReactiveJShell().evalAsync(
                             () -> {
                                 ShellUtil.INSTANCE.setActiveOutput(outputBox);
+                                ShellUtil.INSTANCE.setCurrentCellData(control.getCellData());
+                                control.getCellData().getOutputData().clear();
                                 Platform.runLater(outputBox.getChildren()::clear);
                             },
                             input.getText(),
@@ -195,18 +200,47 @@ public class JavaCellFactory implements CellFactory {
                                             execResult.setGraphic(success);
                                             execResult.setVisible(true);
                                             this.control.getSheet().moveFocusToNextCell(control);
-                                            if (evalResult.lastValueAsString().isPresent()) {
-                                                outputBox.getChildren().add(new Label(evalResult.typeOfLastValue().get() + ": " + evalResult.lastValueAsString().get()));
-                                            }
+                                            evalResult.lastValueAsString().ifPresent(action -> {
+                                                var result = new Label(evalResult.typeOfLastValue().get() + ": " + evalResult.lastValueAsString().get());
+                                                result.getStyleClass().add("jshell_eval_result");
+                                                outputBox.getChildren().add(result);
+                                            });
                                         });
                                     } else {
                                         evalResult.snippetEvents().stream()
-                                                .filter(event -> Snippet.Kind.ERRONEOUS == event.snippet().kind())
+                                                .filter(event -> null != event.exception())
+                                                .map(event -> event.exception())
+                                                .forEach(exception -> {
+                                                    var text = exception.getCause().getClass().getName() + ": " + exception.getCause().getMessage();
+                                                    text += "\n" + Arrays.stream(exception.getCause().getStackTrace())
+                                                            .limit(exception.getCause().getStackTrace().length - 2)
+                                                            .map(ste -> "\t" + ste.toString())
+                                                            .collect(Collectors.joining("\n"));
+                                                    var l = new Label(text);
+                                                    l.getStyleClass().add("jshell_eval_exception");
+                                                    Platform.runLater(() -> outputBox.getChildren().add(l));
+                                                });
+                                        evalResult.snippetEvents().stream()
+                                                .filter(event -> Snippet.Kind.ERRONEOUS == event.snippet().kind() || Snippet.Status.REJECTED == event.status())
                                                 .forEach(event
                                                         -> this.control.getSheet().getReactiveJShell().diagnose(event.snippet())
                                                         .forEachOrdered(diag -> {
-                                                            var l = new Label(diag.getMessage(Locale.getDefault()));
+                                                            var message = diag.getMessage(Locale.getDefault());
+                                                            message += "\n" + event.snippet().source();
+                                                            var pointer = new StringBuffer();
+                                                            pointer.repeat(" ", (int) diag.getStartPosition())
+                                                                    .append("^")
+                                                                    .repeat("-", (int)(diag.getEndPosition() - diag.getStartPosition() -2))
+                                                                    .append("^");
+                                                            message += "\n" + pointer;
+                                                            var problem = new StringBuffer();
+                                                            problem.repeat(" ", (int) diag.getPosition())
+                                                                    .append("^");
+                                                            message += "\n" + problem;
+                                                            var l = new Label(message);
+                                                            l.getStyleClass().add("jshell_eval_erroneous");
                                                             l.setTooltip(new Tooltip(diag.getCode()));
+                                                            outputBox.getStyleClass().add("debug");
                                                             Platform.runLater(() -> outputBox.getChildren().add(l));
                                                         }));
                                         Platform.runLater(() -> {
@@ -238,7 +272,6 @@ public class JavaCellFactory implements CellFactory {
         private void filterCompletion(String text, int caretPos) {
             this.control.getSheet().getReactiveJShell().completionAsync(text, caretPos, result -> {
                 var distinctCompletionSuggestions = result.suggestions().stream().map(SourceCodeAnalysis.Suggestion::continuation).distinct().toList();
-                distinctCompletionSuggestions.stream().forEach(System.out::println);
                 Platform.runLater(() -> completionPopup.getSuggestions().setAll(distinctCompletionSuggestions));
             });
         }
@@ -246,7 +279,6 @@ public class JavaCellFactory implements CellFactory {
         private void handleTabCompletion(String text, int caretPos, Rectangle2D caretCoordiantes, Consumer<CompletionUpdate> consumer) {
             this.control.getSheet().getReactiveJShell().completionAsync(text, caretPos, result -> {
                 var distinctCompletionSuggestions = result.suggestions().stream().map(SourceCodeAnalysis.Suggestion::continuation).distinct().toList();
-                distinctCompletionSuggestions.stream().forEach(System.out::println);
                 // only one completion - just do it
                 if (distinctCompletionSuggestions.size() == 1) {
                     String withCompletion = text.substring(0, result.anchor()) + distinctCompletionSuggestions.getFirst();

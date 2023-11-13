@@ -20,14 +20,14 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import static org.jtaccuino.Sheet.CellData.Type.CODE;
-import static org.jtaccuino.Sheet.CellData.Type.MARKDOWN;
+import static org.jtaccuino.CellData.Type.CODE;
+import static org.jtaccuino.CellData.Type.MARKDOWN;
 import static org.jtaccuino.UiUtils.createSVGToggleToolbarButton;
 import static org.jtaccuino.UiUtils.createSVGToolbarButton;
 
 public interface CellFactory {
 
-    public Sheet.Cell createCell(Sheet.CellData cellData, VBox parent, Sheet sheet);
+    public Sheet.Cell createCell(CellData cellData, VBox parent, Sheet sheet);
 
     public abstract static class AbstractCellSkin<T extends Sheet.Cell> implements Skin<T> {
 
@@ -66,11 +66,11 @@ public interface CellFactory {
 
             var mdType = createSVGToggleToolbarButton("md-cell-type", "Use Markdown for Cell", "toolbar-button");
             mdType.setOnAction((event) -> {
-                this.sheet.replaceCell(getSkinnable(), sheet.createCell(Sheet.CellData.Type.MARKDOWN, getSkinnable().getCellData()));
+                this.sheet.replaceCell(getSkinnable(), sheet.createCell(CellData.Type.MARKDOWN, getSkinnable().getCellData()));
             });
             var javaType = createSVGToggleToolbarButton("java-cell-type", "Use Java Code for Cell", "toolbar-button");
             javaType.setOnAction((event) -> {
-                this.sheet.replaceCell(getSkinnable(), sheet.createCell(Sheet.CellData.Type.CODE, getSkinnable().getCellData()));
+                this.sheet.replaceCell(getSkinnable(), sheet.createCell(CellData.Type.CODE, getSkinnable().getCellData()));
             });
             final ToggleGroup toggleGroup = new ToggleGroup();
 

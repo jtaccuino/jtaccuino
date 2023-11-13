@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jtaccuino;
+package org.jtaccuino.format;
 
 import java.util.List;
 import java.util.Map;
 
-public record Notebook(Map<String, Object> metadata, int nbformat, int nbformat_minor, List<Cell> cells) {
+public record NotebookCompat(Map<String, Object> metadata, int nbformat, int nbformat_minor, List<Cell> cells) {
 
-    public static record Cell(String cell_type, Map<String, Object> metadata, String source, List<Output> outputs) {
+    public static record Cell(String id, String cell_type, Map<String, Object> metadata, String[] source, List<Output> outputs) {        
 
     }
 
-    public static record Output(String output_type, Map<String, Object> data, Map<String, Object> metadata) {
+    public static record Output(String output_type, Map<String, String> data, Map<String, Object> metadata) {
 
     }
 }

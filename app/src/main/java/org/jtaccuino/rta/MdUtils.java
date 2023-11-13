@@ -234,7 +234,7 @@ public class MdUtils {
 
                         paragraphDecorations.pop();
                         bulletListLevel--;
-                        if (0 == bulletListLevel) {
+                        if (0 == bulletListLevel && !bl.getParent().getLastChild().equals(bl)) {
                             var pStart = theText.length();
                             theText.append("\n");
                             decorationList.add(new DecorationModel(pStart, 1, presetTextDecoration, presetParagraphDecoration));
@@ -261,7 +261,7 @@ public class MdUtils {
 
                         paragraphDecorations.pop();
                         orderedListLevel--;
-                        if (0 == orderedListLevel) {
+                        if (0 == orderedListLevel && !ol.getParent().getLastChild().equals(ol)) {
                             var pStart = theText.length();
                             theText.append("\n");
                             decorationList.add(new DecorationModel(pStart, 1, presetTextDecoration, presetParagraphDecoration));
@@ -284,7 +284,6 @@ public class MdUtils {
                         }
                     }
                     case FencedCodeBlock fcb -> {
-                        System.out.println(fcb.getOpeningFence());
                         var pd = ParagraphDecoration.builder().fromDecoration(presetParagraphDecoration).indentationLevel(fcb.getFenceIndent()).build();
                         paragraphDecorations.push(pd);
                         textDecorations.push(monospaceDecoration);

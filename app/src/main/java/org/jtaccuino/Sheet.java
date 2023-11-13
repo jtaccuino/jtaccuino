@@ -15,6 +15,9 @@
  */
 package org.jtaccuino;
 
+import org.jtaccuino.format.Notebook;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -24,15 +27,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
+import org.jtaccuino.format.NotebookCompat;
 import org.jtaccuino.jshell.ReactiveJShell;
 
 public class Sheet extends Control {
@@ -47,13 +51,41 @@ public class Sheet extends Control {
 
     public static Sheet of(Notebook notebook) {
         var s = new Sheet();
-        notebook.cells().stream().map(c -> CellData.of(CellData.Type.of(c.cell_type()), c.source())).forEach(s::addCell);
+        notebook.cells().stream().map(c
+                -> CellData.of(
+                        CellData.Type.of(c.cell_type()),
+                        c.source(),
+                        c.id() == null ? UUID.randomUUID() : UUID.fromString(c.id()),
+                        c.outputs() != null ? c.outputs().stream().map(o
+                                -> CellData.OutputData.of(
+                                CellData.OutputData.OutputType.of(o.output_type()),
+                                o.data())
+                        ).toList() : new ArrayList<>()
+                )
+        ).forEach(s::addCell);
+        return s;
+    }
+
+    public static Sheet of(NotebookCompat notebook) {
+        var s = new Sheet();
+        notebook.cells().stream().map(c
+                -> CellData.of(
+                        CellData.Type.of(c.cell_type()),
+                        Arrays.stream(c.source()).collect(Collectors.joining()),
+                        c.id() == null ? UUID.randomUUID() : UUID.fromString(c.id()),
+                        c.outputs() != null ? c.outputs().stream().map(o
+                                -> CellData.OutputData.of(
+                                CellData.OutputData.OutputType.of(o.output_type()),
+                                o.data())
+                        ).toList() : new ArrayList<>()
+                )
+        ).forEach(s::addCell);
         return s;
     }
 
     public static Sheet of() {
         var s = new Sheet();
-        s.addCell(new CellData(CellData.Type.CODE, null));
+        s.addCell(CellData.of(CellData.Type.CODE, null, UUID.randomUUID()));
         return s;
     }
 
@@ -131,11 +163,11 @@ public class Sheet extends Control {
     public void moveCellDown(Sheet.Cell currentCell) {
         ((SheetSkin) getSkin()).moveCellDown(currentCell);
     }
-    
+
     public void replaceCell(Sheet.Cell currentCell, Sheet.Cell newCell) {
         ((SheetSkin) getSkin()).replaceCell(currentCell, newCell);
     }
-    
+
     public Cell createCell(CellData.Type type, CellData cellData) {
         return ((SheetSkin) getSkin()).createCell(type, cellData);
     }
@@ -143,22 +175,32 @@ public class Sheet extends Control {
     public Notebook toNotebook() {
         var nbCells = cells.stream()
                 .filter(c -> !c.isEmpty())
-                .map(c -> new Notebook.Cell(c.getType().name().toLowerCase(), Map.of(), c.getSource(), List.of()))
+                .map(c
+                        -> new Notebook.Cell(
+                        c.getId().toString(),
+                        c.getType().name().toLowerCase(),
+                        Map.of(),
+                        c.getSource(),
+                        c.getOutputData().stream().map(od -> new Notebook.Output(od.type().toOutputType(), od.mimeBundle(), Map.of())).toList()))
                 .toList();
         return new Notebook(
                 Map.of("kernel_info",
                         Map.of("name", "JTaccuino", "version", "0.1"),
                         "language_info",
-                        Map.of("name", "Java", "version", "21")), 5, 9, nbCells);
+                        Map.of("name", "Java", "version", "21")), 4, 5, nbCells);
     }
 
     private void initShell() {
+        getReactiveJShell().eval("""
+            import java.util.UUID;
+            """);
+        getReactiveJShell().eval("var jsci_uuid = UUID.fromString(\"" + uuid + "\");");
+
         getReactiveJShell().eval("""
             import org.jtaccuino.ShellUtil;
             """);
         getReactiveJShell().eval("""
             public void display(javafx.scene.Node node) {
-                System.out.println("Should now display " + node + " on " + jsci_uuid);
                 ShellUtil.INSTANCE.display(node, jsci_uuid);
             }""");
 
@@ -166,10 +208,6 @@ public class Sheet extends Control {
             public void addDependency(String mavenCoordinate) {
                 ShellUtil.INSTANCE.resolve(mavenCoordinate, jsci_uuid);
             }""");
-        getReactiveJShell().eval("""
-            import java.util.UUID;
-            """);
-        getReactiveJShell().eval("var jsci_uuid = UUID.fromString(\"" + uuid + "\");");
     }
 
     public UUID getUuid() {
@@ -193,65 +231,6 @@ public class Sheet extends Control {
     void close() {
         worker.shutdown();
         getReactiveJShell().shudown();
-    }
-
-    public static class CellData {
-
-        public static enum Type {
-            CODE, MARKDOWN;
-
-            private static Type of(String cell_type) {
-                return switch (cell_type) {
-                    case "markdown" ->
-                        MARKDOWN;
-                    case "code" ->
-                        CODE;
-                    default ->
-                        CODE;
-                };
-            }
-        }
-
-        private final SimpleObjectProperty<Type> type = new SimpleObjectProperty<>();
-        private final SimpleStringProperty source = new SimpleStringProperty();
-
-        public static CellData of(Type type, String source) {
-            return new CellData(type, source);
-        }
-
-        public static CellData empty() {
-            return new CellData(null, null);
-        }
-
-        public static CellData empty(Type type) {
-            return new CellData(type, null);
-        }
-
-        private CellData(Type type, String source) {
-            this.type.set(type);
-            this.source.set(source);
-        }
-
-        public Type getType() {
-            return type.get();
-        }
-
-        public String getSource() {
-            return source.get();
-        }
-
-        public SimpleObjectProperty<Type> typeProperty() {
-            return type;
-        }
-
-        public SimpleStringProperty sourceProperty() {
-            return source;
-        }
-        
-        public boolean isEmpty() {
-            return (null == source.get()) || source.get().isEmpty();
-        }
-
     }
 
     public static abstract class Cell extends Control {
