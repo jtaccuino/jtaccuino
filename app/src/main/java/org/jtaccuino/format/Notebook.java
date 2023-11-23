@@ -15,16 +15,70 @@
  */
 package org.jtaccuino.format;
 
+import jakarta.json.bind.annotation.JsonbTypeDeserializer;
+import jakarta.json.stream.JsonParser;
+import jakarta.json.bind.serializer.DeserializationContext;
+import jakarta.json.bind.serializer.JsonbDeserializer;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public record Notebook(Map<String, Object> metadata, int nbformat, int nbformat_minor, List<Cell> cells) {
 
-    public static record Cell(String id, String cell_type, Map<String, Object> metadata,  String source, List<Output> outputs) {        
+    public static record CodeCell(String id, String cell_type, Map<String, Object> metadata, String source, List<Output> outputs, int execution_count) implements Cell {
+
+    }
+
+    public static record MarkdownCell(String id, String cell_type, Map<String, Object> metadata, String source) implements Cell {
 
     }
 
     public static record Output(String output_type, Map<String, String> data, Map<String, Object> metadata) {
 
     }
+
+    @JsonbTypeDeserializer(CellDeserializer.class)
+    public static sealed interface Cell permits CodeCell, MarkdownCell {
+
+        public Map<String, Object> metadata();
+
+        public String cell_type();
+
+        public String id();
+
+        public String source();
+    }
+
+    public static class CellDeserializer implements JsonbDeserializer<Cell> {
+
+        @Override
+        public Cell deserialize(JsonParser parser, DeserializationContext ctx, Type rtType) {
+            var o = parser.getObject();
+            var type = o.getString("cell_type");
+            var id = o.getString("id");
+            var source = o.getString("source");
+            return switch (type) {
+                case "code" -> {
+                    var outputs = o.getJsonArray("outputs").stream()
+                            .map(v -> v.asJsonObject())
+                            .map(ov
+                                    -> new org.jtaccuino.format.Notebook.Output(
+                                    ov.getString("output_type"),
+                                    ov.getJsonObject("data")
+                                            .entrySet()
+                                            .stream()
+                                            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toString())),
+                                    Map.of()))
+                            .toList();
+                    yield new org.jtaccuino.format.Notebook.CodeCell(id, type, Map.of(), source, outputs, 0);
+                }
+                case "markdown" ->
+                    new org.jtaccuino.format.Notebook.MarkdownCell(id, type, Map.of(), source);
+                default ->
+                    throw new IllegalStateException("Unsupported cell type found: " + type);
+            };
+        }
+    }
+
 }

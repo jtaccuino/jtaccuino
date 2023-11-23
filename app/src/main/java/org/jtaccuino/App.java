@@ -105,7 +105,7 @@ public class App extends Application {
             if (selectedFile != null) {
                 System.out.println(selectedFile);
                 try {
-                    Jsonb jsonb = JsonbBuilder.create();
+                    var jsonb = JsonbBuilder.create();
                     var notebook = jsonb.fromJson(new FileReader(selectedFile), Notebook.class);
                     jsonb.close();
                     activateNotebook(notebook);
