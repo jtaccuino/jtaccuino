@@ -17,10 +17,12 @@ package org.jtaccuino;
 
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.css.PseudoClass;
 import javafx.geometry.Insets;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
@@ -82,6 +84,8 @@ public class JavaCellFactory implements CellFactory {
 
     public static class JavaCellSkin extends AbstractCellSkin<JavaCell> {
 
+        private static final PseudoClass HIGHLIGHT = PseudoClass.getPseudoClass("highlight");
+
         private final JavaCell control;
 
         private CompletionPopup completionPopup = new CompletionPopup();
@@ -101,6 +105,14 @@ public class JavaCellFactory implements CellFactory {
             input.setPromptText("Type code here");
             input.setId("input_" + this.control.cellNumber);
             input.getStyleClass().add("code-editor");
+            input.focusWithinProperty().addListener((observable, oldValue, newValue) -> {
+                if (newValue) {
+                    input.getPseudoClassStates().add(HIGHLIGHT);
+                } else {
+                    input.getPseudoClassStates().remove(HIGHLIGHT);
+                }
+
+            });
             if (null != javaCell.getCellData().getSource()) {
                 input.setText(javaCell.getCellData().getSource());
             }
@@ -201,9 +213,12 @@ public class JavaCellFactory implements CellFactory {
                                             execResult.setVisible(true);
                                             this.control.getSheet().moveFocusToNextCell(control);
                                             evalResult.lastValueAsString().ifPresent(action -> {
-                                                var result = new Label(evalResult.typeOfLastValue().get() + ": " + evalResult.lastValueAsString().get());
+                                                var resultData = evalResult.typeOfLastValue().get() + ": " + evalResult.lastValueAsString().get();
+                                                var result = new Label(resultData);
                                                 result.getStyleClass().add("jshell_eval_result");
                                                 outputBox.getChildren().add(result);
+                                                control.getCellData().getOutputData().add(
+                                                        new CellData.OutputData(org.jtaccuino.CellData.OutputData.OutputType.DISPLAY_DATA, Map.of("text/plain", resultData)));
                                             });
                                         });
                                     } else {
@@ -221,18 +236,20 @@ public class JavaCellFactory implements CellFactory {
                                                     Platform.runLater(() -> outputBox.getChildren().add(l));
                                                 });
                                         evalResult.snippetEvents().stream()
-                                                .filter(event -> Snippet.Kind.ERRONEOUS == event.snippet().kind() || Snippet.Status.REJECTED == event.status())
+                                                .filter(event -> Snippet.Kind.ERRONEOUS == event.snippet().kind() || Snippet.Status.REJECTED == event.status() || Snippet.Status.RECOVERABLE_NOT_DEFINED == event.status())
                                                 .forEach(event
                                                         -> this.control.getSheet().getReactiveJShell().diagnose(event.snippet())
                                                         .forEachOrdered(diag -> {
                                                             var message = diag.getMessage(Locale.getDefault());
                                                             message += "\n" + event.snippet().source();
-                                                            var pointer = new StringBuffer();
-                                                            pointer.repeat(" ", (int) diag.getStartPosition())
-                                                                    .append("^")
-                                                                    .repeat("-", (int)(diag.getEndPosition() - diag.getStartPosition() -2))
-                                                                    .append("^");
-                                                            message += "\n" + pointer;
+                                                            if (diag.getEndPosition() > 0) {
+                                                                var pointer = new StringBuffer();
+                                                                pointer.repeat(" ", (int) diag.getStartPosition())
+                                                                        .append("^")
+                                                                        .repeat("-", (int) (diag.getEndPosition() - diag.getStartPosition() - 1))
+                                                                        .append("^");
+                                                                message += "\n" + pointer;
+                                                            }
                                                             var problem = new StringBuffer();
                                                             problem.repeat(" ", (int) diag.getPosition())
                                                                     .append("^");
@@ -240,7 +257,6 @@ public class JavaCellFactory implements CellFactory {
                                                             var l = new Label(message);
                                                             l.getStyleClass().add("jshell_eval_erroneous");
                                                             l.setTooltip(new Tooltip(diag.getCode()));
-                                                            outputBox.getStyleClass().add("debug");
                                                             Platform.runLater(() -> outputBox.getChildren().add(l));
                                                         }));
                                         Platform.runLater(() -> {

@@ -19,6 +19,7 @@ import com.gluonhq.richtextarea.RichTextArea;
 import com.gluonhq.richtextarea.model.Document;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.css.PseudoClass;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -72,6 +73,9 @@ public class MarkdownCellFactory implements CellFactory {
 
     public static class MarkdownCellSkin extends AbstractCellSkin<MarkdownCell> {
 
+        private static final PseudoClass HIGHLIGHT = PseudoClass.getPseudoClass("highlight");
+        
+        
         private final MarkdownCell control;
         private final BorderPane pane;
         private final TextArea inputArea;
@@ -107,6 +111,14 @@ public class MarkdownCellFactory implements CellFactory {
                     execute();
                     t.consume();
                 }
+            });
+            inputArea.focusWithinProperty().addListener((observable, oldValue, newValue) -> {
+                if (newValue) {
+                    inputArea.getPseudoClassStates().add(HIGHLIGHT);
+                } else {
+                    inputArea.getPseudoClassStates().remove(HIGHLIGHT);
+                }
+
             });
             var toolbar = createToolbar();
             toolbar.visibleProperty().bind(Bindings.or(inputArea.focusedProperty(), toolbar.focusWithinProperty()));

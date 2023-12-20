@@ -18,7 +18,6 @@ package org.jtaccuino;
 import org.jtaccuino.format.Notebook;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -36,6 +35,8 @@ import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
+import org.jtaccuino.format.Notebook.CodeCell;
+import org.jtaccuino.format.Notebook.MarkdownCell;
 import org.jtaccuino.format.NotebookCompat;
 import org.jtaccuino.jshell.ReactiveJShell;
 
@@ -51,36 +52,62 @@ public class Sheet extends Control {
 
     public static Sheet of(Notebook notebook) {
         var s = new Sheet();
-        notebook.cells().stream().map(c
-                -> CellData.of(
-                        CellData.Type.of(c.cell_type()),
-                        c.source(),
-                        c.id() == null ? UUID.randomUUID() : UUID.fromString(c.id()),
-                        c.outputs() != null ? c.outputs().stream().map(o
-                                -> CellData.OutputData.of(
-                                CellData.OutputData.OutputType.of(o.output_type()),
-                                o.data())
-                        ).toList() : new ArrayList<>()
-                )
-        ).forEach(s::addCell);
+        notebook.cells().stream()
+                .map(Sheet::convertFromNotebookCell)
+                .forEach(s::addCell);
         return s;
+    }
+
+    private static final CellData convertFromNotebookCell(Notebook.Cell cell) {
+        return switch (cell) {
+            case CodeCell c ->
+                CellData.of(
+                CellData.Type.of(c.cell_type()),
+                c.source(),
+                c.id() == null ? UUID.randomUUID() : UUID.fromString(c.id()),
+                c.outputs() != null ? c.outputs().stream().map(o
+                -> CellData.OutputData.of(
+                CellData.OutputData.OutputType.of(o.output_type()),
+                o.data())
+                ).toList() : new ArrayList<>()
+                );
+            case MarkdownCell m ->
+                CellData.of(
+                CellData.Type.of(m.cell_type()),
+                m.source(),
+                m.id() == null ? UUID.randomUUID() : UUID.fromString(m.id())
+                );
+        };
     }
 
     public static Sheet of(NotebookCompat notebook) {
         var s = new Sheet();
-        notebook.cells().stream().map(c
-                -> CellData.of(
-                        CellData.Type.of(c.cell_type()),
-                        Arrays.stream(c.source()).collect(Collectors.joining()),
-                        c.id() == null ? UUID.randomUUID() : UUID.fromString(c.id()),
-                        c.outputs() != null ? c.outputs().stream().map(o
-                                -> CellData.OutputData.of(
-                                CellData.OutputData.OutputType.of(o.output_type()),
-                                o.data())
-                        ).toList() : new ArrayList<>()
-                )
-        ).forEach(s::addCell);
+        notebook.cells().stream()
+                .map(Sheet::convertFromNotebookCompatCell)
+                .forEach(s::addCell);
         return s;
+    }
+
+    private static final CellData convertFromNotebookCompatCell(NotebookCompat.Cell cell) {
+        return switch (cell) {
+            case NotebookCompat.CodeCell c ->
+                CellData.of(
+                CellData.Type.of(c.cell_type()),
+                Arrays.stream(c.source()).collect(Collectors.joining()),
+                c.id() == null ? UUID.randomUUID() : UUID.fromString(c.id()),
+                c.outputs() != null ? c.outputs().stream().map(o
+                -> CellData.OutputData.of(
+                CellData.OutputData.OutputType.of(o.output_type()),
+                o.data())
+                ).toList() : new ArrayList<>()
+                );
+            case NotebookCompat.MarkdownCell m ->
+                CellData.of(
+                CellData.Type.of(m.cell_type()),
+                Arrays.stream(m.source()).collect(Collectors.joining()),
+                m.id() == null ? UUID.randomUUID() : UUID.fromString(m.id())
+                );
+        };
     }
 
     public static Sheet of() {
@@ -175,13 +202,7 @@ public class Sheet extends Control {
     public Notebook toNotebook() {
         var nbCells = cells.stream()
                 .filter(c -> !c.isEmpty())
-                .map(c
-                        -> new Notebook.Cell(
-                        c.getId().toString(),
-                        c.getType().name().toLowerCase(),
-                        Map.of(),
-                        c.getSource(),
-                        c.getOutputData().stream().map(od -> new Notebook.Output(od.type().toOutputType(), od.mimeBundle(), Map.of())).toList()))
+                .map(this::convertToNotebookCell)
                 .toList();
         return new Notebook(
                 Map.of("kernel_info",
@@ -190,24 +211,48 @@ public class Sheet extends Control {
                         Map.of("name", "Java", "version", "21")), 4, 5, nbCells);
     }
 
+    private Notebook.Cell convertToNotebookCell(CellData cellData) {
+        return switch (cellData.getType()) {
+            case CODE ->
+                new Notebook.CodeCell(
+                cellData.getId().toString(),
+                cellData.getType().name().toLowerCase(),
+                Map.of(),
+                cellData.getSource(),
+                cellData.getOutputData().stream().map(od -> new Notebook.Output(od.type().toOutputType(), od.mimeBundle(), Map.of())).toList(),
+                0);
+            case MARKDOWN ->
+                new Notebook.MarkdownCell(
+                cellData.getId().toString(),
+                cellData.getType().name().toLowerCase(),
+                Map.of(),
+                cellData.getSource());
+        };
+    }
+
     private void initShell() {
         getReactiveJShell().eval("""
             import java.util.UUID;
             """);
-        getReactiveJShell().eval("var jsci_uuid = UUID.fromString(\"" + uuid + "\");");
+        getReactiveJShell().eval(STR.
+        """
+            var jsci_uuid = UUID.fromString("\{uuid}");
+            """);
 
         getReactiveJShell().eval("""
             import org.jtaccuino.ShellUtil;
-            """);
-        getReactiveJShell().eval("""
+        """);
+        getReactiveJShell().eval(STR."""
             public void display(javafx.scene.Node node) {
-                ShellUtil.INSTANCE.display(node, jsci_uuid);
+                ShellUtil.INSTANCE.display(node, UUID.fromString("\{uuid}"));
             }""");
 
-        getReactiveJShell().eval("""
+        getReactiveJShell().eval(STR."""
             public void addDependency(String mavenCoordinate) {
-                ShellUtil.INSTANCE.resolve(mavenCoordinate, jsci_uuid);
+                ShellUtil.INSTANCE.resolve(mavenCoordinate, UUID.fromString("\{uuid}"));
             }""");
+            
+        getReactiveJShell().eval("import static org.jtaccuino.jshell.extensions.fx.ChartsFx.*");
     }
 
     public UUID getUuid() {

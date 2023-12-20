@@ -17,8 +17,11 @@ package org.jtaccuino;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javafx.application.Platform;
@@ -36,6 +39,7 @@ public class ShellUtil {
 
     private final Map<UUID, VBox> sheets = new HashMap<>();
     private final Map<UUID, JShell> shells = new HashMap<>();
+    private final Map<UUID, List<Path>> paths = new HashMap<>();
     private VBox activeOutput;
     private CellData activeCellData;
 
@@ -55,7 +59,7 @@ public class ShellUtil {
                     var baos = new ByteArrayOutputStream();
                     var eos = Base64.getEncoder().wrap(baos);
                     try {
-                        ImageIO.write(SwingFXUtils.fromFXImage(snapshot, null), "png",eos);
+                        ImageIO.write(SwingFXUtils.fromFXImage(snapshot, null), "png", eos);
                         baos.flush();
                         baos.close();
                         var displayData = new String(baos.toByteArray());
@@ -73,15 +77,30 @@ public class ShellUtil {
     public void resolve(String mavenCoordinates, UUID uuid) {
         try {
             var shell = shells.get(uuid);
-            Dependencies.resolve(mavenCoordinates).forEach(p -> shell.addToClasspath(p.toString()));
-        } catch(Throwable t) {
+            if (null == shell) {
+                System.out.println("Shell is null");
+            } else {
+                Dependencies.resolve(mavenCoordinates).stream()
+                        .filter(p -> !paths.get(uuid).contains(p))
+                        .peek(System.out::println)
+                        .forEach(p -> {
+                            shell.addToClasspath(p.toString());
+                            paths.get(uuid).add(p);
+                        });
+            }
+        } catch (Throwable t) {
             t.printStackTrace();
         }
+    }
+
+    public void register(String uuid, String path) {
+
     }
 
     public void register(VBox vbox, JShell jshell, UUID uuid) {
         sheets.put(uuid, vbox);
         shells.put(uuid, jshell);
+        paths.put(uuid, new ArrayList<Path>());
     }
 
     void setCurrentCellData(CellData cellData) {
