@@ -12,12 +12,14 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ macos-13, macos-14 ]
+        os: [ macos-13, macos-14, ubuntu-latest ]
         include:
           - os: macos-13
-            ARCH: "amd64"
+            ARCH: "-amd64"
           - os: macos-14
-            ARCH: "aarch64"
+            ARCH: "-aarch64"
+          - os: ubuntu-latest
+            ARCH: ""
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +31,7 @@ jobs:
           java-version: '23'
 
       - uses: Apple-Actions/import-codesign-certs@v3
+        if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
         with:
           p12-file-base64: ${{ secrets.CERTIFICATES_FILE_BASE64 }}
           p12-password: ${{ secrets.CERTIFICATES_PASSWORD }}
@@ -36,8 +39,9 @@ jobs:
       - name: Build and package
         run: ./gradlew clean build
 
-      - name: Create Bundle using jpackage
-        id: outputfile
+      - name: Create Bundle using jpackage for macos
+        if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
+        id: outputfile_mac
         run: |
           .github/scripts/build_app_mac.sh \
             --mac-package-signing-prefix "${{ env.MACSIGN_PREFIX }}" \
@@ -48,7 +52,19 @@ jobs:
           MACSIGN_PREFIX: ${{ secrets.GLUON_MACSIGN_PREFIX }}
           MACSIGN_USER: ${{ secrets.GLUON_MACSIGN_USER }}
 
+      - name: Create Bundle using jpackage for linux
+        if: matrix.os == 'ubuntu-latest'
+        id: outputfile_linux
+        run: |
+          .github/scripts/build_app_linux.sh \
+            --type deb            
+          echo path_deb=target/installer/JTaccuinoStudio-1.0.0.deb >> $GITHUB_OUTPUT
+          .github/scripts/build_app_linux.sh \
+            --type rpm            
+          echo path_rpm=target/installer/JTaccuinoStudio-1.0.0.rpm >> $GITHUB_OUTPUT          
+
       - name: Notarize Release Build
+        if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
         uses: erwin1/xcode-notarizer@v1
         with:
           product-path: ${{ steps.outputfile.outputs.path }}
@@ -56,8 +72,23 @@ jobs:
           app-password: ${{ secrets.NOTARIZATION_PASSWORD }}
           team-id: ${{ secrets.GLUON_MACSIGN_PREFIX }}
 
-      - name: Archive jpackage
+      - name: Archive jpackage for macos
+        if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
         uses: actions/upload-artifact@v4
         with:
-          name: JTaccuinoStudio-${{ matrix.ARCH }}
-          path: ${{ steps.outputfile.outputs.path }}
+          name: JTaccuinoStudio${{ matrix.ARCH }}
+          path: ${{ steps.outputfile_mac.outputs.path }}
+
+      - name: Archive jpackage for linux deb
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: JTaccuinoStudio${{ matrix.ARCH }}-deb
+          path: ${{ steps.outputfile_linux.outputs.path_deb }}
+
+      - name: Archive jpackage for linux rpm
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: JTaccuinoStudio${{ matrix.ARCH }}-rpm
+          path: ${{ steps.outputfile_linux.outputs.path_rpm }}          
