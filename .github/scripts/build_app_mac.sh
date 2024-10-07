@@ -94,7 +94,7 @@ $JAVA_HOME/bin/jpackage \
 --name JTaccuinoStudio \
 --main-class org.jtaccuino.app.StudioLauncher \
 --main-jar ${MAIN_JAR} \
---java-options "-Xmx1024m --enable-preview" \
+--java-options "-Xmx2048m --enable-preview" \
 --runtime-image target/java-runtime \
 --icon app/src/main/logo/macosx/duke.icns \
 --app-version ${APP_VERSION} \
