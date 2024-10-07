@@ -12,7 +12,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ macos-13, macos-14, windows-latest ]
+        os: [ macos-13, macos-14, ubuntu-latest, windows-latest ]
         include:
           - os: macos-13
             ARCH: "-amd64"
@@ -20,6 +20,9 @@ jobs:
           - os: macos-14
             ARCH: "-aarch64"
             PLAT: "macos"
+          - os: ubuntu-latest
+            ARCH: ""
+            PLAT: "linux"
           - os: windows-latest
             ARCH: ""
             PLAT: "win"
@@ -55,6 +58,17 @@ jobs:
           MACSIGN_PREFIX: ${{ secrets.GLUON_MACSIGN_PREFIX }}
           MACSIGN_USER: ${{ secrets.GLUON_MACSIGN_USER }}
 
+      - name: Create Bundle using jpackage for linux
+        if: matrix.os == 'ubuntu-latest'
+        id: outputfile_linux
+        run: |
+          .github/scripts/build_app_linux.sh \
+            --type deb            
+          echo path_deb=target/installer/JTaccuinoStudio-1.0.0.deb >> $GITHUB_OUTPUT
+          .github/scripts/build_app_linux.sh \
+            --type rpm            
+          echo path_rpm=target/installer/JTaccuinoStudio-1.0.0.rpm >> $GITHUB_OUTPUT          
+
       - name: Create Bundle using jpackage for windows
         if: matrix.os == 'windows-latest'
         id: outputfile_win
@@ -78,6 +92,20 @@ jobs:
         with:
           name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}
           path: ${{ steps.outputfile_mac.outputs.path }}
+
+      - name: Archive jpackage for linux deb
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}-deb
+          path: ${{ steps.outputfile_linux.outputs.path_deb }}
+
+      - name: Archive jpackage for linux rpm
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}-rpm
+          path: ${{ steps.outputfile_linux.outputs.path_rpm }}
 
       - name: Archive jpackage for windows
         if: matrix.os == 'windows-latest'
