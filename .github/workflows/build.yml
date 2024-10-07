@@ -64,7 +64,7 @@ jobs:
         if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
         uses: erwin1/xcode-notarizer@v1
         with:
-          product-path: ${{ steps.outputfile.outputs.path }}
+          product-path: ${{ steps.outputfile_mac.outputs.path }}
           apple-id: ${{ secrets.NOTARIZATION_USERNAME }}
           app-password: ${{ secrets.NOTARIZATION_PASSWORD }}
           team-id: ${{ secrets.GLUON_MACSIGN_PREFIX }}
