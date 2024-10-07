@@ -92,7 +92,7 @@ $JAVA_HOME/bin/jpackage \
 --main-jar ${MAIN_JAR} \
 --java-options "-Xmx2048m --enable-preview" \
 --runtime-image target/java-runtime \
---icon src/main/logo/linux/duke.png \
+--icon app/src/main/logo/linux/duke.png \
 --app-version ${APP_VERSION} \
 --vendor JTaccuino \
 --copyright "Copyright © 2024 JTaccuino Project" \
