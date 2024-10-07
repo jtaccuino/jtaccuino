@@ -41,7 +41,7 @@ echo detecting required modules
   --multi-release %JAVA_VERSION% ^
   --ignore-missing-deps ^
   --class-path "target\installer\input\libs\*" ^
-  --print-module-deps target\classes\%MAIN_CLASS%.class > temp.txt
+  --print-module-deps app\build\classes\java\main\org\jtaccuino\app\StudioLauncher.class > temp.txt
 
 set /p detected_modules=<temp.txt
 
