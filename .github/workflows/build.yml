@@ -16,10 +16,13 @@ jobs:
         include:
           - os: macos-13
             ARCH: "-amd64"
+            PLAT: "macos"
           - os: macos-14
             ARCH: "-aarch64"
+            PLAT: "macos"
           - os: windows-latest
             ARCH: ""
+            PLAT: "win"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -73,12 +76,12 @@ jobs:
         if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
         uses: actions/upload-artifact@v4
         with:
-          name: JTaccuinoStudio-${{ matrix.ARCH }}
+          name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}
           path: ${{ steps.outputfile_mac.outputs.path }}
 
       - name: Archive jpackage for windows
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: JTaccuinoStudio-${{ matrix.ARCH }}
+          name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}
           path: ${{ steps.outputfile_win.outputs.path }}
