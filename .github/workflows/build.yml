@@ -1,0 +1,63 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ macos-13, macos-14 ]
+        include:
+          - os: macos-13
+            ARCH: "amd64"
+          - os: macos-14
+            ARCH: "aarch64"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '23'
+
+      - uses: Apple-Actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.CERTIFICATES_FILE_BASE64 }}
+          p12-password: ${{ secrets.CERTIFICATES_PASSWORD }}
+
+      - name: Build and package
+        run: ./gradlew clean build
+
+      - name: Create Bundle using jpackage
+        id: outputfile
+        run: |
+          .github/scripts/build_app_mac.sh \
+            --mac-package-signing-prefix "${{ env.MACSIGN_PREFIX }}" \
+            --mac-signing-key-user-name "${{ env.MACSIGN_USER }}" \
+            --mac-sign
+          echo path=target/installer/JTaccuinoStudio-1.0.0.pkg >> $GITHUB_OUTPUT
+        env:
+          MACSIGN_PREFIX: ${{ secrets.GLUON_MACSIGN_PREFIX }}
+          MACSIGN_USER: ${{ secrets.GLUON_MACSIGN_USER }}
+
+      - name: Notarize Release Build
+        uses: erwin1/xcode-notarizer@v1
+        with:
+          product-path: ${{ steps.outputfile.outputs.path }}
+          apple-id: ${{ secrets.NOTARIZATION_USERNAME }}
+          app-password: ${{ secrets.NOTARIZATION_PASSWORD }}
+          team-id: ${{ secrets.GLUON_MACSIGN_PREFIX }}
+
+      - name: Archive jpackage
+        uses: actions/upload-artifact@v4
+        with:
+          name: JTaccuinoStudio-${{ matrix.ARCH }}
+          path: ${{ steps.outputfile.outputs.path }}

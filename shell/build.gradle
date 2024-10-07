@@ -1,0 +1,39 @@
+plugins {
+    // Apply the application plugin to add support for building a CLI application in Java.
+    id 'java-library'
+    id 'com.google.osdetector' version '1.7.3'
+}
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(23)
+    }
+}
+
+compileJava {
+    options.compilerArgs.addAll([
+            // lint everithing except preview (as using preview features would generate a warnig and thus break the build)
+            '-Xlint:all,-preview',
+            '-Werror',
+            '-proc:none',
+     ])
+}
+
+dependencies {
+    implementation group: 'org.apache.maven', name:'maven-model', version: versionMaven
+    implementation group: 'org.apache.maven', name:'maven-settings', version: versionMaven
+    implementation group: 'org.apache.maven', name:'maven-settings-builder', version: versionMaven
+    implementation group: 'org.apache.maven', name:'maven-resolver-provider', version: versionMaven
+    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-supplier', version: versionMavenResolver
+    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-api', version: versionMavenResolver
+    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-spi', version: versionMavenResolver
+    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-impl', version: versionMavenResolver
+    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-connector-basic', version: versionMavenResolver
+    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-transport-file', version: versionMavenResolver
+    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-transport-http', version: versionMavenResolver
+}
