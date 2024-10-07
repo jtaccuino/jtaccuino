@@ -63,10 +63,14 @@ jobs:
         id: outputfile_linux
         run: |
           .github/scripts/build_app_linux.sh \
-            --type deb            
+            --type deb \
+            --verbose
+          ls -l target/installer
           echo path_deb=target/installer/JTaccuinoStudio-1.0.0.deb >> $GITHUB_OUTPUT
           .github/scripts/build_app_linux.sh \
-            --type rpm            
+            --type rpm \
+            --verbose
+          ls -l target/installer
           echo path_rpm=target/installer/JTaccuinoStudio-1.0.0.rpm >> $GITHUB_OUTPUT          
 
       - name: Create Bundle using jpackage for windows
