@@ -37,7 +37,7 @@ jobs:
           java-version: '23'
 
       - uses: Apple-Actions/import-codesign-certs@v3
-        if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
+        if: github.event_name != 'pull_request' && (matrix.os == 'macos-13' || matrix.os == 'macos-14')
         with:
           p12-file-base64: ${{ secrets.CERTIFICATES_FILE_BASE64 }}
           p12-password: ${{ secrets.CERTIFICATES_PASSWORD }}
@@ -49,10 +49,14 @@ jobs:
         if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
         id: outputfile_mac
         run: |
+          if [[ github.event_name == 'pull_request' ]]; then
           .github/scripts/build_app_mac.sh \
             --mac-package-signing-prefix "${{ env.MACSIGN_PREFIX }}" \
             --mac-signing-key-user-name "${{ env.MACSIGN_USER }}" \
             --mac-sign
+          else
+            .github/scripts/build_app_mac.sh
+          fi
           mv target/installer/JTaccuinoStudio-1.0.0.pkg target/installer/JTaccuinoStudio-1.0.0${{ matrix.ARCH }}.pkg
           echo path=target/installer/JTaccuinoStudio-1.0.0${{ matrix.ARCH }}.pkg >> $GITHUB_OUTPUT
         env:
@@ -79,7 +83,7 @@ jobs:
           echo path=target\installer\JTaccuinoStudio-1.0.0.msi >> %GITHUB_OUTPUT%
 
       - name: Notarize Release Build
-        if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
+        if: github.event_name != 'pull_request' && (matrix.os == 'macos-13' || matrix.os == 'macos-14')
         uses: erwin1/xcode-notarizer@v1
         with:
           product-path: ${{ steps.outputfile_mac.outputs.path }}
