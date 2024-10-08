@@ -96,7 +96,7 @@ $JAVA_HOME/bin/jpackage \
 --main-jar ${MAIN_JAR} \
 --java-options "-Xmx2048m --enable-preview" \
 --runtime-image target/java-runtime \
---icon app/src/main/logo/macosx/duke.icns \
+--icon app/src/main/logo/macosx/notebook.icns \
 --app-version ${APP_VERSION} \
 --vendor JTaccuino \
 --copyright "Copyright © 2024 JTaccuino Project" \
