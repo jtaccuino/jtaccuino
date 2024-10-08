@@ -24,7 +24,7 @@ echo "main JAR file: $MAIN_JAR"
 # jar files into the input/libs folder.
 
 rm -rfd ./target/java-runtime/
-rm -rfd target/installer/
+rm -rfd target/installer/input
 
 mkdir -p target/installer/input/libs/
 
