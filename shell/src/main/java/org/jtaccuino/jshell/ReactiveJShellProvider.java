@@ -16,6 +16,7 @@
 package org.jtaccuino.jshell;
 
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.UUID;
 import org.jtaccuino.jshell.extensions.ExtensionManager;
@@ -25,6 +26,9 @@ import org.jtaccuino.jshell.extensions.JShellExtension;
  * Works as a factory for an async (reactive) extensible JShell Wrapper
  */
 public class ReactiveJShellProvider {
+
+    private static final String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+    private static final boolean IS_WINDOWS = osName.contains("windows");
 
     public static ReactiveJShell createReactiveShell(UUID uuid, Path path) {
         ReactiveJShell rjs = ReactiveJShell.create(uuid);
@@ -49,13 +53,17 @@ public class ReactiveJShellProvider {
             System.out.println(evalResult.snippetEventsCurrent());
         }
         if (path != null) {
-            var cwdInitSource = "var cwd = java.nio.file.Paths.get(\"" + path.toString() + "\");";
+            var pathString = path.toString();
+            if (IS_WINDOWS) {
+                pathString = path.toString().replaceAll("\\\\", "//");
+            }
+            var cwdInitSource = "var cwd = java.nio.file.Paths.get(\"" + pathString + "\");";
             ReactiveJShell.EvaluationResult cwdDefResult = rjs.eval(cwdInitSource);
 
             if (cwdDefResult.status().isSuccess()) {
-                System.out.println("cwd successfully set");
+                System.out.println("cwd successfully set to " + pathString);
             } else {
-                System.out.println("cwd failed to set");
+                System.out.println("cwd failed to set to " + pathString);
                 System.out.println(cwdDefResult.snippetEventsCurrent());
             }
         }
