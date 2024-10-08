@@ -3,10 +3,10 @@ name: Build
 on:
   push:
     branches:
-      - '*'
+      - 'main'
   pull_request:
     branches:
-      - '*'
+      - 'main'
 
 jobs:
   build:
@@ -53,7 +53,8 @@ jobs:
             --mac-package-signing-prefix "${{ env.MACSIGN_PREFIX }}" \
             --mac-signing-key-user-name "${{ env.MACSIGN_USER }}" \
             --mac-sign
-          echo path=target/installer/JTaccuinoStudio-1.0.0.pkg >> $GITHUB_OUTPUT
+          mv target/installer/JTaccuinoStudio-1.0.0.pkg target/installer/JTaccuinoStudio-1.0.0${{ matrix.ARCH }}.pkg
+          echo path=target/installer/JTaccuinoStudio-1.0.0${{ matrix.ARCH }}.pkg >> $GITHUB_OUTPUT
         env:
           MACSIGN_PREFIX: ${{ secrets.GLUON_MACSIGN_PREFIX }}
           MACSIGN_USER: ${{ secrets.GLUON_MACSIGN_USER }}
