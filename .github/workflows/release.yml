@@ -1,12 +1,9 @@
-name: Build
+name: Release
 
 on:
   push:
-    branches:
-      - 'main'
-  pull_request:
-    branches:
-      - 'main'
+    tags:
+      - '*'
 
 jobs:
   build:
@@ -114,3 +111,43 @@ jobs:
         with:
           name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}
           path: ${{ steps.outputfile_win.outputs.path }}
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/download-artifact@v4
+        with:
+          name: JTaccuinoStudio-win
+          path: ./dist/
+      - uses: actions/download-artifact@v4
+        with:
+          name: JTaccuinoStudio-macos-amd64
+          path: ./dist/
+      - uses: actions/download-artifact@v4
+        with:
+          name: JTaccuinoStudio-macos-aarch64
+          path: ./dist/
+      - uses: actions/download-artifact@v4
+        with:
+          name: JTaccuinoStudio-linux-rpm
+          path: ./dist/
+      - uses: actions/download-artifact@v4
+        with:
+          name: JTaccuinoStudio-linux-deb
+          path: ./dist/
+      - name: Check files
+        run: |
+          ls -R ./dist/
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: JTaccuino Studio 1.0.0
+          body: |
+            This is the JTaccuino Studio version 1.0.0
+          files: |
+            ./dist/*
