@@ -49,10 +49,14 @@ jobs:
         if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
         id: outputfile_mac
         run: |
+          if [[ github.event_name == 'pull_request' ]]; then
           .github/scripts/build_app_mac.sh \
             --mac-package-signing-prefix "${{ env.MACSIGN_PREFIX }}" \
             --mac-signing-key-user-name "${{ env.MACSIGN_USER }}" \
             --mac-sign
+          else
+            .github/scripts/build_app_mac.sh
+          fi
           mv target/installer/JTaccuinoStudio-1.0.0.pkg target/installer/JTaccuinoStudio-1.0.0${{ matrix.ARCH }}.pkg
           echo path=target/installer/JTaccuinoStudio-1.0.0${{ matrix.ARCH }}.pkg >> $GITHUB_OUTPUT
         env:
