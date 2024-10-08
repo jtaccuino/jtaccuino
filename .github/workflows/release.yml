@@ -1,0 +1,152 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ macos-13, macos-14, ubuntu-latest, windows-latest ]
+        include:
+          - os: macos-13
+            ARCH: "-amd64"
+            PLAT: "macos"
+          - os: macos-14
+            ARCH: "-aarch64"
+            PLAT: "macos"
+          - os: ubuntu-latest
+            ARCH: ""
+            PLAT: "linux"
+          - os: windows-latest
+            ARCH: ""
+            PLAT: "win"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '23'
+
+      - uses: Apple-Actions/import-codesign-certs@v3
+        if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
+        with:
+          p12-file-base64: ${{ secrets.CERTIFICATES_FILE_BASE64 }}
+          p12-password: ${{ secrets.CERTIFICATES_PASSWORD }}
+
+      - name: Build and package
+        run: ./gradlew clean build
+
+      - name: Create Bundle using jpackage for macos
+        if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
+        id: outputfile_mac
+        run: |
+          .github/scripts/build_app_mac.sh \
+            --mac-package-signing-prefix "${{ env.MACSIGN_PREFIX }}" \
+            --mac-signing-key-user-name "${{ env.MACSIGN_USER }}" \
+            --mac-sign
+          echo path=target/installer/JTaccuinoStudio-1.0.0.pkg >> $GITHUB_OUTPUT
+        env:
+          MACSIGN_PREFIX: ${{ secrets.GLUON_MACSIGN_PREFIX }}
+          MACSIGN_USER: ${{ secrets.GLUON_MACSIGN_USER }}
+
+      - name: Create Bundle using jpackage for linux
+        if: matrix.os == 'ubuntu-latest'
+        id: outputfile_linux
+        run: |
+          .github/scripts/build_app_linux.sh \
+            --type deb
+          echo path_deb=target/installer/jtaccuinostudio_1.0.0_amd64.deb >> $GITHUB_OUTPUT
+          .github/scripts/build_app_linux.sh \
+            --type rpm
+          echo path_rpm=target/installer/jtaccuinostudio-1.0.0-1.x86_64.rpm >> $GITHUB_OUTPUT          
+
+      - name: Create Bundle using jpackage for windows
+        if: matrix.os == 'windows-latest'
+        id: outputfile_win
+        shell: cmd
+        run: |
+          call .github\scripts\build_app_windows.bat
+          echo path=target\installer\JTaccuinoStudio-1.0.0.msi >> %GITHUB_OUTPUT%
+
+      - name: Notarize Release Build
+        if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
+        uses: erwin1/xcode-notarizer@v1
+        with:
+          product-path: ${{ steps.outputfile_mac.outputs.path }}
+          apple-id: ${{ secrets.NOTARIZATION_USERNAME }}
+          app-password: ${{ secrets.NOTARIZATION_PASSWORD }}
+          team-id: ${{ secrets.GLUON_MACSIGN_PREFIX }}
+
+      - name: Archive jpackage for macos
+        if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
+        uses: actions/upload-artifact@v4
+        with:
+          name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}
+          path: ${{ steps.outputfile_mac.outputs.path }}
+
+      - name: Archive jpackage for linux deb
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}-deb
+          path: ${{ steps.outputfile_linux.outputs.path_deb }}
+
+      - name: Archive jpackage for linux rpm
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}-rpm
+          path: ${{ steps.outputfile_linux.outputs.path_rpm }}
+
+      - name: Archive jpackage for windows
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}
+          path: ${{ steps.outputfile_win.outputs.path }}
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/download-artifact@v4
+        with:
+          name: JTaccuinoStudio-win
+          path: ./dist/
+      - uses: actions/download-artifact@v4
+        with:
+          name: JTaccuinoStudio-macos-amd64
+          path: ./dist/
+      - uses: actions/download-artifact@v4
+        with:
+          name: JTaccuinoStudio-macos-aarch64
+          path: ./dist/
+      - uses: actions/download-artifact@v4
+        with:
+          name: JTaccuinoStudio-linux-rpm
+          path: ./dist/
+      - uses: actions/download-artifact@v4
+        with:
+          name: JTaccuinoStudio-linux-deb
+          path: ./dist/
+      - name: Check files
+        run: |
+          ls -R ./dist/
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: JTaccuino Studio 1.0.0
+          body: |
+            This is the JTaccuino Studio version 1.0.0
+          files: |
+            ./dist/*.zip
