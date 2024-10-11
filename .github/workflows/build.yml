@@ -51,11 +51,13 @@ jobs:
         run: |
           echo "Run jpackage with ${{ github.event_name }}"
           if [[ github.event_name != 'pull_request' ]]; then
+          echo "jpackage with signing"
           .github/scripts/build_app_mac.sh \
             --mac-package-signing-prefix "${{ env.MACSIGN_PREFIX }}" \
             --mac-signing-key-user-name "${{ env.MACSIGN_USER }}" \
             --mac-sign
           else
+            echo "jpackage without signing"
             .github/scripts/build_app_mac.sh
           fi
           mv target/installer/JTaccuinoStudio-1.0.0.pkg target/installer/JTaccuinoStudio-1.0.0${{ matrix.ARCH }}.pkg
