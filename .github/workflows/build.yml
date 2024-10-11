@@ -50,7 +50,7 @@ jobs:
         id: outputfile_mac
         run: |
           echo "Run jpackage with ${{ github.event_name }}"
-          if [[ github.event_name != 'pull_request' ]]; then
+          if [[ ${{ github.event_name }} != 'pull_request' ]]; then
           echo "jpackage with signing"
           .github/scripts/build_app_mac.sh \
             --mac-package-signing-prefix "${{ env.MACSIGN_PREFIX }}" \
