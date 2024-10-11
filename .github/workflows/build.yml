@@ -49,7 +49,7 @@ jobs:
         if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
         id: outputfile_mac
         run: |
-          if [[ github.event_name != 'pull_request' ]]; then
+          if [[ ${{ github.event_name }} != 'pull_request' ]]; then
           .github/scripts/build_app_mac.sh \
             --mac-package-signing-prefix "${{ env.MACSIGN_PREFIX }}" \
             --mac-signing-key-user-name "${{ env.MACSIGN_USER }}" \
