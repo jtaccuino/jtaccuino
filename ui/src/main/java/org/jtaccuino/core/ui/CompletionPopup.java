@@ -25,6 +25,7 @@ import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.event.EventType;
+import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.control.PopupControl;
@@ -64,9 +65,9 @@ public class CompletionPopup extends PopupControl {
         return completionSuggestions;
     }
 
-    public void show(Node node, Rectangle2D caretCoordiantes) {
+    public void show(Node node, Point2D caretOrigin) {
         var parent = node.getScene().getWindow();
-        var localToScene = node.localToScene(caretCoordiantes.getMaxX(), caretCoordiantes.getMaxY());
+        var localToScene = node.localToScene(caretOrigin);
         this.show(
                 parent,
                 parent.getX() + localToScene.getX() + node.getScene().getX(),
