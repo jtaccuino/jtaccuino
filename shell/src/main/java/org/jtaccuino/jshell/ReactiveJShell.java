@@ -38,9 +38,14 @@ import org.jtaccuino.jshell.extensions.JShellExtension;
 
 public class ReactiveJShell {
 
-    private final ExecutorService worker = Executors.newSingleThreadExecutor(Thread.ofVirtual().name("ReactiveJShellWorker").factory());
+    private final ExecutorService worker = Executors
+            .newSingleThreadExecutor(Thread.ofVirtual().name("ReactiveJShellWorker").factory());
 
-    private final JShell jshell = jdk.jshell.JShell.builder().compilerOptions("--enable-preview", "-source", "23").executionEngine("local").build();
+    private final JShell jshell = JShell.builder()
+            .compilerOptions("--enable-preview", "-source", System.getProperty("java.specification.version"))
+            .executionEngine("local")
+            .build();
+
     private final UUID uuid;
 
     private ReactiveJShell(UUID uuid) {
