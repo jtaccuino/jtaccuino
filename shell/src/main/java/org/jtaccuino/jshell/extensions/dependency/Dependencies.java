@@ -53,7 +53,7 @@ final class Dependencies {
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
         LocalRepository localRepo = new LocalRepository(System.getProperty("user.home")
-                + File.separator + "jtaccuino"+  File.separator + "cache" + File.separator + "local-repo");
+                + File.separator + "jtaccuino" + File.separator + "cache" + File.separator + "local-repo");
         session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
 
         return session;
@@ -68,9 +68,12 @@ final class Dependencies {
             Dependency dependency
                     = new Dependency(new DefaultArtifact(mavenCoordinates), JavaScopes.COMPILE);
             RemoteRepository central = new RemoteRepository.Builder("central", "default", "https://repo1.maven.org/maven2/").build();
+            var localRepoPath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository";
+            RemoteRepository mavenlocal = new RemoteRepository.Builder("mavenLocal", "default", new File(localRepoPath).toURI().toString()).build();
 
             CollectRequest collectRequest = new CollectRequest();
             collectRequest.setRoot(dependency);
+            collectRequest.addRepository(mavenlocal);
             collectRequest.addRepository(central);
             DependencyNode node = repoSystem.collectDependencies(session, collectRequest).getRoot();
 
@@ -90,7 +93,7 @@ final class Dependencies {
 
             var test = new DependencyVisitor() {
 
-                int depth =0;
+                int depth = 0;
 
                 @Override
                 public boolean visitEnter(DependencyNode node) {
