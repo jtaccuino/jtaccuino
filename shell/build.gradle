@@ -29,11 +29,13 @@ dependencies {
     implementation group: 'org.apache.maven', name:'maven-settings', version: versionMaven
     implementation group: 'org.apache.maven', name:'maven-settings-builder', version: versionMaven
     implementation group: 'org.apache.maven', name:'maven-resolver-provider', version: versionMaven
-    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-supplier', version: versionMavenResolver
+    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-supplier-mvn3', version: versionMavenResolver
+    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-generator-gnupg', version: versionMavenResolver
     implementation group: 'org.apache.maven.resolver', name:'maven-resolver-api', version: versionMavenResolver
     implementation group: 'org.apache.maven.resolver', name:'maven-resolver-spi', version: versionMavenResolver
     implementation group: 'org.apache.maven.resolver', name:'maven-resolver-impl', version: versionMavenResolver
     implementation group: 'org.apache.maven.resolver', name:'maven-resolver-connector-basic', version: versionMavenResolver
     implementation group: 'org.apache.maven.resolver', name:'maven-resolver-transport-file', version: versionMavenResolver
-    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-transport-http', version: versionMavenResolver
+    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-transport-jetty', version: versionMavenResolver
+    implementation group: 'org.apache.maven.resolver', name:'maven-resolver-transport-jdk-11', version: versionMavenResolver
 }

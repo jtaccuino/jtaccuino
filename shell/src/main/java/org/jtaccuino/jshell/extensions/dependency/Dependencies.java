@@ -34,40 +34,42 @@ import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.graph.DependencyVisitor;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactDescriptorException;
+import org.eclipse.aether.resolution.ArtifactDescriptorRequest;
 import org.eclipse.aether.resolution.DependencyRequest;
 import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.eclipse.aether.supplier.RepositorySystemSupplier;
-import org.eclipse.aether.util.artifact.JavaScopes;
+import org.eclipse.aether.supplier.SessionBuilderSupplier;
 import org.eclipse.aether.util.filter.DependencyFilterUtils;
-import org.eclipse.aether.util.graph.visitor.PreorderNodeListGenerator;
 
 final class Dependencies {
 
-    @SuppressWarnings("deprecation")
     private static RepositorySystem newRepositorySystem() {
         var repoSup = new RepositorySystemSupplier();
         return repoSup.get();
     }
 
-    private static RepositorySystemSession newSession(RepositorySystem system) {
-        DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-
-        LocalRepository localRepo = new LocalRepository(System.getProperty("user.home")
-                + File.separator + "jtaccuino" + File.separator + "cache" + File.separator + "local-repo");
-        session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
-
-        return session;
+    public static RepositorySystemSession.SessionBuilder newRepositorySystemSession(RepositorySystem system) {
+        RepositorySystemSession.SessionBuilder result = new SessionBuilderSupplier(system)
+                .get()
+                .withLocalRepositoryBaseDirectories(Path.of(System.getProperty("user.home")
+                        + File.separator + "jtaccuino" + File.separator + "cache" + File.separator + "local-repo"))
+                .setConfigProperty("aether.syncContext.named.factory", "noop");
+        return result;
     }
 
     static List<Path> resolve(String mavenCoordinates) {
         try {
             RepositorySystem repoSystem = newRepositorySystem();
 
-            RepositorySystemSession session = newSession(repoSystem);
+            RepositorySystemSession session = newRepositorySystemSession(repoSystem).build();
+
+            var artifact = new DefaultArtifact(mavenCoordinates);
 
             Dependency dependency
-                    = new Dependency(new DefaultArtifact(mavenCoordinates), JavaScopes.COMPILE);
+                    = new Dependency(artifact, "compile");
             RemoteRepository central = new RemoteRepository.Builder("central", "default", "https://repo1.maven.org/maven2/").build();
+
             var localRepoPath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository";
             RemoteRepository mavenlocal = new RemoteRepository.Builder("mavenLocal", "default", new File(localRepoPath).toURI().toString()).build();
 
@@ -75,23 +77,26 @@ final class Dependencies {
             collectRequest.setRoot(dependency);
             collectRequest.addRepository(mavenlocal);
             collectRequest.addRepository(central);
-            DependencyNode node = repoSystem.collectDependencies(session, collectRequest).getRoot();
 
-            DependencyRequest dependencyRequest = new DependencyRequest();
-            dependencyRequest.setRoot(node);
-
-            var classpathFilter = DependencyFilterUtils.classpathFilter(JavaScopes.COMPILE);
             DependencyFilter javafxFilter = (dn, list) -> {
                 return !"org.openjfx".equals(dn.getArtifact().getGroupId());
             };
 
-            var filter = DependencyFilterUtils.andFilter(classpathFilter, javafxFilter);
+            DependencyFilter compileFilter = (dn, list) -> {
+                return !"compile".equals(dn.getDependency().getScope());
+            };
 
-            dependencyRequest.setFilter(filter);
+            DependencyFilter runtimeFilter = (dn, list) -> {
+                return !"runtimeFilter".equals(dn.getDependency().getScope());
+            };
 
-            repoSystem.resolveDependencies(session, dependencyRequest);
+            var filter = DependencyFilterUtils.andFilter(javafxFilter, DependencyFilterUtils.orFilter(compileFilter, runtimeFilter));
 
-            var test = new DependencyVisitor() {
+            DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, filter);
+
+            var dependencyResult = repoSystem.resolveDependencies(session, dependencyRequest);
+
+            var dv = new DependencyVisitor() {
 
                 int depth = 0;
 
@@ -115,11 +120,9 @@ final class Dependencies {
                 }
 
             };
-            node.accept(test);
-            var nlg = new PreorderNodeListGenerator();
-            node.accept(nlg);
-            return nlg.getArtifacts(false).stream().map(a -> a.getFile().toPath()).toList();
-        } catch (DependencyCollectionException | DependencyResolutionException ex) {
+            dependencyResult.getRoot().accept(dv);
+            return dependencyResult.getArtifactResults().stream().map(a -> a.getLocalArtifactResult().getPath()).toList();
+        } catch (DependencyResolutionException ex) {
             Logger.getLogger(Dependencies.class.getName()).log(Level.SEVERE, null, ex);
             return Collections.emptyList();
         }

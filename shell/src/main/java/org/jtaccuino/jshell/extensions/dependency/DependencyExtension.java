@@ -64,6 +64,7 @@ public class DependencyExtension implements JShellExtension {
                 System.out.println("Adding deps for " + mavenCoordinates);
                 Dependencies.resolve(mavenCoordinates).stream()
                         .filter(p -> !paths.contains(p))
+                        .filter(p -> null != p)
                         .peek(System.out::println)
                         .forEach(p -> {
                             jshell.addToClasspath(p.toString());
