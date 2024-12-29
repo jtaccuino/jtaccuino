@@ -328,7 +328,7 @@ public class JavaCellFactory implements CellFactory {
                                                         .limit(realEx.getStackTrace().length > 2 ? realEx.getStackTrace().length - 2 : realEx.getStackTrace().length)
                                                         .map(ste -> "\t" + ste.toString())
                                                         .collect(Collectors.joining("\n"));
-                                                t = realEx.getCause();
+                                                t = t.getCause();
                                             } while (t != null);
                                             var l = new Label(text);
                                             l.getStyleClass().add("jshell_eval_exception");
