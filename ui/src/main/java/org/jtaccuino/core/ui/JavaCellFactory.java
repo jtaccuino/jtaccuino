@@ -34,6 +34,7 @@ import javafx.collections.ListChangeListener;
 import javafx.css.PseudoClass;
 import javafx.event.ActionEvent;
 import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -229,17 +230,9 @@ public class JavaCellFactory implements CellFactory {
             input.addEventFilter(KeyEvent.KEY_PRESSED, t
                     -> {
                 if (KeyCode.TAB == t.getCode()) {
-                    var oldText = input.getDocument().getText();
                     var oldCaretPosition = input.caretPositionProperty().get();
-                    var optional = input.lookupAll(".caret").stream().filter(node -> node.getLayoutBounds().getHeight() > 0).findFirst();
-                    var n = optional.get();
-                    var row = n.getParent().getParent().getParent().getParent();
-//                    System.out.println("Bounds in Parent " + n.getBoundsInParent());
-//                    System.out.println("Bounds of Row" + row.getBoundsInParent());
-                    Bounds caretBounds = n.getBoundsInParent();
-                    Bounds rowBounds = row.getBoundsInParent();
                     handleTabCompletion(input.getDocument().getText(), oldCaretPosition,
-                            new Rectangle2D(rowBounds.getMinX() + caretBounds.getMaxX(), rowBounds.getMinY() + caretBounds.getMinY(), caretBounds.getWidth(), caretBounds.getHeight()),
+                            input.getCaretOrigin(),
                             (completionUpdate) -> {
                                 if (null != completionUpdate) {
                                     System.out.println("Text before: " + input.getDocument().getText());
@@ -335,7 +328,7 @@ public class JavaCellFactory implements CellFactory {
                                                         .limit(realEx.getStackTrace().length > 2 ? realEx.getStackTrace().length - 2 : realEx.getStackTrace().length)
                                                         .map(ste -> "\t" + ste.toString())
                                                         .collect(Collectors.joining("\n"));
-                                                t = realEx.getCause();
+                                                t = t.getCause();
                                             } while (t != null);
                                             var l = new Label(text);
                                             l.getStyleClass().add("jshell_eval_exception");
@@ -422,7 +415,7 @@ public class JavaCellFactory implements CellFactory {
             return new CompletionUpdate(fullCompletionText, remainingCompletion);
         }
 
-        private void handleTabCompletion(String text, int caretPos, Rectangle2D caretCoordiantes, Consumer<CompletionUpdate> consumer) {
+        private void handleTabCompletion(String text, int caretPos, Point2D caretOrigin, Consumer<CompletionUpdate> consumer) {
             this.control.getSheet().getReactiveJShell().completionAsync(text, caretPos, result -> {
                 var distinctCompletionSuggestions = result.suggestions().stream().map(SourceCodeAnalysis.Suggestion::continuation).distinct().toList();
                 // only one completion - just do it
@@ -440,7 +433,7 @@ public class JavaCellFactory implements CellFactory {
                             int newCaretPos = withCompletion.length();
                             Platform.runLater(() -> consumer.accept(convert(text, result.anchor(), caretPos, event.getSuggestion())));
                         });
-                        Platform.runLater(() -> completionPopup.show(this.control.getScene().focusOwnerProperty().get(), caretCoordiantes));
+                        Platform.runLater(() -> completionPopup.show(this.control.getScene().focusOwnerProperty().get(), caretOrigin));
                     }
                 }
             });

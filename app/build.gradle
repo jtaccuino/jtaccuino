@@ -8,7 +8,9 @@ repositories {
     // Use Maven Central for resolving dependencies.
     mavenLocal()
     mavenCentral()
-
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
     // JPRO artifacts
     repositories {
         maven {
