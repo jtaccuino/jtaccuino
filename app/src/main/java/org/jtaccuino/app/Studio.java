@@ -15,26 +15,21 @@
  */
 package org.jtaccuino.app;
 
-import java.io.File;
 import javafx.application.Application;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.stage.FileChooser;
-import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.jtaccuino.app.common.NotebookPersistence;
+import org.jtaccuino.app.studio.MenuBar;
+import org.jtaccuino.app.studio.SheetManager;
+import org.jtaccuino.app.studio.ToolBar;
 import org.jtaccuino.core.ui.Sheet;
-import static org.jtaccuino.core.ui.UiUtils.createSVGToolbarButton;
-import org.jtaccuino.core.ui.api.Notebook;
 
 public class Studio extends Application {
 
@@ -46,25 +41,12 @@ public class Studio extends Application {
 
     private Scene scene;
     private BorderPane bp;
-    private TabPane tabPane;
+    private TabPane sheetPane;
 
     @Override
     public void start(Stage stage) throws Exception {
-        bp = new BorderPane();
-        tabPane = new TabPane();
-        tabPane.addEventFilter(KeyEvent.KEY_PRESSED, t -> {
-                if (KeyCode.S == t.getCode() && t.isShortcutDown() && !t.isShiftDown()) {
-                    if (tabPane.getSelectionModel().getSelectedItem() instanceof TabSheet ts) {
-                        ts.save();
-                    }
-                    t.consume();
-                }
-            });
-
-        tabPane.getTabs().add(new TabSheet(Sheet.of(NotebookPersistence.INSTANCE.of()), "Scratch", null));
-        bp.setCenter(tabPane);
-        bp.setTop(createMainToolBar(stage));
-        scene = new Scene(bp);
+        Parent node = createParentNode();
+        scene = new Scene(node);
         scene.getStylesheets().add(this.getClass().getResource("/jtaccuino.css").toExternalForm());
         stage.setScene(scene);
         stage.setHeight(Screen.getPrimary().getBounds().getHeight() * 0.75);
@@ -72,119 +54,51 @@ public class Studio extends Application {
         stage.setTitle(TITLE);
         stage.getIcons().add(new Image("notebook-svgrepo-com_256.png"));
         stage.setOnCloseRequest((event) -> {
-            tabPane.getTabs().stream()
-                    .filter(t-> t instanceof TabSheet)
-                    .forEach(t-> ((TabSheet)t).close());
+            shutdown();
         });
         stage.show();
     }
 
-    private void activateNotebook(Notebook notebook, String displayName, File file) {
-        tabPane.getTabs().add(new TabSheet(
-                switch(notebook) {
-                    case null -> Sheet.of(NotebookPersistence.INSTANCE.of());
-                    default -> Sheet.of(NotebookPersistence.INSTANCE.of(file));
-                }, displayName, file)
-        );
-        tabPane.getSelectionModel().selectLast();
+    public Parent createParentNode() {
+        var bp = new BorderPane();
+        sheetPane = new TabPane();
+
+        var notebook = NotebookPersistence.INSTANCE.of();
+        sheetPane.getTabs().add(new TabSheet(SheetManager.getDefault().of(notebook)));
+
+        SheetManager.getDefault().setOnOpen(evt -> {
+            var ts = new TabSheet(evt.getSource());
+            sheetPane.getTabs().add(ts);
+            sheetPane.getSelectionModel().select(ts);
+        });
+
+        bp.setCenter(sheetPane);
+        bp.setTop(new VBox(
+                MenuBar.createMainMenuBar(),
+                ToolBar.createMainToolBar()));
+        return bp;
     }
 
-    private HBox createMainToolBar(Stage stage) {
-        var empty = createSVGToolbarButton("empty-notebook", "Empty Notebook", "main-toolbar-button");
-        empty.setOnAction((event) -> {
-            activateNotebook((Notebook)null, "Empty", null);
-        });
-
-        var load = createSVGToolbarButton("load-notebook", "Load Notebook", "main-toolbar-button");
-        load.setOnAction((event) -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Load Notebook");
-            fileChooser.getExtensionFilters().addAll(
-                    new ExtensionFilter("Notebook Files", "*.ipynb"),
-                    new ExtensionFilter("All Files", "*.*"));
-            File selectedFile = fileChooser.showOpenDialog(stage);
-            if (selectedFile != null) {
-                var notebook = NotebookPersistence.INSTANCE.of(selectedFile);
-                activateNotebook(notebook, selectedFile.getName(), selectedFile);
-            }
-        });
-        var save = createSVGToolbarButton("save-notebook", "Save Notebook", "main-toolbar-button");
-        save.setOnAction((event) -> {
-            if (tabPane.getSelectionModel().getSelectedItem() instanceof TabSheet t) {
-                FileChooser fileChooser = new FileChooser();
-                fileChooser.setTitle("Save Notebook");
-                fileChooser.getExtensionFilters().addAll(
-                        new ExtensionFilter("Notebook Files", "*.ipynb"),
-                        new ExtensionFilter("All Files", "*.*"));
-                File selectedFile = fileChooser.showSaveDialog(stage);
-                if (null != selectedFile) {
-                    t.saveToFile(selectedFile);
-                }
-            }
-        });
-
-        var execute = createSVGToolbarButton("execute-notebook", "Execute Notebook", "main-toolbar-button");
-        execute.setOnAction((event) -> {
-            if (tabPane.getSelectionModel().getSelectedItem() instanceof TabSheet t) {
-                t.execute();
-            }
-        });
-        var resetAndExecute = createSVGToolbarButton("reset-execute-notebook", "Reset Shell And Execute Notebook", "main-toolbar-button");
-        resetAndExecute.setOnAction((event) -> {
-            if (tabPane.getSelectionModel().getSelectedItem() instanceof TabSheet t) {
-                t.resetAndExecute();
-            }
-        });
-        var toolbar = new HBox(empty, load, save, execute, resetAndExecute);
-        HBox.setHgrow(toolbar, Priority.NEVER);
-        toolbar.maxWidthProperty().bind(toolbar.prefWidthProperty());
-        toolbar.getStyleClass().add("main-toolbar");
-        return toolbar;
+    public void shutdown() {
+        sheetPane.getTabs().stream()
+                .filter(t -> t instanceof TabSheet)
+                .forEach(t -> ((TabSheet) t).close());
     }
 
     static class TabSheet extends Tab {
 
         private final Sheet sheet;
-        private File file;
 
-        TabSheet(Sheet sheet, String displayName, File file) {
-            super(displayName, sheet);
+        TabSheet(Sheet sheet) {
+            super(sheet.getNotebook().getDisplayName(), sheet);
             this.sheet = sheet;
-            setFile(file);
             this.onCloseRequestProperty().set((t) -> {
-                sheet.close();
+                this.sheet.close();
             });
         }
 
         void close() {
-            sheet.close();
-        }
-
-        void execute() {
-            sheet.execute();
-        }
-
-        void resetAndExecute() {
-            sheet.resetAndExecute();
-        }
-
-        void save() {
-            saveToFile(file);
-        }
-
-        void saveToFile(File selectedFile) {
-            this.sheet.getNotebook().saveToFile(selectedFile);
-            setFile(file);
-        }
-
-        private void setFile(File file) {
-            this.file = file;
-            if (null != file) {
-                setTooltip(new Tooltip(file.getPath()));
-                setText(file.getName());
-            } else {
-                setTooltip(null);
-            }
+            this.sheet.close();
         }
     }
 }
