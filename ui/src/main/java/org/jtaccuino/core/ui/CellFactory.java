@@ -32,6 +32,7 @@ public interface CellFactory {
     public Sheet.Cell createCell(CellData cellData, VBox parent, Sheet sheet);
 
     public abstract static class AbstractCellSkin<T extends Sheet.Cell> implements Skin<T> {
+
         protected static final PseudoClass OUTDATED = PseudoClass.getPseudoClass("outdated");
         protected static final PseudoClass SELECTED = PseudoClass.getPseudoClass("selected");
 
@@ -42,40 +43,40 @@ public interface CellFactory {
         }
 
         protected HBox createToolbar() {
-            var executeCell = createSVGToolbarButton("execute-cell", "Execute Cell", "toolbar-button");
-            executeCell.setOnAction((event) -> {
-                execute();
-            });
-            var moveCellUp = createSVGToolbarButton("move-cell-up", "Move Cell Up", "toolbar-button");
-            moveCellUp.setOnAction((event) -> {
-                this.sheet.moveCellUp(getSkinnable());
-            });
-            var moveCellDown = createSVGToolbarButton("move-cell-down", "Move Cell Down", "toolbar-button");
-            moveCellDown.setOnAction((event) -> {
-                this.sheet.moveCellDown(getSkinnable());
-            });
+            var executeCell = createSVGToolbarButton("execute-cell", "Execute Cell", "toolbar-button",
+                    (event) -> {
+                        execute();
+                    });
+            var moveCellUp = createSVGToolbarButton("move-cell-up", "Move Cell Up", "toolbar-button",
+                    (event) -> {
+                        this.sheet.moveCellUp(getSkinnable());
+                    });
+            var moveCellDown = createSVGToolbarButton("move-cell-down", "Move Cell Down", "toolbar-button",
+                    (event) -> {
+                        this.sheet.moveCellDown(getSkinnable());
+                    });
 
-            var insertCellBefore = createSVGToolbarButton("insert-cell-before", "Insert Cell Before", "toolbar-button");
-            insertCellBefore.setOnAction((event) -> {
-                this.sheet.insertCellBefore(getSkinnable());
-            });
-            var insertCellAfter = createSVGToolbarButton("insert-cell-after", "Insert Cell After", "toolbar-button");
-            insertCellAfter.setOnAction((event) -> {
-                this.sheet.insertCellAfter(getSkinnable());
-            });
-            var deleteCell = createSVGToolbarButton("delete-cell", "Delete Cell", "toolbar-button");
-            deleteCell.setOnAction((event) -> {
-                this.sheet.removeCell(getSkinnable());
-            });
+            var insertCellBefore = createSVGToolbarButton("insert-cell-before", "Insert Cell Before", "toolbar-button",
+                    (event) -> {
+                        this.sheet.insertCellBefore(getSkinnable());
+                    });
+            var insertCellAfter = createSVGToolbarButton("insert-cell-after", "Insert Cell After", "toolbar-button",
+                    (event) -> {
+                        this.sheet.insertCellAfter(getSkinnable());
+                    });
+            var deleteCell = createSVGToolbarButton("delete-cell", "Delete Cell", "toolbar-button",
+                    (event) -> {
+                        this.sheet.removeCell(getSkinnable());
+                    });
 
-            var mdType = createSVGToggleToolbarButton("md-cell-type", "Use Markdown for Cell", "toolbar-button");
-            mdType.setOnAction((event) -> {
-                this.sheet.replaceCell(getSkinnable(), sheet.createCell(CellData.Type.MARKDOWN, getSkinnable().getCellData()));
-            });
-            var javaType = createSVGToggleToolbarButton("java-cell-type", "Use Java Code for Cell", "toolbar-button");
-            javaType.setOnAction((event) -> {
-                this.sheet.replaceCell(getSkinnable(), sheet.createCell(CellData.Type.CODE, getSkinnable().getCellData()));
-            });
+            var mdType = createSVGToggleToolbarButton("md-cell-type", "Use Markdown for Cell", "toolbar-button",
+                    (event) -> {
+                        this.sheet.replaceCell(getSkinnable(), sheet.createCell(CellData.Type.MARKDOWN, getSkinnable().getCellData()));
+                    });
+            var javaType = createSVGToggleToolbarButton("java-cell-type", "Use Java Code for Cell", "toolbar-button",
+                    (event) -> {
+                        this.sheet.replaceCell(getSkinnable(), sheet.createCell(CellData.Type.CODE, getSkinnable().getCellData()));
+                    });
             final ToggleGroup toggleGroup = new ToggleGroup();
 
             mdType.setToggleGroup(toggleGroup);

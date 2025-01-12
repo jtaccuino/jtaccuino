@@ -16,6 +16,7 @@
 package org.jtaccuino.app;
 
 import java.io.File;
+import java.util.Objects;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -63,56 +64,53 @@ public class Pad extends Application {
         stage.show();
     }
 
-    private void activateNotebook(Notebook notebook, String displayName, File file) {
-        sheetPane =
-        new SheetPane(
-                switch(notebook) {
-                    case null -> Sheet.of(NotebookPersistence.INSTANCE.of());
-                    default -> Sheet.of(notebook);
-                });
+    private void activateNotebook(Notebook notebook) {
+        sheetPane = new SheetPane(Sheet.of(notebook));
         bp.setCenter(sheetPane);
     }
 
     private HBox createMainToolBar(Stage stage) {
-        var empty = createSVGToolbarButton("empty-notebook", "Empty Notebook", "main-toolbar-button");
-        empty.setOnAction((event) -> {
-            activateNotebook((Notebook)null, "Empty", null);
-        });
+        var empty = createSVGToolbarButton("empty-notebook", "Empty Notebook", "main-toolbar-button",
+                (event) -> {
+                    activateNotebook(NotebookPersistence.INSTANCE.of());
+                });
 
-        var load = createSVGToolbarButton("load-notebook", "Load Notebook", "main-toolbar-button");
-        load.setOnAction((event) -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Open Notebook File");
-            fileChooser.getExtensionFilters().addAll(
-                    new ExtensionFilter("Notebook Files", "*.ipynb"),
-                    new ExtensionFilter("All Files", "*.*"));
-            File selectedFile = fileChooser.showOpenDialog(stage);
-            if (selectedFile != null) {
-                System.out.println(selectedFile);
-                var notebook = NotebookPersistence.INSTANCE.of(selectedFile);
-                activateNotebook(notebook, selectedFile.getName(), selectedFile);
-            }
-        });
+        var load = createSVGToolbarButton("load-notebook", "Load Notebook", "main-toolbar-button",
+                (event) -> {
+                    FileChooser fileChooser = new FileChooser();
+                    fileChooser.setTitle("Open Notebook File");
+                    fileChooser.getExtensionFilters().addAll(
+                            new ExtensionFilter("Notebook Files", "*.ipynb"),
+                            new ExtensionFilter("All Files", "*.*"));
+                    File selectedFile = fileChooser.showOpenDialog(stage);
+                    if (selectedFile != null) {
+                        System.out.println(selectedFile);
+                        var notebook = NotebookPersistence.INSTANCE.of(selectedFile);
+                        activateNotebook(notebook);
+                    }
+                });
 
-        var save = createSVGToolbarButton("save-notebook", "Save Notebook", "main-toolbar-button");
-        save.setOnAction((event) -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Open Notebook File");
-            fileChooser.getExtensionFilters().addAll(
-                    new ExtensionFilter("Notebook Files", "*.ipynb"),
-                    new ExtensionFilter("All Files", "*.*"));
-            File selectedFile = fileChooser.showSaveDialog(stage);
-            sheetPane.saveToFile(selectedFile);
-        });
+        var save = createSVGToolbarButton("save-notebook", "Save Notebook", "main-toolbar-button",
+                (event) -> {
+                    FileChooser fileChooser = new FileChooser();
+                    fileChooser.setTitle("Open Notebook File");
+                    fileChooser.getExtensionFilters().addAll(
+                            new ExtensionFilter("Notebook Files", "*.ipynb"),
+                            new ExtensionFilter("All Files", "*.*"));
+                    File selectedFile = fileChooser.showSaveDialog(stage);
+                    sheetPane.saveToFile(selectedFile);
+                });
 
-        var execute = createSVGToolbarButton("execute-notebook", "Execute Notebook", "main-toolbar-button");
-        execute.setOnAction((event) -> {
-            sheetPane.execute();
-        });
-        var resetAndExecute = createSVGToolbarButton("reset-execute-notebook", "Reset Shell And Execute Notebook", "main-toolbar-button");
-        resetAndExecute.setOnAction((event) -> {
-            sheetPane.resetAndExecute();
-        });
+        var execute = createSVGToolbarButton("execute-notebook", "Execute Notebook", "main-toolbar-button",
+                (event) -> {
+                    sheetPane.execute();
+                });
+
+        var resetAndExecute = createSVGToolbarButton("reset-execute-notebook", "Reset Shell And Execute Notebook", "main-toolbar-button",
+                (event) -> {
+                    sheetPane.resetAndExecute();
+                });
+
         var toolbar = new HBox(empty, load, save, execute, resetAndExecute);
         HBox.setHgrow(toolbar, Priority.NEVER);
         toolbar.maxWidthProperty().bind(toolbar.prefWidthProperty());

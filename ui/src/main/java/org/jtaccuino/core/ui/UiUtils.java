@@ -16,6 +16,8 @@
 package org.jtaccuino.core.ui;
 
 import java.util.List;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
@@ -23,23 +25,25 @@ import javafx.scene.layout.Region;
 
 public class UiUtils {
 
-    public static Button createSVGToolbarButton(String styleClass, String tooltip, String toolbarStyle) {
+    public static Button createSVGToolbarButton(String styleClass, String tooltip, String toolbarStyle, EventHandler<ActionEvent> handler) {
         var button = new Button();
         button.setTooltip(new Tooltip(tooltip));
         button.getStyleClass().add(toolbarStyle);
         var region = new Region();
         region.getStyleClass().addAll("toolbar-button-graphics", styleClass);
         button.setGraphic(region);
+        button.setOnAction(handler);
         return button;
     }
 
-    public static ToggleButton createSVGToggleToolbarButton(String styleClass, String tooltip, String toolbarStyle) {
+    public static ToggleButton createSVGToggleToolbarButton(String styleClass, String tooltip, String toolbarStyle, EventHandler<ActionEvent> handler) {
         var button = new ToggleButton();
         button.setTooltip(new Tooltip(tooltip));
         button.getStyleClass().add(toolbarStyle);
         var region = new Region();
         region.getStyleClass().addAll("toolbar-button-graphics", styleClass);
         button.setGraphic(region);
+        button.setOnAction(handler);
         return button;
     }
 
