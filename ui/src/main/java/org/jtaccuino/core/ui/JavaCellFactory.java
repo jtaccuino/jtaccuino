@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.jtaccuino.core.ui;
 
+import org.jtaccuino.core.ui.api.CellData;
 import com.gluonhq.richtextarea.RichTextArea;
 import com.gluonhq.richtextarea.Selection;
 import com.gluonhq.richtextarea.model.DecorationModel;
@@ -307,7 +308,7 @@ public class JavaCellFactory implements CellFactory {
                                         var result = new Label(resultData);
                                         result.getStyleClass().add("jshell_eval_result");
                                         outputBox.getChildren().add(result);
-                                        control.getCellData().getOutputData().add(new CellData.OutputData(org.jtaccuino.core.ui.CellData.OutputData.OutputType.DISPLAY_DATA, Map.of("text/plain", resultData)));
+                                        control.getCellData().getOutputData().add(new CellData.OutputData(org.jtaccuino.core.ui.api.CellData.OutputData.OutputType.DISPLAY_DATA, Map.of("text/plain", resultData)));
                                     });
                                 });
                             } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,9 @@
  */
 package org.jtaccuino.app;
 
-import org.jtaccuino.format.Notebook;
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
-import jakarta.json.bind.JsonbConfig;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -34,9 +27,10 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import org.jtaccuino.app.common.NotebookPersistence;
 import org.jtaccuino.core.ui.Sheet;
 import static org.jtaccuino.core.ui.UiUtils.createSVGToolbarButton;
-import org.jtaccuino.format.NotebookCompat;
+import org.jtaccuino.core.ui.api.Notebook;
 
 public class Pad extends Application {
 
@@ -53,7 +47,7 @@ public class Pad extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         bp = new BorderPane();
-        var sheetPane = new SheetPane(Sheet.of(), "Scratch", null);
+        var sheetPane = new SheetPane(Sheet.of(NotebookPersistence.INSTANCE.of()));
         bp.setCenter(sheetPane);
         bp.setTop(createMainToolBar(stage));
         scene = new Scene(bp);
@@ -69,23 +63,13 @@ public class Pad extends Application {
         stage.show();
     }
 
-    private void activateNotebook(NotebookCompat notebook, String displayName, File file) {
-        sheetPane =
-        new SheetPane(
-                switch(notebook) {
-                    case null -> Sheet.of();
-                    default -> Sheet.of(notebook);
-                }, displayName, file);
-        bp.setCenter(sheetPane);
-    }
-
     private void activateNotebook(Notebook notebook, String displayName, File file) {
         sheetPane =
         new SheetPane(
                 switch(notebook) {
-                    case null -> Sheet.of();
+                    case null -> Sheet.of(NotebookPersistence.INSTANCE.of());
                     default -> Sheet.of(notebook);
-                }, displayName, file);
+                });
         bp.setCenter(sheetPane);
     }
 
@@ -105,25 +89,11 @@ public class Pad extends Application {
             File selectedFile = fileChooser.showOpenDialog(stage);
             if (selectedFile != null) {
                 System.out.println(selectedFile);
-                try {
-                    var jsonb = JsonbBuilder.create();
-                    var notebook = jsonb.fromJson(new FileReader(selectedFile), Notebook.class);
-                    jsonb.close();
-                    activateNotebook(notebook, selectedFile.getName(), selectedFile);
-                } catch (final Exception ex) {
-                    ex.printStackTrace();
-                    try {
-                        Jsonb jsonb = JsonbBuilder.create();
-                        var notebook = jsonb.fromJson(new FileReader(selectedFile), NotebookCompat.class);
-                        jsonb.close();
-                        activateNotebook(notebook, selectedFile.getName(), selectedFile);
-                    } catch (Exception ee) {
-                    // try compat mode
-                        ee.printStackTrace();
-                    }
-                }
+                var notebook = NotebookPersistence.INSTANCE.of(selectedFile);
+                activateNotebook(notebook, selectedFile.getName(), selectedFile);
             }
         });
+
         var save = createSVGToolbarButton("save-notebook", "Save Notebook", "main-toolbar-button");
         save.setOnAction((event) -> {
             FileChooser fileChooser = new FileChooser();
@@ -153,12 +123,10 @@ public class Pad extends Application {
     static class SheetPane extends Pane {
 
         private final Sheet sheet;
-        private final File file;
 
-        SheetPane(Sheet sheet, String displayName, File file) {
+        SheetPane(Sheet sheet) {
             super(sheet);
             this.sheet = sheet;
-            this.file = file;
             this.sheet.prefWidthProperty().bind(this.widthProperty());
             this.sheet.maxHeightProperty().bind(this.heightProperty());
         }
@@ -175,20 +143,8 @@ public class Pad extends Application {
             sheet.resetAndExecute();
         }
 
-        void save() {
-            saveToFile(file);
-        }
-
         void saveToFile(File selectedFile) {
-            var config = new JsonbConfig();
-            config.setProperty(JsonbConfig.FORMATTING, true);
-            Jsonb jsonb = JsonbBuilder.create(config);
-            try {
-                jsonb.toJson(sheet.toNotebook(), new FileWriter(selectedFile));
-                jsonb.close();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            this.sheet.getNotebook().saveToFile(selectedFile);
         }
     }
 }

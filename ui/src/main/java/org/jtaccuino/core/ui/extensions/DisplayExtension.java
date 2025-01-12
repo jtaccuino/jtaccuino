@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ import javax.imageio.ImageIO;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
-import org.jtaccuino.core.ui.CellData;
+import org.jtaccuino.core.ui.api.CellData;
 import org.jtaccuino.jshell.ReactiveJShell;
 import org.jtaccuino.jshell.extensions.JShellExtension;
 
