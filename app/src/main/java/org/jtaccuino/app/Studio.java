@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,7 @@
  */
 package org.jtaccuino.app;
 
-import org.jtaccuino.format.Notebook;
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
-import jakarta.json.bind.JsonbConfig;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
@@ -37,9 +31,10 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import org.jtaccuino.app.common.NotebookPersistence;
 import org.jtaccuino.core.ui.Sheet;
 import static org.jtaccuino.core.ui.UiUtils.createSVGToolbarButton;
-import org.jtaccuino.format.NotebookCompat;
+import org.jtaccuino.core.ui.api.Notebook;
 
 public class Studio extends Application {
 
@@ -66,7 +61,7 @@ public class Studio extends Application {
                 }
             });
 
-        tabPane.getTabs().add(new TabSheet(Sheet.of(), "Scratch", null));
+        tabPane.getTabs().add(new TabSheet(Sheet.of(NotebookPersistence.INSTANCE.of()), "Scratch", null));
         bp.setCenter(tabPane);
         bp.setTop(createMainToolBar(stage));
         scene = new Scene(bp);
@@ -84,21 +79,11 @@ public class Studio extends Application {
         stage.show();
     }
 
-    private void activateNotebook(NotebookCompat notebook, String displayName, File file) {
-        tabPane.getTabs().add(new TabSheet(
-                switch(notebook) {
-                    case null -> Sheet.of();
-                    default -> Sheet.of(notebook, file);
-                }, displayName, file)
-        );
-        tabPane.getSelectionModel().selectLast();
-    }
-
     private void activateNotebook(Notebook notebook, String displayName, File file) {
         tabPane.getTabs().add(new TabSheet(
                 switch(notebook) {
-                    case null -> Sheet.of();
-                    default -> Sheet.of(notebook, file);
+                    case null -> Sheet.of(NotebookPersistence.INSTANCE.of());
+                    default -> Sheet.of(NotebookPersistence.INSTANCE.of(file));
                 }, displayName, file)
         );
         tabPane.getSelectionModel().selectLast();
@@ -119,24 +104,8 @@ public class Studio extends Application {
                     new ExtensionFilter("All Files", "*.*"));
             File selectedFile = fileChooser.showOpenDialog(stage);
             if (selectedFile != null) {
-                System.out.println(selectedFile);
-                try {
-                    var jsonb = JsonbBuilder.create();
-                    var notebook = jsonb.fromJson(new FileReader(selectedFile), Notebook.class);
-                    jsonb.close();
-                    activateNotebook(notebook, selectedFile.getName(), selectedFile);
-                } catch (final Exception ex) {
-                    ex.printStackTrace();
-                    try {
-                        Jsonb jsonb = JsonbBuilder.create();
-                        var notebook = jsonb.fromJson(new FileReader(selectedFile), NotebookCompat.class);
-                        jsonb.close();
-                        activateNotebook(notebook, selectedFile.getName(), selectedFile);
-                    } catch (Exception ee) {
-                    // try compat mode
-                        ee.printStackTrace();
-                    }
-                }
+                var notebook = NotebookPersistence.INSTANCE.of(selectedFile);
+                activateNotebook(notebook, selectedFile.getName(), selectedFile);
             }
         });
         var save = createSVGToolbarButton("save-notebook", "Save Notebook", "main-toolbar-button");
@@ -204,16 +173,8 @@ public class Studio extends Application {
         }
 
         void saveToFile(File selectedFile) {
-            var config = new JsonbConfig();
-            config.setProperty(JsonbConfig.FORMATTING, true);
-            Jsonb jsonb = JsonbBuilder.create(config);
-            try {
-                jsonb.toJson(sheet.toNotebook(), new FileWriter(selectedFile));
-                jsonb.close();
-                setFile(selectedFile);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            this.sheet.getNotebook().saveToFile(selectedFile);
+            setFile(file);
         }
 
         private void setFile(File file) {

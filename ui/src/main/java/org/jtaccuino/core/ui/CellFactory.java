@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,15 @@
  */
 package org.jtaccuino.core.ui;
 
+import org.jtaccuino.core.ui.api.CellData;
 import javafx.css.PseudoClass;
 import javafx.scene.control.Skin;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import static org.jtaccuino.core.ui.CellData.Type.CODE;
-import static org.jtaccuino.core.ui.CellData.Type.MARKDOWN;
+import static org.jtaccuino.core.ui.api.CellData.Type.CODE;
+import static org.jtaccuino.core.ui.api.CellData.Type.MARKDOWN;
 import static org.jtaccuino.core.ui.UiUtils.createSVGToggleToolbarButton;
 import static org.jtaccuino.core.ui.UiUtils.createSVGToolbarButton;
 
