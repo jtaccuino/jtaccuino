@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,19 +27,35 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.AnchorPane;
 
-public class InputControl extends AnchorPane {
+sealed class InputControl extends AnchorPane permits JavaControl, MarkdownControl {
+
+    enum Type {
+        JAVA("Type code here", "java"),
+        MARKDOWN("Type markdown here", "md");
+
+        private String promptText;
+        private String styleClassPrefix;
+
+        Type(String promptText, String styleClassPrefix) {
+            this.promptText = promptText;
+            this.styleClassPrefix = styleClassPrefix;
+        }
+    }
 
     private final double padding = 0;
     private final double MIN_WIDTH = 100;
     private final double inputPadding;
+
+    private final Type type;
 
     private final RichTextArea input;
     private final int cellNumber;
     private final SimpleBooleanProperty rtaFocussedProperty = new SimpleBooleanProperty();
 
     @SuppressWarnings("this-escape")
-    public InputControl(int cellNumber) {
+    public InputControl(int cellNumber, Type type) {
         this.cellNumber = cellNumber;
+        this.type = type;
         input = new RichTextArea();
         setup();
         getChildren().add(input);
@@ -49,7 +65,16 @@ public class InputControl extends AnchorPane {
         input.setTranslateX(padding);
         input.setTranslateY(padding);
         rtaFocussedProperty.bind(input.focusedProperty());
-        getStyleClass().add("java-cell-input");
+        getStyleClass().add(type.styleClassPrefix + "-cell-input");
+    }
+
+    protected int getCellNumber() {
+        return cellNumber;
+    }
+
+    @Override
+    public void requestFocus() {
+        getInput().requestFocus();
     }
 
     public ReadOnlyBooleanProperty codeEditorFocussed() {
@@ -76,15 +101,15 @@ public class InputControl extends AnchorPane {
         });
 
         //input.setPrefRowCount(1);
-        input.setPromptText("Type code here");
+        input.setPromptText(type.promptText);
         input.setTableAllowed(false);
         input.setId("input_" + cellNumber);
-        input.getStyleClass().add("code-editor");
+        input.getStyleClass().add(type.styleClassPrefix + "-editor");
         input.setAutoSave(true);
 
         input.documentProperty().subscribe(d
                 -> Platform.runLater(()
-                -> recalculateRTA(Math.max(MIN_WIDTH, getWidth()))));
+                        -> recalculateRTA(Math.max(MIN_WIDTH, getWidth()))));
         input.heightProperty().subscribe((h0, h) -> {
             double newHeight = h.doubleValue() + 2 * padding;
             setMinHeight(newHeight);
@@ -116,12 +141,12 @@ public class InputControl extends AnchorPane {
         }
         if (sheet != null) {
             double cellHeight = sheet.getChildren().stream()
-                        .filter(ListCell.class::isInstance)
-                        .map(ListCell.class::cast)
-                        .filter(cell -> cell.getGraphic() != null)
-                        .mapToDouble(n -> n.prefHeight(textAreaWidth))
-                        .findFirst()
-                        .orElse(RTA_LINE_HEIGHT);
+                    .filter(ListCell.class::isInstance)
+                    .map(ListCell.class::cast)
+                    .filter(cell -> cell.getGraphic() != null)
+                    .mapToDouble(n -> n.prefHeight(textAreaWidth))
+                    .findFirst()
+                    .orElse(RTA_LINE_HEIGHT);
             return Math.max(RTA_LINE_HEIGHT,
                     cellHeight * paragraphListView.getItems().size() + 2);
         }

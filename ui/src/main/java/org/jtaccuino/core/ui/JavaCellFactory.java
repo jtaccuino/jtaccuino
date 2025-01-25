@@ -34,9 +34,7 @@ import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.css.PseudoClass;
 import javafx.event.ActionEvent;
-import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.Skin;
@@ -57,7 +55,7 @@ import jdk.jshell.Snippet;
 import jdk.jshell.SourceCodeAnalysis;
 import jdk.jshell.StatementSnippet;
 import jdk.jshell.VarSnippet;
-import org.jtaccuino.core.ui.controls.InputControl;
+import org.jtaccuino.core.ui.controls.JavaControl;
 import org.jtaccuino.core.ui.extensions.DisplayExtension;
 
 public class JavaCellFactory implements CellFactory {
@@ -73,14 +71,12 @@ public class JavaCellFactory implements CellFactory {
     public static class JavaCell extends Sheet.Cell {
 
         private final int cellNumber;
-        private final VBox parentBox;
 
         private List<String> snippetIds = Collections.emptyList();
 
         public JavaCell(CellData cellData, VBox parent, Sheet sheet, int cellNumber) {
             super(cellData, sheet);
             this.cellNumber = cellNumber;
-            this.parentBox = parent;
         }
 
         @Override
@@ -152,7 +148,7 @@ public class JavaCellFactory implements CellFactory {
         private JavaCellSkin(JavaCell javaCell) {
             super(javaCell);
             this.control = javaCell;
-            var inputControl = new InputControl(control.cellNumber);
+            var inputControl = new JavaControl(control.cellNumber);
             input = inputControl.getInput();
 
             input.documentProperty().subscribe((t, u) -> {
