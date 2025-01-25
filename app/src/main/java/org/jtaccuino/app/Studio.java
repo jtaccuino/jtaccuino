@@ -72,6 +72,12 @@ public class Studio extends Application {
             sheetPane.getSelectionModel().select(ts);
         });
 
+        sheetPane.getSelectionModel().selectedItemProperty().subscribe((t) -> {
+           if (t instanceof TabSheet tabSheet) {
+               SheetManager.getDefault().setActiveSheet(tabSheet.sheet);
+           }
+        });
+
         bp.setCenter(sheetPane);
         bp.setTop(new VBox(
                 MenuBar.createMainMenuBar(),
