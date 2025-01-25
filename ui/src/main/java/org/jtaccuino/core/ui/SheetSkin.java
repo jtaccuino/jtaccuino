@@ -72,7 +72,6 @@ public class SheetSkin implements Skin<Sheet> {
     public void moveFocusToNextCell(Sheet.Cell currentCell) {
         int indexOfNextCell = cells.indexOf(currentCell) + 1;
         if (indexOfNextCell == cells.size()) {
-            // Select Factory based on type...
             var newCell = insertCellAfter(currentCell);
             newCell.sceneProperty().addListener((observable, oldValue, newValue) -> {
                 if (null != newValue) {
@@ -103,7 +102,12 @@ public class SheetSkin implements Skin<Sheet> {
         int indexOfCurrentCell = cells.indexOf(currentCell);
         org.jtaccuino.core.ui.api.CellData newCellData = CellData.empty(currentCell.getCellData().getType());
         sheet.getCells().add(indexOfCurrentCell + 1, newCellData);
-        var newCell = javaCellFactory.createCell(newCellData, cellBox, sheet);
+        var newCell = switch (currentCell.getCellData().getType()) {
+            case CODE ->
+                javaCellFactory.createCell(newCellData, cellBox, sheet);
+            case MARKDOWN ->
+                markdownCellFactory.createCell(newCellData, cellBox, sheet);
+        };
 
         cells.add(indexOfCurrentCell + 1, newCell);
         return newCell;

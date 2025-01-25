@@ -55,14 +55,6 @@ https://github.com/githubnext/monaspace
     -fx-border-color: red;
 }
 
-.code-editor {
-    -fx-font-family: 'Monaspace Argon';
-}
-
-.md-editor {
-    -fx-font-family: 'Monaspace Radon'
-}
-
 .main-toolbar-button {
     -size: 24px;
     -fx-padding: 2px;
@@ -387,6 +379,10 @@ AUTHOR: ShopWare
     -fx-border-color: derive(skyblue, -10%);
 }
 
+.md-cell-input {
+   -fx-max-width: infinity;
+}
+
 .md-cell-meta {
     -fx-padding: 0 0 0 6px;
     -fx-border-style: solid;
@@ -407,19 +403,19 @@ AUTHOR: ShopWare
     -fx-spacing: 5px;
 }
 
-.code-editor {
+.java-editor {
     -fx-background-color: whitesmoke;
 /*    -fx-padding: 10; */
 }
 
-.code-editor > .paragraph-list-view {
+.java-editor > .paragraph-list-view {
     -fx-padding: 0;
     -fx-background-color: white, #EBECF0, white;
     -fx-background-insets: 0, 0 0 0 39.5, 0 0 0 40;
     -fx-border-color: lightgray;
 }
 
-.code-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell > .paragraph-tile > .graphic-box {
+.java-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell > .paragraph-tile > .graphic-box {
     -fx-padding: 0;
     -fx-alignment: top-left;
     -fx-min-width: 50;
@@ -427,7 +423,7 @@ AUTHOR: ShopWare
     -fx-max-width: 50;
 }
 
-.code-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell > .paragraph-tile > .graphic-box > .numbered-label {
+.java-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell > .paragraph-tile > .graphic-box > .numbered-label {
     -fx-alignment: center-right;
     -fx-pref-width: 20;
     -fx-text-fill: #AEB3C2;
@@ -435,10 +431,46 @@ AUTHOR: ShopWare
     -fx-font-size: 13;
 }
 
-.code-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell,
-.code-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd,
-.code-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd,
-.code-editor > .paragraph-list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected {
+.java-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell,
+.java-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd,
+.java-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd,
+.java-editor > .paragraph-list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+}
+
+.md-editor {
+    -fx-background-color: whitesmoke;
+/*    -fx-padding: 10; */
+}
+
+.md-editor > .paragraph-list-view {
+    -fx-padding: 0;
+    -fx-background-color: white, #EBECF0, white;
+    -fx-background-insets: 0, 0 0 0 39.5, 0 0 0 40;
+    -fx-border-color: lightgray;
+}
+
+.md-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell > .paragraph-tile > .graphic-box {
+    -fx-padding: 0;
+    -fx-alignment: top-left;
+    -fx-min-width: 50;
+    -fx-pref-width: 50;
+    -fx-max-width: 50;
+}
+
+.md-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell > .paragraph-tile > .graphic-box > .numbered-label {
+    -fx-alignment: center-right;
+    -fx-pref-width: 20;
+    -fx-text-fill: #AEB3C2;
+    -fx-font-family: "Monaspace Argon";
+    -fx-font-size: 13;
+}
+
+.md-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell,
+.md-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd,
+.md-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd,
+.md-editor > .paragraph-list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected {
     -fx-background: transparent;
     -fx-background-color: transparent;
 }
