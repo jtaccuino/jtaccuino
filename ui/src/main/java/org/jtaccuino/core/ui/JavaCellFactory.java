@@ -262,7 +262,7 @@ public class JavaCellFactory implements CellFactory {
         }
 
         void requestFocus() {
-            this.control.getSheet().ensureCellVisible(getNode());
+            this.control.getSheet().ensureCellVisible(control);
             input.requestFocus();
         }
 
