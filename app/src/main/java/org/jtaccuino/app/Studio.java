@@ -27,7 +27,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.jtaccuino.app.common.NotebookPersistence;
 import org.jtaccuino.app.studio.MenuBar;
-import org.jtaccuino.app.studio.SheetManager;
+import org.jtaccuino.core.ui.api.SheetManager;
 import org.jtaccuino.app.studio.ToolBar;
 import org.jtaccuino.core.ui.Sheet;
 

@@ -24,7 +24,9 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
@@ -40,6 +42,8 @@ public class Sheet extends Control {
     private final ExecutorService worker = Executors.newSingleThreadExecutor(Thread.ofVirtual().name("SheetWorker").factory());
 
     private final SimpleObjectProperty<ReactiveJShell> reactiveJShellProperty = new SimpleObjectProperty<>();
+    private final SimpleObjectProperty<Cell> activeCellProperty = new SimpleObjectProperty<>();
+    private final SimpleObjectProperty<Integer> activeCellNumberProperty = new SimpleObjectProperty<>();
     private final UUID uuid;
     private int counter = 0;
     private final Notebook notebook;
@@ -52,6 +56,11 @@ public class Sheet extends Control {
         this.uuid = UUID.randomUUID();
         this.notebook = notebook;
         reactiveJShellProperty.set(ReactiveJShellProvider.createReactiveShell(uuid, null != this.notebook.getFile() ? this.notebook.getFile().getParentFile().toPath() : null));
+        activeCellProperty.subscribe(c -> {
+            if (c != null) {
+                activeCellNumberProperty.set(c.cellNumber);
+            }
+        });
     }
 
     public Notebook getNotebook() {
@@ -78,6 +87,14 @@ public class Sheet extends Control {
         });
     }
 
+    public ReadOnlyObjectProperty<Cell> activeCellProperty() {
+        return activeCellProperty;
+    }
+
+    public Cell getActiveCell() {
+        return activeCellProperty.get();
+    }
+
     public void moveFocusToNextCell(Cell currentCell) {
         currentCell.markAsSelected(false);
         ((SheetSkin) getSkin()).moveFocusToNextCell(currentCell);
@@ -93,6 +110,7 @@ public class Sheet extends Control {
 
     public void moveFocusToCell(Cell cell) {
         cell.requestFocus();
+        activeCellProperty.set(cell);
     }
 
     public ReactiveJShell getReactiveJShell() {
@@ -165,10 +183,14 @@ public class Sheet extends Control {
     public static abstract class Cell extends Control {
 
         private final ObjectProperty<CellData> cellDataProperty = new SimpleObjectProperty<>();
+        private final SimpleBooleanProperty isSelectedProperty = new SimpleBooleanProperty();
+        private final SimpleBooleanProperty isOutdatedProperty = new SimpleBooleanProperty();
         private final Sheet sheet;
+        protected final int cellNumber;
 
-        public Cell(CellData cellData, Sheet sheet) {
+        public Cell(CellData cellData, Sheet sheet, int cellNumber) {
             this.sheet = sheet;
+            this.cellNumber = cellNumber;
             cellDataProperty.set(cellData);
         }
 
@@ -186,10 +208,21 @@ public class Sheet extends Control {
 
         public abstract void execute();
 
+        public ReadOnlyBooleanProperty isOutdatedProperty() {
+            return isOutdatedProperty;
+        }
+
         public void markAsOutdated(boolean isOutdated) {
+            isOutdatedProperty.set(isOutdated);
+        }
+
+        public ReadOnlyBooleanProperty isSelectedProperty() {
+            return isSelectedProperty;
         }
 
         public void markAsSelected(boolean isSelected) {
+            isSelectedProperty.set(isSelected);
+            sheet.activeCellProperty.set(this);
         }
     }
 

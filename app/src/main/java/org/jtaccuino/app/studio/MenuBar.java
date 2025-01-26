@@ -23,6 +23,14 @@ import org.jtaccuino.app.studio.actions.NewAction;
 import org.jtaccuino.app.studio.actions.OpenAction;
 import org.jtaccuino.app.studio.actions.ResetAndExecuteNotebookAction;
 import org.jtaccuino.app.studio.actions.SaveAction;
+import org.jtaccuino.core.ui.actions.ChangeCellToJavaAction;
+import org.jtaccuino.core.ui.actions.ChangeCellToMarkdownAction;
+import org.jtaccuino.core.ui.actions.DeleteCellAction;
+import org.jtaccuino.core.ui.actions.ExecuteCellAction;
+import org.jtaccuino.core.ui.actions.InsertCellAboveAction;
+import org.jtaccuino.core.ui.actions.InsertCellBelowAction;
+import org.jtaccuino.core.ui.actions.MoveCellDownAction;
+import org.jtaccuino.core.ui.actions.MoveCellUpAction;
 import org.jtaccuino.core.ui.api.Action;
 
 public class MenuBar {
@@ -50,13 +58,33 @@ public class MenuBar {
 
         var executeMenu = createMenuItem(ExecuteNotebookAction.INSTANCE);
         var resetAndExecuteMenu = createMenuItem(ResetAndExecuteNotebookAction.INSTANCE);
+// Called from RTA for now, do not register to avoid duplicate triggering
+//        var executeCellMenu = createMenuItem(ExecuteCellAction.INSTANCE);
         var runMenu = new Menu("Run");
         runMenu.getItems().addAll(
                 executeMenu,
-                resetAndExecuteMenu,
-                new SeparatorMenuItem()
+                resetAndExecuteMenu
+//                new SeparatorMenuItem(),
+//                executeCellMenu
         );
-        menuBar.getMenus().addAll(fileMenu, runMenu);
+//        var deleteCell = createMenuItem(DeleteCellAction.INSTANCE);
+        var moveCellUp = createMenuItem(MoveCellUpAction.INSTANCE);
+        var moveCellDown = createMenuItem(MoveCellDownAction.INSTANCE);
+        var insertCellAbove = createMenuItem(InsertCellAboveAction.INSTANCE);
+        var insertCellBelow = createMenuItem(InsertCellBelowAction.INSTANCE);
+        var changeCellToJava = createMenuItem(ChangeCellToJavaAction.INSTANCE);
+        var changeCellToMarkdown = createMenuItem(ChangeCellToMarkdownAction.INSTANCE);
+        var sourceMenu = new Menu("Source");
+        sourceMenu.getItems().addAll(
+//                deleteCell,
+                moveCellUp,
+                moveCellDown,
+                insertCellAbove,
+                insertCellBelow,
+                changeCellToJava,
+                changeCellToMarkdown
+        );
+        menuBar.getMenus().addAll(fileMenu, sourceMenu, runMenu);
         return menuBar;
     }
 

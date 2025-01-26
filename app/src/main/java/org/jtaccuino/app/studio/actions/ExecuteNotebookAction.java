@@ -15,11 +15,10 @@
  */
 package org.jtaccuino.app.studio.actions;
 
-import javafx.event.ActionEvent;
-import org.jtaccuino.app.studio.SheetManager;
-import org.jtaccuino.core.ui.api.AbstractAction;
+import org.jtaccuino.core.ui.Sheet;
+import org.jtaccuino.core.ui.api.SheetAction;
 
-public final class ExecuteNotebookAction extends AbstractAction {
+public final class ExecuteNotebookAction extends SheetAction {
 
     public static final ExecuteNotebookAction INSTANCE = new ExecuteNotebookAction();
 
@@ -30,7 +29,7 @@ public final class ExecuteNotebookAction extends AbstractAction {
     }
 
     @Override
-    public void handle(ActionEvent t) {
-        SheetManager.getDefault().getActiveSheet().execute();
+    protected void handle(Sheet sheet) {
+        sheet.execute();
     }
 }

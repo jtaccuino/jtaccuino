@@ -22,8 +22,20 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.Region;
+import org.jtaccuino.core.ui.api.Action;
 
 public class UiUtils {
+
+    public static Button createSVGToolbarButton(String styleClass, String toolbarStyle, Action action) {
+        var button = new Button();
+        button.setTooltip(new Tooltip(action.getDisplayString() + " (" + action.getAccelerator().getDisplayText() + ")"));
+        button.getStyleClass().add(toolbarStyle);
+        var region = new Region();
+        region.getStyleClass().addAll("toolbar-button-graphics", styleClass);
+        button.setGraphic(region);
+        button.setOnAction(action);
+        return button;
+    }
 
     public static Button createSVGToolbarButton(String styleClass, String tooltip, String toolbarStyle, EventHandler<ActionEvent> handler) {
         var button = new Button();
@@ -33,6 +45,17 @@ public class UiUtils {
         region.getStyleClass().addAll("toolbar-button-graphics", styleClass);
         button.setGraphic(region);
         button.setOnAction(handler);
+        return button;
+    }
+
+    public static ToggleButton createSVGToggleToolbarButton(String styleClass, String toolbarStyle, Action action) {
+        var button = new ToggleButton();
+        button.setTooltip(new Tooltip(action.getDisplayString() + " (" + action.getAccelerator().getDisplayText() + ")"));
+        button.getStyleClass().add(toolbarStyle);
+        var region = new Region();
+        region.getStyleClass().addAll("toolbar-button-graphics", styleClass);
+        button.setGraphic(region);
+        button.setOnAction(action);
         return button;
     }
 

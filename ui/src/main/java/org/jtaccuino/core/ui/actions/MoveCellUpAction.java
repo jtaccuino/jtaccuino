@@ -13,25 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jtaccuino.app.studio.actions;
+package org.jtaccuino.core.ui.actions;
 
-import javafx.event.ActionEvent;
-import org.jtaccuino.app.common.NotebookPersistence;
-import org.jtaccuino.core.ui.api.SheetManager;
-import org.jtaccuino.core.ui.api.AbstractAction;
+import org.jtaccuino.core.ui.Sheet;
+import org.jtaccuino.core.ui.api.CellAction;
 
-public final class NewAction extends AbstractAction {
+public class MoveCellUpAction extends CellAction {
 
-    public static final NewAction INSTANCE = new NewAction();
+    public static final MoveCellUpAction INSTANCE = new MoveCellUpAction();
 
-    private NewAction() {
-        super("file/new",
-            "New",
-            "Meta+N");
+    private MoveCellUpAction() {
+        super("source/move-cell-up", "Move Cell Up", "Ctrl+Shift+Up");
     }
 
     @Override
-    public void handle(ActionEvent t) {
-        SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of());
+    protected void handle(Sheet.Cell cell) {
+        cell.getSheet().moveCellUp(cell);
     }
 }

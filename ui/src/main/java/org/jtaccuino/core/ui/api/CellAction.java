@@ -13,25 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jtaccuino.app.studio.actions;
+package org.jtaccuino.core.ui.api;
 
 import javafx.event.ActionEvent;
-import org.jtaccuino.app.common.NotebookPersistence;
-import org.jtaccuino.core.ui.api.SheetManager;
-import org.jtaccuino.core.ui.api.AbstractAction;
+import org.jtaccuino.core.ui.Sheet.Cell;
 
-public final class NewAction extends AbstractAction {
+public abstract class CellAction extends AbstractAction {
 
-    public static final NewAction INSTANCE = new NewAction();
-
-    private NewAction() {
-        super("file/new",
-            "New",
-            "Meta+N");
+    protected CellAction(String name, String displayText, String keyCode) {
+        super(name, displayText, keyCode);
     }
 
     @Override
-    public void handle(ActionEvent t) {
-        SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of());
+    final public void handle(ActionEvent t) {
+        handle(SheetManager.getDefault().getActiveSheet().getActiveCell());
     }
+
+    abstract protected void handle(Cell cell);
 }

@@ -16,13 +16,12 @@
 package org.jtaccuino.app.studio.actions;
 
 import java.io.File;
-import javafx.event.ActionEvent;
 import javafx.stage.FileChooser;
-import org.jtaccuino.app.studio.SheetManager;
 import org.jtaccuino.app.studio.WindowManager;
-import org.jtaccuino.core.ui.api.AbstractAction;
+import org.jtaccuino.core.ui.Sheet;
+import org.jtaccuino.core.ui.api.SheetAction;
 
-public final class SaveAction extends AbstractAction {
+public final class SaveAction extends SheetAction {
 
     public static final SaveAction INSTANCE = new SaveAction();
 
@@ -33,7 +32,7 @@ public final class SaveAction extends AbstractAction {
     }
 
     @Override
-    public void handle(ActionEvent t) {
+    protected void handle(Sheet sheet) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Notebook File");
         fileChooser.getExtensionFilters().addAll(
@@ -41,7 +40,7 @@ public final class SaveAction extends AbstractAction {
                 new FileChooser.ExtensionFilter("All Files", "*.*"));
         File selectedFile = fileChooser.showSaveDialog(WindowManager.getDefault().getMainWindow());
         if (null != selectedFile) {
-            SheetManager.getDefault().getActiveSheet().getNotebook().saveToFile(selectedFile);
+            sheet.getNotebook().saveToFile(selectedFile);
         }
     }
 }
