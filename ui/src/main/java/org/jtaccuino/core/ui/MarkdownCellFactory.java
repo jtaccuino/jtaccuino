@@ -170,7 +170,7 @@ public class MarkdownCellFactory implements CellFactory {
 
         public void requestFocus() {
             inputControl.requestFocus();
-            this.control.getSheet().ensureCellVisible(getNode());
+            this.control.getSheet().ensureCellVisible(control);
         }
 
         @Override

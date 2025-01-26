@@ -21,7 +21,6 @@ import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Bounds;
-import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Skin;
@@ -169,21 +168,29 @@ public class SheetSkin implements Skin<Sheet> {
     }
 
     void scrollTo(Node node) {
-        final Node content = pane.getContent();
-        Bounds localBounds = node.getBoundsInLocal();
-        Point2D position = new Point2D(localBounds.getMinX(), localBounds.getMinY());
+        final Bounds viewPortBounds = pane.getViewportBounds();
+        final double heightOfContent = cellBox.getBoundsInLocal().getHeight();
+        final double heightOfViewport = viewPortBounds.getHeight();
 
-        // transform to content coordinates
-        while (node != content) {
-            position = node.localToParent(position);
-            node = node.getParent();
+        final double oversizedHeight = heightOfContent - heightOfViewport;
+
+        final Bounds boundsInParent = node.getBoundsInParent();
+        final double maxYValue = boundsInParent.getMaxY();
+        final double maxYValueWithPadding = maxYValue + 5;
+        final double vValue = pane.getVvalue();
+
+        final double currentVisibleMinValue = oversizedHeight * vValue;
+        final double currentVisibleMaxValue = currentVisibleMinValue + heightOfViewport;
+
+        // node fits in viewport
+        if (boundsInParent.getHeight() < heightOfViewport) {
+            // bottom of component currently not visible
+            if (maxYValueWithPadding > currentVisibleMaxValue) {
+                // calculate newVValue
+                double newVValue = (maxYValueWithPadding - heightOfViewport) / oversizedHeight;
+                pane.setVvalue(newVValue);
+            }
         }
-
-        final Bounds viewportBounds = pane.getViewportBounds();
-        final Bounds contentBounds = content.getBoundsInLocal();
-
-        pane.setHvalue(position.getX() / (contentBounds.getWidth() - viewportBounds.getWidth()));
-        pane.setVvalue(position.getY() / (contentBounds.getHeight() - viewportBounds.getHeight()));
     }
 
     @Override
