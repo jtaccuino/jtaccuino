@@ -78,8 +78,8 @@ public final class MarkdownControl extends InputControl {
 
     private double computePreviewRTAPrefHeight(double width) {
         if (group == null) {
-            group = (Group) this.lookup(".sheet");
-            paragraphListView = (ListView<?>) this.lookup(".paragraph-list-view");
+            group = (Group) mdRenderArea.lookup(".sheet");
+            paragraphListView = (ListView<?>) mdRenderArea.lookup(".paragraph-list-view");
         }
         if (null != group) {
             double averageCellHeight = group.getChildren().stream()
@@ -122,6 +122,7 @@ public final class MarkdownControl extends InputControl {
                 setPrefHeight(newHeight);
                 setMaxHeight(newHeight);
                 mdRenderArea = null;
+                group = null;
                 t.consume();
             }
         });
