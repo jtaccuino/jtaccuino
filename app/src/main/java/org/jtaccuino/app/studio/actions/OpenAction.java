@@ -19,7 +19,7 @@ import java.io.File;
 import javafx.event.ActionEvent;
 import javafx.stage.FileChooser;
 import org.jtaccuino.app.common.NotebookPersistence;
-import org.jtaccuino.app.studio.SheetManager;
+import org.jtaccuino.core.ui.api.SheetManager;
 import org.jtaccuino.app.studio.WindowManager;
 import org.jtaccuino.core.ui.api.AbstractAction;
 

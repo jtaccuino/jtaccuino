@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jtaccuino.app.studio.actions;
+package org.jtaccuino.core.ui.actions;
 
-import javafx.event.ActionEvent;
-import org.jtaccuino.app.common.NotebookPersistence;
-import org.jtaccuino.core.ui.api.SheetManager;
-import org.jtaccuino.core.ui.api.AbstractAction;
+import org.jtaccuino.core.ui.Sheet;
+import org.jtaccuino.core.ui.api.CellAction;
+import org.jtaccuino.core.ui.api.CellData;
 
-public final class NewAction extends AbstractAction {
+public class ChangeCellToJavaAction extends CellAction {
 
-    public static final NewAction INSTANCE = new NewAction();
+    public static final ChangeCellToJavaAction INSTANCE = new ChangeCellToJavaAction();
 
-    private NewAction() {
-        super("file/new",
-            "New",
-            "Meta+N");
+    private ChangeCellToJavaAction() {
+        super("source/change-cell-to-java", "Change Cell to Java", "Meta+J");
     }
 
     @Override
-    public void handle(ActionEvent t) {
-        SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of());
+    protected void handle(Sheet.Cell cell) {
+        var sheet = cell.getSheet();
+        sheet.replaceCell(cell, sheet.createCell(CellData.Type.CODE, cell.getCellData()));
     }
 }

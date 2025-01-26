@@ -31,9 +31,12 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.css.PseudoClass;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.event.EventType;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -70,13 +73,10 @@ public class JavaCellFactory implements CellFactory {
 
     public static class JavaCell extends Sheet.Cell {
 
-        private final int cellNumber;
-
         private List<String> snippetIds = Collections.emptyList();
 
         public JavaCell(CellData cellData, VBox parent, Sheet sheet, int cellNumber) {
-            super(cellData, sheet);
-            this.cellNumber = cellNumber;
+            super(cellData, sheet, cellNumber);
         }
 
         @Override
@@ -105,11 +105,13 @@ public class JavaCellFactory implements CellFactory {
         @Override
         public void markAsOutdated(boolean isOutdated) {
             ((JavaCellSkin) getSkin()).markAsOutdated(isOutdated);
+            super.markAsOutdated(isOutdated);
         }
 
         @Override
         public void markAsSelected(boolean isSelected) {
             ((JavaCellSkin) getSkin()).markAsSelected(isSelected);
+            super.markAsSelected(isSelected);
         }
 
         List<String> getSnippetIds() {
@@ -157,7 +159,7 @@ public class JavaCellFactory implements CellFactory {
                 }
             });
 
-            inputControl.codeEditorFocussed().addListener((observable, oldValue, newValue) -> markAsSelected(newValue));
+            inputControl.codeEditorFocussed().addListener((observable, oldValue, newValue) -> getSkinnable().markAsSelected(newValue));
             input.textLengthProperty().subscribe(nv -> {
                 if (nv.doubleValue() == 0) {
                     input.getActionFactory().decorate(presetDecoration).execute(new ActionEvent());
@@ -211,19 +213,15 @@ public class JavaCellFactory implements CellFactory {
                             inputBox.getChildren().add(outputBox);
                         }
                     });
-            input.addEventFilter(KeyEvent.KEY_PRESSED, e
-                    -> {
-                if (SHIFT_ENTER_KEY_COMBINATION.match(e)) {
-                    handleExecution();
-                    e.consume();
+
+            // works around not customizable input map from RTA (e.g. shift-enter for cell execution)
+            input.onKeyPressedProperty().addListener((ov, t, t1) -> {
+                if (t1 != getKeyHandler()) {
+                    input.setOnKeyPressed(getKeyHandler());
+                    delegateKeyEvents(t1);
                 }
             });
-//            input.addEventFilter(KeyEvent.KEY_PRESSED, e
-//                    -> {
-//                if (KeyCode.BACK_SPACE != e.getCode()) {
-//                    handleSyntaxHighlighting(input.getDocument().getText());
-//                }
-//            });
+
             input.addEventFilter(KeyEvent.KEY_PRESSED, t
                     -> {
                 if (KeyCode.TAB == t.getCode()) {
@@ -263,6 +261,7 @@ public class JavaCellFactory implements CellFactory {
 
         void requestFocus() {
             this.control.getSheet().ensureCellVisible(control);
+            this.control.markAsSelected(true);
             input.requestFocus();
         }
 

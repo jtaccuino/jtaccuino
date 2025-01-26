@@ -13,25 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jtaccuino.app.studio.actions;
+package org.jtaccuino.app.studio;
 
-import javafx.event.ActionEvent;
 import org.jtaccuino.app.common.NotebookPersistence;
-import org.jtaccuino.core.ui.api.SheetManager;
-import org.jtaccuino.core.ui.api.AbstractAction;
+import org.jtaccuino.core.ui.Sheet;
+import org.jtaccuino.core.ui.spi.SheetManagerSPI;
 
-public final class NewAction extends AbstractAction {
-
-    public static final NewAction INSTANCE = new NewAction();
-
-    private NewAction() {
-        super("file/new",
-            "New",
-            "Meta+N");
-    }
+public class SheetManagerSPIImpl extends SheetManagerSPI{
 
     @Override
-    public void handle(ActionEvent t) {
-        SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of());
+    public Sheet of() {
+        return Sheet.of(NotebookPersistence.INSTANCE.of());
     }
 }

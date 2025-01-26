@@ -19,11 +19,11 @@ import com.gluonhq.richtextarea.model.DecorationModel;
 import com.gluonhq.richtextarea.model.Document;
 import com.gluonhq.richtextarea.model.ParagraphDecoration;
 import com.gluonhq.richtextarea.model.TextDecoration;
-import java.util.Arrays;
 import java.util.List;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.css.PseudoClass;
+import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.scene.control.Skin;
 import javafx.scene.input.KeyCode;
@@ -46,11 +46,8 @@ public class MarkdownCellFactory implements CellFactory {
 
     public static class MarkdownCell extends Sheet.Cell {
 
-        private final int cellNumber;
-
         public MarkdownCell(CellData cellData, VBox parent, Sheet sheet, int cellNumber) {
-            super(cellData, sheet);
-            this.cellNumber = cellNumber;
+            super(cellData, sheet, cellNumber);
         }
 
         @Override
@@ -79,6 +76,7 @@ public class MarkdownCellFactory implements CellFactory {
         @Override
         public void markAsSelected(boolean isSelected) {
             ((MarkdownCellSkin) getSkin()).markAsSelected(isSelected);
+            super.markAsSelected(isSelected);
         }
     }
 
@@ -125,17 +123,23 @@ public class MarkdownCellFactory implements CellFactory {
 
             inputControl.getInput().documentProperty().subscribe(doc -> markdownCell.getCellData().sourceProperty().set(doc.getText()));
 
-            inputControl.getInput().addEventFilter(KeyEvent.KEY_PRESSED, t -> {
-                if (KeyCode.ENTER == t.getCode() && t.isShiftDown()) {
-                    execute();
-                    t.consume();
+            // works around not customizable input map from RTA (e.g. shift-enter for cell execution)
+            inputControl.getInput().onKeyPressedProperty().addListener((ov, t, t1) -> {
+                if (t1 != getKeyHandler()) {
+                    inputControl.getInput().setOnKeyPressed(getKeyHandler());
+                    delegateKeyEvents(t1);
                 }
             });
+
+            inputControl.getInput().addEventFilter(KeyEvent.KEY_PRESSED, t -> {
+                Platform.runLater(() -> this.control.getSheet().ensureCellVisible(control));
+            });
+
             var toolbar = createToolbar();
 
             toolbar.visibleProperty().bind(Bindings.or(inputControl.getInput().focusedProperty(), toolbar.focusWithinProperty()));
             inputControl.codeEditorFocussed().addListener((observable, oldValue, newValue) -> {
-                markAsSelected(newValue);
+                getSkinnable().markAsSelected(newValue);
             });
 
             inputControl.getInput().visibleProperty().addListener((ov, t, t1) -> {

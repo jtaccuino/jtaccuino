@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jtaccuino.app.studio;
+package org.jtaccuino.core.ui.api;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceLoader;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.event.EventHandler;
-import org.jtaccuino.app.common.NotebookPersistence;
 import org.jtaccuino.core.ui.Sheet;
-import org.jtaccuino.core.ui.api.Notebook;
+import org.jtaccuino.core.ui.spi.SheetManagerSPI;
 
 /**
  * Manage sheet instances and meta data. Works as a model for the different ui
@@ -32,9 +32,11 @@ public class SheetManager {
 
     private static final SheetManager INSTANCE = new SheetManager();
 
-    private ObjectProperty<Sheet> activeSheetProperty = new SimpleObjectProperty<>();
+    private final ObjectProperty<Sheet> activeSheetProperty = new SimpleObjectProperty<>();
 
-    private List<Sheet> sheets = new ArrayList<>();
+    private final List<Sheet> sheets = new ArrayList<>();
+
+    private final SheetManagerSPI sheetManagerSPI;
 
     private EventHandler<SheetEvent> onOpen = null;
 
@@ -43,6 +45,7 @@ public class SheetManager {
     }
 
     private SheetManager() {
+        this.sheetManagerSPI = ServiceLoader.load(SheetManagerSPI.class).findFirst().orElseThrow();
     }
 
     public Sheet of(Notebook notebook) {
@@ -52,7 +55,7 @@ public class SheetManager {
     }
 
     public Sheet of() {
-        var s = Sheet.of(NotebookPersistence.INSTANCE.of());
+        var s = sheetManagerSPI.of();
         this.sheets.add(s);
         return s;
     }

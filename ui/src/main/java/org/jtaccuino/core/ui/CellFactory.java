@@ -15,17 +15,28 @@
  */
 package org.jtaccuino.core.ui;
 
-import org.jtaccuino.core.ui.api.CellData;
+import java.util.Map;
 import javafx.css.PseudoClass;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.control.Skin;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import static org.jtaccuino.core.ui.api.CellData.Type.CODE;
-import static org.jtaccuino.core.ui.api.CellData.Type.MARKDOWN;
 import static org.jtaccuino.core.ui.UiUtils.createSVGToggleToolbarButton;
 import static org.jtaccuino.core.ui.UiUtils.createSVGToolbarButton;
+import org.jtaccuino.core.ui.actions.ChangeCellToJavaAction;
+import org.jtaccuino.core.ui.actions.ChangeCellToMarkdownAction;
+import org.jtaccuino.core.ui.actions.DeleteCellAction;
+import org.jtaccuino.core.ui.actions.ExecuteCellAction;
+import org.jtaccuino.core.ui.actions.InsertCellAboveAction;
+import org.jtaccuino.core.ui.actions.InsertCellBelowAction;
+import org.jtaccuino.core.ui.actions.MoveCellDownAction;
+import org.jtaccuino.core.ui.actions.MoveCellUpAction;
+import org.jtaccuino.core.ui.api.CellData;
 
 public interface CellFactory {
 
@@ -36,6 +47,21 @@ public interface CellFactory {
         protected static final PseudoClass OUTDATED = PseudoClass.getPseudoClass("outdated");
         protected static final PseudoClass SELECTED = PseudoClass.getPseudoClass("selected");
 
+        private static final Map<KeyCombination, EventHandler<ActionEvent>> DEFAULT_INPUT_MAP = Map.ofEntries(
+                Map.entry(ExecuteCellAction.INSTANCE.getAccelerator(), ExecuteCellAction.INSTANCE),
+                // not added here, needs entry into menu bar to work
+                // if added here actions are called twice
+//                Map.entry(MoveCellUpAction.INSTANCE.getAccelerator(), MoveCellUpAction.INSTANCE),
+//                Map.entry(MoveCellDownAction.INSTANCE.getAccelerator(), MoveCellDownAction.INSTANCE),
+//                Map.entry(InsertCellAboveAction.INSTANCE.getAccelerator(), InsertCellAboveAction.INSTANCE),
+//                Map.entry(InsertCellBelowAction.INSTANCE.getAccelerator(), InsertCellBelowAction.INSTANCE),
+                Map.entry(DeleteCellAction.INSTANCE.getAccelerator(), DeleteCellAction.INSTANCE)
+//                Map.entry(ChangeCellToMarkdownAction.INSTANCE.getAccelerator(), ChangeCellToMarkdownAction.INSTANCE),
+//                Map.entry(ChangeCellToJavaAction.INSTANCE.getAccelerator(), ChangeCellToJavaAction.INSTANCE)
+        );
+
+        private final KeyHandler keyHandler = new KeyHandler();
+
         private final Sheet sheet;
 
         protected AbstractCellSkin(T sheetCell) {
@@ -43,40 +69,14 @@ public interface CellFactory {
         }
 
         protected HBox createToolbar() {
-            var executeCell = createSVGToolbarButton("execute-cell", "Execute Cell", "toolbar-button",
-                    (event) -> {
-                        execute();
-                    });
-            var moveCellUp = createSVGToolbarButton("move-cell-up", "Move Cell Up", "toolbar-button",
-                    (event) -> {
-                        this.sheet.moveCellUp(getSkinnable());
-                    });
-            var moveCellDown = createSVGToolbarButton("move-cell-down", "Move Cell Down", "toolbar-button",
-                    (event) -> {
-                        this.sheet.moveCellDown(getSkinnable());
-                    });
-
-            var insertCellBefore = createSVGToolbarButton("insert-cell-before", "Insert Cell Before", "toolbar-button",
-                    (event) -> {
-                        this.sheet.insertCellBefore(getSkinnable());
-                    });
-            var insertCellAfter = createSVGToolbarButton("insert-cell-after", "Insert Cell After", "toolbar-button",
-                    (event) -> {
-                        this.sheet.insertCellAfter(getSkinnable());
-                    });
-            var deleteCell = createSVGToolbarButton("delete-cell", "Delete Cell", "toolbar-button",
-                    (event) -> {
-                        this.sheet.removeCell(getSkinnable());
-                    });
-
-            var mdType = createSVGToggleToolbarButton("md-cell-type", "Use Markdown for Cell", "toolbar-button",
-                    (event) -> {
-                        this.sheet.replaceCell(getSkinnable(), sheet.createCell(CellData.Type.MARKDOWN, getSkinnable().getCellData()));
-                    });
-            var javaType = createSVGToggleToolbarButton("java-cell-type", "Use Java Code for Cell", "toolbar-button",
-                    (event) -> {
-                        this.sheet.replaceCell(getSkinnable(), sheet.createCell(CellData.Type.CODE, getSkinnable().getCellData()));
-                    });
+            var executeCell = createSVGToolbarButton("execute-cell", "toolbar-button", ExecuteCellAction.INSTANCE);
+            var moveCellUp = createSVGToolbarButton("move-cell-up", "toolbar-button", MoveCellUpAction.INSTANCE);
+            var moveCellDown = createSVGToolbarButton("move-cell-down", "toolbar-button", MoveCellDownAction.INSTANCE);
+            var insertCellBefore = createSVGToolbarButton("insert-cell-before", "toolbar-button", InsertCellAboveAction.INSTANCE);
+            var insertCellAfter = createSVGToolbarButton("insert-cell-after", "toolbar-button", InsertCellBelowAction.INSTANCE);
+            var deleteCell = createSVGToolbarButton("delete-cell", "toolbar-button", DeleteCellAction.INSTANCE);
+            var mdType = createSVGToggleToolbarButton("md-cell-type", "toolbar-button", ChangeCellToMarkdownAction.INSTANCE);
+            var javaType = createSVGToggleToolbarButton("java-cell-type", "toolbar-button", ChangeCellToJavaAction.INSTANCE);
             final ToggleGroup toggleGroup = new ToggleGroup();
 
             mdType.setToggleGroup(toggleGroup);
@@ -95,6 +95,42 @@ public interface CellFactory {
             return hbox;
         }
 
+        protected void delegateKeyEvents(EventHandler<? super KeyEvent> handler) {
+            keyHandler.setDelegatingKeyHandler(handler);
+        }
+
+        protected EventHandler<KeyEvent> getKeyHandler() {
+            return keyHandler;
+        }
+
         protected abstract void execute();
+
+        private static class KeyHandler implements EventHandler<KeyEvent> {
+
+            private EventHandler<? super KeyEvent> delegatingHandler;
+
+            private KeyHandler() {
+            }
+
+            @Override
+            public void handle(KeyEvent e) {
+                // Find an applicable action and execute it if found
+                for (KeyCombination kc : DEFAULT_INPUT_MAP.keySet()) {
+                    if (kc.match(e)) {
+                        ActionEvent ae = new ActionEvent(e.getSource(), e.getTarget());
+                        DEFAULT_INPUT_MAP.get(kc).handle(ae);
+                        e.consume();
+                        return;
+                    }
+                }
+                if (null != delegatingHandler) {
+                    delegatingHandler.handle(e);
+                }
+            }
+
+            void setDelegatingKeyHandler(EventHandler<? super KeyEvent> handler) {
+                this.delegatingHandler = handler;
+            }
+        }
     }
 }

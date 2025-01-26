@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jtaccuino.app.studio;
+package org.jtaccuino.core.ui.api;
 
 import javafx.beans.NamedArg;
 import javafx.event.Event;

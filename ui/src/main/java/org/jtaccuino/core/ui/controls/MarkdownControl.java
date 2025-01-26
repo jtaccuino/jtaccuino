@@ -69,7 +69,7 @@ public final class MarkdownControl extends InputControl {
         mdRenderArea.setMaxHeight(textAreaHeight);
         mdRenderArea.requestLayout();
 
-        double newHeight = mdRenderArea.getHeight();
+        double newHeight = textAreaHeight + 2;
         setMinHeight(newHeight);
         setPrefHeight(newHeight);
         setMaxHeight(newHeight);
