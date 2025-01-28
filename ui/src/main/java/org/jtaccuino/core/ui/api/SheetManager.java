@@ -18,6 +18,7 @@ package org.jtaccuino.core.ui.api;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
+import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.event.EventHandler;
@@ -82,6 +83,8 @@ public class SheetManager {
 
     public void setActiveSheet(Sheet sheet) {
         activeSheetProperty.set(sheet);
+
+        Platform.runLater(() -> sheet.getActiveCell().requestFocus());
     }
 
     public ObjectProperty<Sheet> activeSheet() {

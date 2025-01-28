@@ -27,6 +27,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.jtaccuino.app.common.NotebookPersistence;
 import org.jtaccuino.app.studio.MenuBar;
+import org.jtaccuino.app.studio.StatusLine;
 import org.jtaccuino.core.ui.api.SheetManager;
 import org.jtaccuino.app.studio.ToolBar;
 import org.jtaccuino.core.ui.Sheet;
@@ -64,7 +65,6 @@ public class Studio extends Application {
         sheetPane = new TabPane();
 
         var notebook = NotebookPersistence.INSTANCE.of();
-        sheetPane.getTabs().add(new TabSheet(SheetManager.getDefault().of(notebook)));
 
         SheetManager.getDefault().setOnOpen(evt -> {
             var ts = new TabSheet(evt.getSource());
@@ -82,6 +82,10 @@ public class Studio extends Application {
         bp.setTop(new VBox(
                 MenuBar.createMainMenuBar(),
                 ToolBar.createMainToolBar()));
+        bp.setBottom(StatusLine.getDefault().getNode());
+
+        sheetPane.getTabs().add(new TabSheet(SheetManager.getDefault().of(notebook)));
+
         return bp;
     }
 

@@ -20,6 +20,7 @@ import javafx.stage.FileChooser;
 import org.jtaccuino.app.studio.WindowManager;
 import org.jtaccuino.core.ui.Sheet;
 import org.jtaccuino.core.ui.api.SheetAction;
+import org.jtaccuino.core.ui.api.StatusDisplayer;
 
 public final class SaveAction extends SheetAction {
 
@@ -27,8 +28,8 @@ public final class SaveAction extends SheetAction {
 
     private SaveAction() {
         super("file/save",
-            "Save",
-            "Meta+S");
+                "Save",
+                "Meta+S");
     }
 
     @Override
@@ -41,6 +42,7 @@ public final class SaveAction extends SheetAction {
         File selectedFile = fileChooser.showSaveDialog(WindowManager.getDefault().getMainWindow());
         if (null != selectedFile) {
             sheet.getNotebook().saveToFile(selectedFile);
+            StatusDisplayer.display("Saved notebook " + sheet.getNotebook().getDisplayName() + ".");
         }
     }
 }

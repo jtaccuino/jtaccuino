@@ -15,7 +15,6 @@
  */
 package org.jtaccuino.core.ui;
 
-import java.util.Arrays;
 import java.util.function.Predicate;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -192,6 +191,10 @@ public class SheetSkin implements Skin<Sheet> {
                 pane.setVvalue(newVValue);
             }
         }
+    }
+
+    public int getCellIndex(Sheet.Cell cell) {
+        return cells.indexOf(cell) + 1;
     }
 
     @Override

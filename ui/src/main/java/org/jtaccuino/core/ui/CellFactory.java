@@ -16,9 +16,12 @@
 package org.jtaccuino.core.ui;
 
 import java.util.Map;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.css.PseudoClass;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Point2D;
 import javafx.scene.control.Skin;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.KeyCombination;
@@ -51,21 +54,24 @@ public interface CellFactory {
                 Map.entry(ExecuteCellAction.INSTANCE.getAccelerator(), ExecuteCellAction.INSTANCE),
                 // not added here, needs entry into menu bar to work
                 // if added here actions are called twice
-//                Map.entry(MoveCellUpAction.INSTANCE.getAccelerator(), MoveCellUpAction.INSTANCE),
-//                Map.entry(MoveCellDownAction.INSTANCE.getAccelerator(), MoveCellDownAction.INSTANCE),
-//                Map.entry(InsertCellAboveAction.INSTANCE.getAccelerator(), InsertCellAboveAction.INSTANCE),
-//                Map.entry(InsertCellBelowAction.INSTANCE.getAccelerator(), InsertCellBelowAction.INSTANCE),
+                //                Map.entry(MoveCellUpAction.INSTANCE.getAccelerator(), MoveCellUpAction.INSTANCE),
+                //                Map.entry(MoveCellDownAction.INSTANCE.getAccelerator(), MoveCellDownAction.INSTANCE),
+                //                Map.entry(InsertCellAboveAction.INSTANCE.getAccelerator(), InsertCellAboveAction.INSTANCE),
+                //                Map.entry(InsertCellBelowAction.INSTANCE.getAccelerator(), InsertCellBelowAction.INSTANCE),
                 Map.entry(DeleteCellAction.INSTANCE.getAccelerator(), DeleteCellAction.INSTANCE)
-//                Map.entry(ChangeCellToMarkdownAction.INSTANCE.getAccelerator(), ChangeCellToMarkdownAction.INSTANCE),
-//                Map.entry(ChangeCellToJavaAction.INSTANCE.getAccelerator(), ChangeCellToJavaAction.INSTANCE)
+        //                Map.entry(ChangeCellToMarkdownAction.INSTANCE.getAccelerator(), ChangeCellToMarkdownAction.INSTANCE),
+        //                Map.entry(ChangeCellToJavaAction.INSTANCE.getAccelerator(), ChangeCellToJavaAction.INSTANCE)
         );
 
         private final KeyHandler keyHandler = new KeyHandler();
+        protected final ReadOnlyObjectWrapper<Point2D> caretRowColumnProperty;
 
         private final Sheet sheet;
 
+        @SuppressWarnings("this-escape")
         protected AbstractCellSkin(T sheetCell) {
             this.sheet = sheetCell.getSheet();
+             caretRowColumnProperty = new ReadOnlyObjectWrapper<>(this, "caretRowColumn", Point2D.ZERO);
         }
 
         protected HBox createToolbar() {
@@ -101,6 +107,14 @@ public interface CellFactory {
 
         protected EventHandler<KeyEvent> getKeyHandler() {
             return keyHandler;
+        }
+
+        public final ReadOnlyObjectProperty<Point2D> caretRowColumnProperty() {
+            return caretRowColumnProperty.getReadOnlyProperty();
+        }
+
+        public final Point2D getCaretRowColumn() {
+            return caretRowColumnProperty.get();
         }
 
         protected abstract void execute();

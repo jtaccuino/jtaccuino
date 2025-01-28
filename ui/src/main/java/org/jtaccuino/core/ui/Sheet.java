@@ -29,6 +29,7 @@ import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
@@ -95,6 +96,14 @@ public class Sheet extends Control {
         return activeCellProperty.get();
     }
 
+    private void setActiveCell(Cell cell) {
+        activeCellProperty.set(cell);
+    }
+
+    public int getCellIndex(Cell cell) {
+        return ((SheetSkin)getSkin()).getCellIndex(cell);
+    }
+
     public void moveFocusToNextCell(Cell currentCell) {
         currentCell.markAsSelected(false);
         ((SheetSkin) getSkin()).moveFocusToNextCell(currentCell);
@@ -110,7 +119,7 @@ public class Sheet extends Control {
 
     public void moveFocusToCell(Cell cell) {
         cell.requestFocus();
-        activeCellProperty.set(cell);
+        setActiveCell(cell);
     }
 
     public ReactiveJShell getReactiveJShell() {
@@ -222,7 +231,11 @@ public class Sheet extends Control {
 
         public void markAsSelected(boolean isSelected) {
             isSelectedProperty.set(isSelected);
-            sheet.activeCellProperty.set(this);
+            sheet.setActiveCell(this);
+        }
+
+        public final ReadOnlyObjectProperty<Point2D> caretRowColumnProperty() {
+            return ((CellFactory.AbstractCellSkin<? extends Cell>)getSkin()).caretRowColumnProperty();
         }
     }
 
