@@ -105,6 +105,7 @@ public class MarkdownCellFactory implements CellFactory {
             pane.getStyleClass().add("md-cell-meta");
 
             inputControl = new MarkdownControl(control.cellNumber);
+            caretRowColumnProperty.bind(inputControl.getInput().caretRowColumnProperty());
             String source = markdownCell.getCellData().getSource();
             if (null != source) {
                 inputControl.openDocument(

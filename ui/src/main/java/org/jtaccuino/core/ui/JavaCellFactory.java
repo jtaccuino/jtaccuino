@@ -31,6 +31,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.css.PseudoClass;
@@ -152,7 +153,7 @@ public class JavaCellFactory implements CellFactory {
             this.control = javaCell;
             var inputControl = new JavaControl(control.cellNumber);
             input = inputControl.getInput();
-
+            caretRowColumnProperty.bind(input.caretRowColumnProperty());
             input.documentProperty().subscribe((t, u) -> {
                 if (!t.getText().equals(u.getText())) {
                     handleSyntaxHighlighting(input.getDocument().getText());
