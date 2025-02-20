@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package org.jtaccuino.jshell;
 
 import java.nio.file.Path;
 import java.util.Locale;
-import java.util.ServiceLoader;
 import java.util.UUID;
 import org.jtaccuino.jshell.extensions.ExtensionManager;
 import org.jtaccuino.jshell.extensions.JShellExtension;
@@ -27,8 +26,8 @@ import org.jtaccuino.jshell.extensions.JShellExtension;
  */
 public class ReactiveJShellProvider {
 
-    private static final String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-    private static final boolean IS_WINDOWS = osName.contains("windows");
+    private static final String OS_NAME = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+    private static final boolean IS_WINDOWS = OS_NAME.contains("windows");
 
     public static ReactiveJShell createReactiveShell(UUID uuid, Path path) {
         ReactiveJShell rjs = ReactiveJShell.create(uuid);
@@ -67,7 +66,7 @@ public class ReactiveJShellProvider {
                 System.out.println(cwdDefResult.snippetEventsCurrent());
             }
         }
-        addDefaultExtensions(rjs, uuid);
+        addSystemExtensions(rjs);
         return postInitShell(rjs, uuid);
     }
 
@@ -77,27 +76,9 @@ public class ReactiveJShellProvider {
         return rjs;
     }
 
-    private static ReactiveJShell addDefaultExtensions(ReactiveJShell rjs, UUID uuid) {
-        var factories = ServiceLoader.load(JShellExtension.Factory.class);
-        factories.forEach(f -> {
-            JShellExtension extension = f.createExtension(rjs);
-            ExtensionManager.register(extension, uuid);
-            String extensionVarInit = "var " + extension.shellVariableName() + " = org.jtaccuino.jshell.extensions.ExtensionManager.lookup(" + extension.getClass().getName() + ".class, _$jsci$uuid)";
-            rjs.eval(extensionVarInit);
-            rjs.getWrappedShell().onSnippetEvent((t) -> {
-                if (t.snippet().source().equals(extensionVarInit)) {
-                    System.out.println("Init extensionVar extension.shellVariableName() status changed from " + t.previousStatus() + " to : " + t.status());
-                    System.out.println("Caused by: " + t.causeSnippet() == null ? "Empty" : t.causeSnippet().source());
-                }
-            });
-            ReactiveJShell.EvaluationResult evalResult = rjs.eval(extension.initCodeSnippet());
-            if (evalResult.status().isSuccess()) {
-                System.out.println("Extension " + extension + " init code registered successfully");
-            } else {
-                System.out.println("Extension " + extension + " failed to load init code!");
-                System.out.println(evalResult.snippetEventsCurrent());
-            }
-        });
+    private static ReactiveJShell addSystemExtensions(ReactiveJShell rjs) {
+        JShellExtension.Mode.SYSTEM.getExtensionFactories()
+                .forEach(rjs::activateExtension);
         return rjs;
     }
 }
