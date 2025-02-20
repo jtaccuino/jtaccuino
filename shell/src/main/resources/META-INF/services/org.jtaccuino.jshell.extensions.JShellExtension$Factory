@@ -1,1 +1,2 @@
 org.jtaccuino.jshell.extensions.dependency.DependencyExtension$Factory
+org.jtaccuino.jshell.extensions.use.UseExtension$FactoryImpl
