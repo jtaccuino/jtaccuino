@@ -169,7 +169,7 @@ public class ReactiveJShell {
         JShellExtension extension = factory.createExtension(this);
         ExtensionManager.register(extension, uuid);
         extension.shellVariableName().ifPresent(shellVariablename -> {
-            String extensionVarInit = "var " + shellVariablename + " = org.jtaccuino.jshell.extensions.ExtensionManager.lookup(" + extension.getClass().getName() + ".class, _$jsci$uuid)";
+        String extensionVarInit = "var " + shellVariablename + " = org.jtaccuino.jshell.extensions.ExtensionManager.lookup(" + extension.getClass().getName() + ".class, _$jsci$uuid)";
             this.eval(extensionVarInit);
             this.getWrappedShell().onSnippetEvent((t) -> {
                 if (t.snippet().source().equals(extensionVarInit)) {

@@ -18,7 +18,6 @@ package org.jtaccuino.jshell;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.UUID;
-import org.jtaccuino.jshell.extensions.ExtensionManager;
 import org.jtaccuino.jshell.extensions.JShellExtension;
 
 /**
@@ -66,14 +65,7 @@ public class ReactiveJShellProvider {
                 System.out.println(cwdDefResult.snippetEventsCurrent());
             }
         }
-        addSystemExtensions(rjs);
-        return postInitShell(rjs, uuid);
-    }
-
-    private static ReactiveJShell postInitShell(ReactiveJShell rjs, UUID uuid) {
-        rjs.eval("import static org.jtaccuino.jshell.extensions.fx.ChartsFx.*");
-
-        return rjs;
+        return addSystemExtensions(rjs);
     }
 
     private static ReactiveJShell addSystemExtensions(ReactiveJShell rjs) {
