@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,6 +163,30 @@ public class ReactiveJShell {
 
     private SourceCodeAnalysis sourceCodeAnalysis() {
         return jshell.sourceCodeAnalysis();
+    }
+
+    public void activateExtension(JShellExtension.Factory factory) {
+        JShellExtension extension = factory.createExtension(this);
+        ExtensionManager.register(extension, uuid);
+        extension.shellVariableName().ifPresent(shellVariablename -> {
+            String extensionVarInit = "var " + shellVariablename + " = org.jtaccuino.jshell.extensions.ExtensionManager.lookup(" + extension.getClass().getName() + ".class, _$jsci$uuid)";
+            this.eval(extensionVarInit);
+            this.getWrappedShell().onSnippetEvent((t) -> {
+                if (t.snippet().source().equals(extensionVarInit)) {
+                    System.out.println("Init extensionVar extension.shellVariableName() status changed from " + t.previousStatus() + " to : " + t.status());
+                    System.out.println("Caused by: " + t.causeSnippet() == null ? "Empty" : t.causeSnippet().source());
+                }
+            });
+        });
+        extension.initCodeSnippet().ifPresent(initCodeSnippet -> {
+            ReactiveJShell.EvaluationResult evalResult = this.eval(initCodeSnippet);
+            if (evalResult.status().isSuccess()) {
+                System.out.println("Extension " + extension + " init code registered successfully");
+            } else {
+                System.out.println("Extension " + extension + " failed to load init code!");
+                System.out.println(evalResult.snippetEventsCurrent());
+            }
+        });
     }
 
     public void shutdown() {

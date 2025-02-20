@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.jtaccuino.jshell.extensions.dependency;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import jdk.jshell.JShell;
 import org.jtaccuino.jshell.ReactiveJShell;
 import org.jtaccuino.jshell.extensions.JShellExtension;
@@ -28,7 +29,8 @@ public class DependencyExtension implements JShellExtension {
 
     private final List<Path> paths = new ArrayList<>();
 
-    public static class Factory implements JShellExtension.Factory<DependencyExtension> {
+    @Descriptor(mode = Mode.SYSTEM, type = DependencyExtension.class)
+    public static class Factory implements JShellExtension.Factory {
 
         public DependencyExtension createExtension(ReactiveJShell jshell) {
             return new DependencyExtension(jshell);
@@ -43,16 +45,16 @@ public class DependencyExtension implements JShellExtension {
     // var dependencyManager = ExtensionManager.lookup(DependencyExtension.class,_$jsci$uuid);
 
     @Override
-    public String shellVariableName() {
-        return "dependencyManager";
+    public Optional<String> shellVariableName() {
+        return Optional.of("dependencyManager");
     }
 
     @Override
-    public String initCodeSnippet() {
-        return """
+    public Optional<String> initCodeSnippet() {
+        return Optional.of("""
             public void addDependency(String mavenCoordinate) {
                 dependencyManager.resolve(mavenCoordinate);
-            }""";
+            }""");
     }
 
     public void resolve(String mavenCoordinates) {

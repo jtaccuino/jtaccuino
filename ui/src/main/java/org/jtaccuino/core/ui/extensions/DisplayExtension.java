@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -62,7 +63,8 @@ public class DisplayExtension implements JShellExtension {
     private CellData activeCellData;
     private final ReactiveJShell reactiveJShell;
 
-    public static class Factory implements JShellExtension.Factory<DisplayExtension> {
+    @Descriptor(mode = Mode.SYSTEM, type = DisplayExtension.class)
+    public static class Factory implements JShellExtension.Factory {
 
         public DisplayExtension createExtension(ReactiveJShell jshell) {
             return new DisplayExtension(jshell);
@@ -74,19 +76,19 @@ public class DisplayExtension implements JShellExtension {
     }
 
     @Override
-    public String shellVariableName() {
-        return "displayManager";
+    public Optional<String> shellVariableName() {
+        return Optional.of("displayManager");
     }
 
     @Override
-    public String initCodeSnippet() {
-        return """
+    public Optional<String> initCodeSnippet() {
+        return Optional.of("""
             public void display(Object object) {
                 displayManager.display(object, null);
             }
             public void display(Object object, java.util.function.Consumer<Integer> a) {
                 displayManager.display(object, a);
-            }""";
+            }""");
     }
 
     public void setActiveOutput(VBox vbox) {
