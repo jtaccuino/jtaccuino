@@ -1,0 +1,9 @@
+org.jtaccuino.core.ui.renderer.ObjectRenderer
+org.jtaccuino.core.ui.renderer.DefaultNodeRenderer
+org.jtaccuino.core.ui.renderer.SubSceneRenderer
+org.jtaccuino.core.ui.renderer.BufferedImageRenderer
+org.jtaccuino.core.ui.renderer.ObjectArrayRenderer
+org.jtaccuino.core.ui.renderer.IntArrayRenderer
+org.jtaccuino.core.ui.renderer.LongArrayRenderer
+org.jtaccuino.core.ui.renderer.DoubleArrayRenderer
+org.jtaccuino.core.ui.renderer.CollectionRenderer
