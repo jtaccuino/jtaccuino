@@ -1,0 +1,30 @@
+name: Update Gradle Wrapper
+
+on:
+  schedule:
+    - cron: "30 7 * * Mon"
+  workflow_dispatch:
+
+jobs:
+  update-gradle-wrapper:
+    name: Check for a gradle wrapper update and post PR updating it if one is available
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out sources
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+
+      # Setup JDK environment for the next steps
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '22'
+          cache: gradle
+
+      # Setup JDK environment for the next steps
+      - name: Update Gradle Wrapper When Possible
+        uses: gradle-update/update-gradle-wrapper-action@v2.1.0
+        with:
+          repo-token: ${{ secrets.REPO_PAT }}
