@@ -37,26 +37,32 @@ public class NotebookImpl implements Notebook{
                 : Arrays.asList(new CellData[]{CellData.of(CellData.Type.CODE, null, UUID.randomUUID())}));
     }
 
+    @Override
     public ObservableList<CellData> getCells() {
         return this.cells;
     }
 
+    @Override
     public String getDisplayName() {
         return displayName;
     }
 
+    @Override
     public File getFile() {
         return file;
     }
 
+    @Override
     public void setFile(File file) {
         this.file = file;
     }
 
+    @Override
     public void save() {
         saveToFile(file);
     }
 
+    @Override
     public void saveToFile(File selectedFile) {
         NotebookPersistence.INSTANCE.toFile(selectedFile, cells);
     }

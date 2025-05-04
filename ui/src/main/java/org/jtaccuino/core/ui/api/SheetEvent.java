@@ -35,7 +35,9 @@ public class SheetEvent extends Event {
         return (Sheet) super.getSource();
     }
 
+    @Override
+    @SuppressWarnings("unchecked") // TODO: Check if it is used and remove if not
     public EventType<SheetEvent> getEventType() {
-        return getEventType();
+        return (EventType<SheetEvent>) super.getEventType();
     }
 }

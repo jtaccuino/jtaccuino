@@ -66,12 +66,9 @@ public interface CellFactory {
         private final KeyHandler keyHandler = new KeyHandler();
         protected final ReadOnlyObjectWrapper<Point2D> caretRowColumnProperty;
 
-        private final Sheet sheet;
-
         @SuppressWarnings("this-escape")
         protected AbstractCellSkin(T sheetCell) {
-            this.sheet = sheetCell.getSheet();
-             caretRowColumnProperty = new ReadOnlyObjectWrapper<>(this, "caretRowColumn", Point2D.ZERO);
+            caretRowColumnProperty = new ReadOnlyObjectWrapper<>(this, "caretRowColumn", Point2D.ZERO);
         }
 
         protected HBox createToolbar() {

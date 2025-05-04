@@ -19,6 +19,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jdk.jshell.JShell;
 import org.jtaccuino.jshell.ReactiveJShell;
 import org.jtaccuino.jshell.extensions.JShellExtension;
@@ -32,6 +34,7 @@ public class DependencyExtension implements JShellExtension {
     @Descriptor(mode = Mode.SYSTEM, type = DependencyExtension.class)
     public static class Factory implements JShellExtension.Factory {
 
+        @Override
         public DependencyExtension createExtension(ReactiveJShell jshell) {
             return new DependencyExtension(jshell);
         }
@@ -74,7 +77,7 @@ public class DependencyExtension implements JShellExtension {
                         });
             }
         } catch (Throwable t) {
-            t.printStackTrace();
+            Logger.getLogger(DependencyExtension.class.getName()).log(Level.SEVERE, null, t);
         }
     }
 }
