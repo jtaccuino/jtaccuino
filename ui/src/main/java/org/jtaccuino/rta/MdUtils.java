@@ -93,8 +93,8 @@ public class MdUtils {
         final TextDecoration monospaceDecoration = TextDecoration.builder().presets().fontFamily("Monospace").background(Color.GAINSBORO.toString()).foreground(Color.BLACK.toString()).build();
         final TextDecoration emphasisDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontPosture(FontPosture.ITALIC).build();
         final TextDecoration strongEmphasisDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontWeight(BOLD).build();
-        @SuppressWarnings("UnusedVariable") // TODO: Check if it is used and remove if not
-        final TextDecoration bothEmphasisDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontPosture(FontPosture.ITALIC).fontWeight(BOLD).build();
+//        @SuppressWarnings("UnusedVariable") // TODO: Check if it is used and remove if not
+//        final TextDecoration bothEmphasisDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontPosture(FontPosture.ITALIC).fontWeight(BOLD).build();
         final TextDecoration strikethroughDecoration = TextDecoration.builder().presets().strikethrough(true).fontFamily("Arial").build();
 
         final ParagraphDecoration bulletItemLevelOneDecoration = ParagraphDecoration.builder().presets()

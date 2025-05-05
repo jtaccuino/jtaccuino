@@ -55,12 +55,12 @@ public class SubSceneRenderer implements NodeRenderer<SubScene> {
             return subScene;
         }
         Translate t = (Translate) cameraTransform.getTransforms().get(0);
-        @SuppressWarnings("UnusedVariable") // TODO: Remove if really unused
-        Rotate rz = (Rotate) cameraTransform.getTransforms().get(1);
+//        @SuppressWarnings("UnusedVariable") // TODO: Remove if really unused
+//        Rotate rz = (Rotate) cameraTransform.getTransforms().get(1);
         Rotate ry = (Rotate) cameraTransform.getTransforms().get(2);
         Rotate rx = (Rotate) cameraTransform.getTransforms().get(3);
-        @SuppressWarnings("UnusedVariable") // TODO: Remove if really unused
-        Scale s = (Scale) cameraTransform.getTransforms().get(4);
+//        @SuppressWarnings("UnusedVariable") // TODO: Remove if really unused
+//        Scale s = (Scale) cameraTransform.getTransforms().get(4);
 
         subScene.parentProperty().addListener(new InvalidationListener() {
             @Override
