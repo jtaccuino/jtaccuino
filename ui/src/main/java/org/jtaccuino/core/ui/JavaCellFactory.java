@@ -118,7 +118,6 @@ public class JavaCellFactory implements CellFactory {
 
     public static class JavaCellSkin extends AbstractCellSkin<JavaCell> {
 
-
         static final TextDecoration presetDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
                 .fontWeight(FontWeight.NORMAL).fontSize(13).build();
 
