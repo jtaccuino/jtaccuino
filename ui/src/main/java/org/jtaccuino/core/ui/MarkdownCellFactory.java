@@ -82,8 +82,6 @@ public class MarkdownCellFactory implements CellFactory {
 
     public static class MarkdownCellSkin extends AbstractCellSkin<MarkdownCell> {
 
-        private static final PseudoClass HIGHLIGHT = PseudoClass.getPseudoClass("highlight");
-
         static final TextDecoration presetDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Radon")
                 .fontWeight(FontWeight.NORMAL).fontSize(13).build();
 

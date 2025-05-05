@@ -30,9 +30,11 @@ import org.jtaccuino.core.ui.api.CellData;
 
 public record IpynbFormatCompat(Map<String, Object> metadata, int nbformat, int nbformat_minor, List<Cell> cells) implements IpynbFormatOperations {
 
+    @SuppressWarnings("ArrayRecordComponent") // TODO: https://errorprone.info/bugpattern/ArrayRecordComponent What to do?
     public static record CodeCell(String id, String cell_type, Map<String, Object> metadata, String[] source, List<Output> outputs, int execution_count) implements Cell {
     }
 
+    @SuppressWarnings("ArrayRecordComponent") // TODO: https://errorprone.info/bugpattern/ArrayRecordComponent What to do?
     public static record MarkdownCell(String id, String cell_type, Map<String, Object> metadata, String[] source) implements Cell {
     }
 
@@ -68,13 +70,14 @@ public record IpynbFormatCompat(Map<String, Object> metadata, int nbformat, int 
         }
     }
 
+    @Override
     public List<CellData> toCellDataList() {
         return cells().stream()
                 .map(IpynbFormatCompat::convertFromNotebookCell)
                 .toList();
     }
 
-    private static final CellData convertFromNotebookCell(Cell cell) {
+    private static CellData convertFromNotebookCell(Cell cell) {
         return switch (cell) {
             case CodeCell c ->
                 CellData.of(

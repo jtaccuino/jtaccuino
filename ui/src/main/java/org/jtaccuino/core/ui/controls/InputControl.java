@@ -33,8 +33,8 @@ sealed class InputControl extends AnchorPane permits JavaControl, MarkdownContro
         JAVA("Type code here", "java"),
         MARKDOWN("Type markdown here", "md");
 
-        private String promptText;
-        private String styleClassPrefix;
+        private final String promptText;
+        private final String styleClassPrefix;
 
         Type(String promptText, String styleClassPrefix) {
             this.promptText = promptText;

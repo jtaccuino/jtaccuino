@@ -34,20 +34,17 @@ import org.jtaccuino.core.ui.Sheet;
 
 public class Studio extends Application {
 
+    private static final String TITLE = "JTaccuino Studio - A scientific notebook powered by Java";
+    private TabPane sheetPane;
+
     public static void main(String[] args) {
         launch(args);
     }
 
-    private static final String TITLE = "JTaccuino Studio - A scientific notebook powered by Java";
-
-    private Scene scene;
-    private BorderPane bp;
-    private TabPane sheetPane;
-
     @Override
     public void start(Stage stage) throws Exception {
         Parent node = createParentNode();
-        scene = new Scene(node);
+        Scene scene = new Scene(node);
         scene.getStylesheets().add(this.getClass().getResource("/jtaccuino.css").toExternalForm());
         stage.setScene(scene);
         stage.setHeight(Screen.getPrimary().getBounds().getHeight() * 0.75);

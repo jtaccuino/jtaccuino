@@ -21,8 +21,12 @@ import jakarta.json.bind.JsonbConfig;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jtaccuino.app.common.internal.IpynbFormat;
 import org.jtaccuino.app.common.internal.IpynbFormatCompat;
 import org.jtaccuino.core.ui.api.CellData;
@@ -47,19 +51,19 @@ public class NotebookPersistence {
     public NotebookImpl of(File file) {
         try {
             var jsonb = JsonbBuilder.create();
-            var ipynb = jsonb.fromJson(new FileReader(file), IpynbFormat.class);
+            var ipynb = jsonb.fromJson(new FileReader(file, Charset.forName("UTF-8")), IpynbFormat.class);
             jsonb.close();
             return new NotebookImpl(ipynb, file.getName(), file);
         } catch (final Exception ex) {
-            ex.printStackTrace();
+            Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ex);
             try {
                 Jsonb jsonb = JsonbBuilder.create();
-                var ipynb = jsonb.fromJson(new FileReader(file), IpynbFormatCompat.class);
+                var ipynb = jsonb.fromJson(new FileReader(file, Charset.forName("UTF-8")), IpynbFormatCompat.class);
                 jsonb.close();
                 return new NotebookImpl(ipynb, file.getName(), file);
             } catch (Exception ee) {
                 // try compat mode
-                ee.printStackTrace();
+                Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ee);
             }
         }
         return null;
@@ -70,10 +74,10 @@ public class NotebookPersistence {
         config.setProperty(JsonbConfig.FORMATTING, true);
         Jsonb jsonb = JsonbBuilder.create(config);
         try {
-            jsonb.toJson(toIpynbFormat(cells), new FileWriter(selectedFile));
+            jsonb.toJson(toIpynbFormat(cells), new FileWriter(selectedFile, Charset.forName("UTF-8")));
             jsonb.close();
         } catch (Exception ex) {
-            ex.printStackTrace();
+            Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -87,7 +91,7 @@ public class NotebookPersistence {
             case CODE ->
                 new IpynbFormat.CodeCell(
                 cellData.getId().toString(),
-                cellData.getType().name().toLowerCase(),
+                cellData.getType().name().toLowerCase(Locale.ENGLISH),
                 Map.of(),
                 cellData.getSource(),
                 cellData.getOutputData().stream().map(od -> new IpynbFormat.Output(od.type().toOutputType(), od.mimeBundle(), Map.of())).toList(),
@@ -95,7 +99,7 @@ public class NotebookPersistence {
             case MARKDOWN ->
                 new IpynbFormat.MarkdownCell(
                 cellData.getId().toString(),
-                cellData.getType().name().toLowerCase(),
+                cellData.getType().name().toLowerCase(Locale.ENGLISH),
                 Map.of(),
                 cellData.getSource());
         };

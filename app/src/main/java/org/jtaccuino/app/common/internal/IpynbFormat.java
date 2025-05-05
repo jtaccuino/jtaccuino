@@ -81,13 +81,14 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
         }
     }
 
+    @Override
     public List<CellData> toCellDataList() {
         return cells().stream()
                 .map(IpynbFormat::convertFromNotebookCell)
                 .toList();
     }
 
-    private static final CellData convertFromNotebookCell(Cell cell) {
+    private static CellData convertFromNotebookCell(Cell cell) {
         return switch (cell) {
             case CodeCell c ->
                 CellData.of(

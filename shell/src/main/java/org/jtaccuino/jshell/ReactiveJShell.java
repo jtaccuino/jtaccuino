@@ -24,6 +24,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.Diag;
@@ -126,24 +128,27 @@ public class ReactiveJShell {
 
     public void evalAsync(Runnable preAction, String codeSnippet, Consumer<EvaluationResult> consumer) {
         worker.execute(preAction);
-        var future = new JShellCompletableFuture<EvaluationResult>(worker);
-        future.completeAsync(() -> eval(codeSnippet)).thenAccept(consumer);
+        new JShellCompletableFuture<EvaluationResult>(worker)
+                .completeAsync(() -> eval(codeSnippet)).thenAccept(consumer)
+                .exceptionally(this::logThrowable);
+    }
+
+    private Void logThrowable(Throwable t) {
+        Logger.getLogger(ReactiveJShell.class.getName()).log(Level.SEVERE, null, t);
+        return null;
     }
 
     public void completionAsync(String text, int caretPosition,
             Consumer<CompletionSuggestion> consumer) {
-        var future = new JShellCompletableFuture<CompletionSuggestion>(worker);
-        future.completeAsync(() -> {
-            int[] anchor = new int[1];
-            try {
-                var completionSuggestions = jshell.sourceCodeAnalysis().completionSuggestions(text, caretPosition, anchor);
-                System.out.println("Completion suggestions: " + completionSuggestions);
-                return new CompletionSuggestion(completionSuggestions, anchor[0]);
-            } catch (Throwable t) {
-                t.printStackTrace();
-                throw t;
-            }
-        }).thenAccept(consumer);
+        new JShellCompletableFuture<CompletionSuggestion>(worker)
+                .completeAsync(() -> {
+                    int[] anchor = new int[1];
+                    var completionSuggestions = jshell.sourceCodeAnalysis().completionSuggestions(text, caretPosition, anchor);
+                    System.out.println("Completion suggestions: " + completionSuggestions);
+                    return new CompletionSuggestion(completionSuggestions, anchor[0]);
+                })
+                .thenAccept(consumer)
+                .exceptionally(this::logThrowable);
     }
 
     public Stream<Diag> diagnose(Snippet snippet) {
@@ -155,10 +160,10 @@ public class ReactiveJShell {
     }
 
     public void highlightingAsync(String text, Consumer<List<SourceCodeAnalysis.Highlight>> consumer) {
-        var future = new JShellCompletableFuture<List<SourceCodeAnalysis.Highlight>>(worker);
-        future.completeAsync(() -> {
-            return sourceCodeAnalysis().highlights(text);
-        }).thenAccept(consumer);
+        new JShellCompletableFuture<List<SourceCodeAnalysis.Highlight>>(worker)
+                .completeAsync(() -> sourceCodeAnalysis().highlights(text))
+                .thenAccept(consumer)
+                .exceptionally(this::logThrowable);
     }
 
     private SourceCodeAnalysis sourceCodeAnalysis() {

@@ -23,6 +23,8 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -171,8 +173,13 @@ public class Sheet extends Control {
     }
 
     public <T> void executeAsync(Supplier<T> callable, Consumer<T> consumer) {
-        var future = new SheetCompletableFuture<T>(worker);
-        future.completeAsync(callable).thenAccept(consumer);
+        new SheetCompletableFuture<T>(worker)
+                .completeAsync(callable)
+                .thenAccept(consumer)
+                .exceptionally(t -> {
+                    Logger.getLogger(Sheet.class.getName()).log(Level.SEVERE, null, t);
+                    return null;
+                });
     }
 
     @Override

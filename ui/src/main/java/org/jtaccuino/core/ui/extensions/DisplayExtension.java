@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.Map;
@@ -48,13 +49,14 @@ import org.jtaccuino.jshell.extensions.JShellExtension;
 public class DisplayExtension implements JShellExtension {
 
     @SuppressWarnings("rawtypes")
-    private static Comparator<ServiceLoader.Provider<NodeRenderer>> NODE_RENDERER_COMPARATOR = Comparator.comparing(
+    private static final Comparator<ServiceLoader.Provider<NodeRenderer>> NODE_RENDERER_COMPARATOR = Comparator.comparing(
             (ServiceLoader.Provider<NodeRenderer> p) -> p.type().getAnnotation(NodeRenderer.Descriptor.class).type(),
             (Class<?> o1, Class<?> o2) -> o1.isAssignableFrom(o2) ? 1 : -1);
 
     @Descriptor(mode = Mode.SYSTEM, type = DisplayExtension.class)
     public static class Factory implements JShellExtension.Factory {
 
+        @Override
         public DisplayExtension createExtension(ReactiveJShell jshell) {
             return new DisplayExtension(jshell);
         }
@@ -62,6 +64,7 @@ public class DisplayExtension implements JShellExtension {
 
     private VBox activeOutput;
     private CellData activeCellData;
+    @SuppressWarnings("UnusedVariable") // TODO: Remove if really unused
     private final ReactiveJShell reactiveJShell;
 
     private DisplayExtension(ReactiveJShell reactiveJShell) {
@@ -108,16 +111,16 @@ public class DisplayExtension implements JShellExtension {
                                 eos);
                         baos.flush();
                         baos.close();
-                        var displayData = new String(baos.toByteArray());
+                        var displayData = new String(baos.toByteArray(), Charset.forName("UTF-8"));
                         aC.getOutputData().add(CellData.OutputData.of(
                                 CellData.OutputData.OutputType.DISPLAY_DATA,
                                 Map.of("image/png", displayData)
                         ));
                     } catch (IOException ex) {
-                        ex.printStackTrace();
+                        Logger.getLogger(DisplayExtension.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 } catch (Throwable t) {
-                    t.printStackTrace();
+                    Logger.getLogger(DisplayExtension.class.getName()).log(Level.SEVERE, null, t);
                 }
             });
         }

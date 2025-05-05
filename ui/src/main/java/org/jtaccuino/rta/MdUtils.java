@@ -42,10 +42,11 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.NodeVisitor;
 import com.vladsch.flexmark.util.ast.Visitor;
 import com.vladsch.flexmark.util.data.MutableDataSet;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
-import java.util.Stack;
 import java.util.function.BiConsumer;
 import javafx.scene.paint.Color;
 import javafx.scene.text.FontPosture;
@@ -54,12 +55,11 @@ import javafx.scene.text.TextAlignment;
 
 public class MdUtils {
 
-    public static Document render(String text) {
-        return render(text, false);
+    private MdUtils() {
+        // prevent instantiation
     }
 
-    private static Document render(String text, boolean debug) {
-
+    public static Document render(String text) {
         MutableDataSet options = new MutableDataSet();
 
         // uncomment to set optional extensions
@@ -93,7 +93,8 @@ public class MdUtils {
         final TextDecoration monospaceDecoration = TextDecoration.builder().presets().fontFamily("Monospace").background(Color.GAINSBORO.toString()).foreground(Color.BLACK.toString()).build();
         final TextDecoration emphasisDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontPosture(FontPosture.ITALIC).build();
         final TextDecoration strongEmphasisDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontWeight(BOLD).build();
-        final TextDecoration bothEmphasisDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontPosture(FontPosture.ITALIC).fontWeight(BOLD).build();
+//        @SuppressWarnings("UnusedVariable") // TODO: Check if it is used and remove if not
+//        final TextDecoration bothEmphasisDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontPosture(FontPosture.ITALIC).fontWeight(BOLD).build();
         final TextDecoration strikethroughDecoration = TextDecoration.builder().presets().strikethrough(true).fontFamily("Arial").build();
 
         final ParagraphDecoration bulletItemLevelOneDecoration = ParagraphDecoration.builder().presets()
@@ -127,8 +128,8 @@ public class MdUtils {
 
             String indentation = " ";
 
-            Stack<ParagraphDecoration> paragraphDecorations = new Stack<>();
-            Stack<TextDecoration> textDecorations = new Stack<>();
+            Deque<ParagraphDecoration> paragraphDecorations = new ArrayDeque<>();
+            Deque<TextDecoration> textDecorations = new ArrayDeque<>();
 
             @Override
             protected void processNode(com.vladsch.flexmark.util.ast.Node node, boolean withChildren, BiConsumer<com.vladsch.flexmark.util.ast.Node, Visitor<com.vladsch.flexmark.util.ast.Node>> processor) {
@@ -227,7 +228,7 @@ public class MdUtils {
                     }
                     case Emoji e -> {
                         var start = theText.length();
-                        var emojiAsString = EmojiData.emojiFromShortName(e.getText().toString()).orElse(null).character();
+                        var emojiAsString = EmojiData.emojiFromShortName(e.getText().toString()).map(com.gluonhq.emoji.Emoji::character).orElse("");
                         var length = emojiAsString.length();
                         theText.append(emojiAsString);
                         decorationList.add(new DecorationModel(start, length, presetTextDecoration, presetParagraphDecoration));

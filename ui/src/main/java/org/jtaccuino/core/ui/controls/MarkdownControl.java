@@ -113,7 +113,7 @@ public final class MarkdownControl extends InputControl {
 
         mdRenderArea.setEditable(false);
         mdRenderArea.addEventFilter(MouseEvent.MOUSE_CLICKED, t -> {
-            if (1 == t.getClickCount() & t.isShiftDown()) {
+            if (1 == t.getClickCount() && t.isShiftDown()) {
                 getChildren().remove(mdRenderArea);
                 getInput().setVisible(true);
                 // getChildren().add(0, getInput());

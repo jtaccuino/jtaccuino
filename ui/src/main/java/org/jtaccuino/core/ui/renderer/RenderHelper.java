@@ -16,17 +16,23 @@
 package org.jtaccuino.core.ui.renderer;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.scene.Node;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.util.Callback;
 
 public class RenderHelper {
 
@@ -34,24 +40,15 @@ public class RenderHelper {
     public final static double CELL_MAX_HEIGHT = 200;
     public final static double COLUMN_PREF_WIDTH = 300;
 
+    private RenderHelper() {
+        // prevent instantiation
+    }
+
     public static List<TableColumn<Object, String>> tableColumnsFromRecordComponents(Class<?> record) {
         return Arrays.stream(record.getRecordComponents())
                 .map(rc -> {
                     var tc = new TableColumn<Object, String>(rc.getName());
-                    tc.setCellValueFactory(o -> {
-                        var valueProp = new SimpleStringProperty();
-                        if (null != o) {
-                            try {
-                                var value = rc.getAccessor().invoke(o.getValue());
-                                valueProp.set(String.valueOf(value));
-                            } catch (IllegalAccessException iae) {
-                                iae.printStackTrace();
-                            } catch (InvocationTargetException ite) {
-                                ite.getTargetException().printStackTrace();
-                            }
-                        }
-                        return valueProp;
-                    });
+                    tc.setCellValueFactory(stringValueOfCellValueFactory(rc, Function.identity()));
                     return tc;
                 }).toList();
     }
@@ -60,22 +57,27 @@ public class RenderHelper {
         return Arrays.stream(record.getRecordComponents())
                 .map(rc -> {
                     var tc = new TableColumn<Map.Entry<Object, Object>, String>(rc.getName());
-                    tc.setCellValueFactory(o -> {
-                        var valueProp = new SimpleStringProperty();
-                        if (null != o) {
-                            try {
-                                var value = rc.getAccessor().invoke(o.getValue().getValue());
-                                valueProp.set(String.valueOf(value));
-                            } catch (IllegalAccessException iae) {
-                                iae.printStackTrace();
-                            } catch (InvocationTargetException ite) {
-                                ite.getTargetException().printStackTrace();
-                            }
-                        }
-                        return valueProp;
-                    });
+                    tc.setCellValueFactory(stringValueOfCellValueFactory(rc, Map.Entry::getValue));
                     return tc;
                 }).toList();
+    }
+
+    private static <T> Callback<TableColumn.CellDataFeatures<T, String>, ObservableValue<String>> stringValueOfCellValueFactory(
+            final RecordComponent rc, Function<T, Object> valueExtractor) {
+        return o -> {
+            var valueProp = new SimpleStringProperty();
+            if (null != o) {
+                try {
+                    var value = rc.getAccessor().invoke(valueExtractor.apply(o.getValue()));
+                    valueProp.set(String.valueOf(value));
+                } catch (IllegalAccessException iae) {
+                    Logger.getLogger(RenderHelper.class.getName()).log(Level.SEVERE, "Failed to extract value", iae);
+                } catch (InvocationTargetException ite) {
+                    Logger.getLogger(RenderHelper.class.getName()).log(Level.SEVERE, "Failed to extract value", ite.getTargetException());
+                }
+            }
+            return valueProp;
+        };
     }
 
     public static <T> Node convertArrayToListView(T[] a) {
@@ -93,7 +95,7 @@ public class RenderHelper {
         return recordsToTable(collection.iterator().next().getClass(), (tv) -> tv.getItems().addAll(collection));
     }
 
-    private  static TableView<Object> recordsToTable(Class<?> recordClass, Consumer<TableView<Object>> fillTable) {
+    private static TableView<Object> recordsToTable(Class<?> recordClass, Consumer<TableView<Object>> fillTable) {
         var tv = new TableView<Object>();
         tv.getColumns().addAll(RenderHelper.tableColumnsFromRecordComponents(recordClass));
         fillTable.accept(tv);

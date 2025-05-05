@@ -31,13 +31,9 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.css.PseudoClass;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.event.EventType;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -121,11 +117,6 @@ public class JavaCellFactory implements CellFactory {
     }
 
     public static class JavaCellSkin extends AbstractCellSkin<JavaCell> {
-
-        private static final PseudoClass HIGHLIGHT = PseudoClass.getPseudoClass("highlight");
-
-        private static final KeyCodeCombination SHIFT_ENTER_KEY_COMBINATION
-                = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.SHIFT_DOWN);
 
         static final TextDecoration presetDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
                 .fontWeight(FontWeight.NORMAL).fontSize(13).build();
@@ -341,21 +332,21 @@ public class JavaCellFactory implements CellFactory {
                                         .forEach(event -> {
                                             this.control.getSheet().getReactiveJShell().diagnose(event.snippet())
                                                     .forEachOrdered(diag -> {
-                                                        var message = diag.getMessage(Locale.getDefault());
-                                                        message += "\n" + event.snippet().source();
+                                                        var message = new StringBuilder()
+                                                                .append(diag.getMessage(Locale.getDefault()))
+                                                                .append('\n')
+                                                                .append(event.snippet().source());
                                                         if (diag.getEndPosition() > 0 && diag.getEndPosition() - diag.getStartPosition() > 1) {
-                                                            var pointer = new StringBuffer();
-                                                            pointer.repeat(" ", (int) diag.getStartPosition())
+                                                            message.append('\n')
+                                                                    .repeat(' ', (int) diag.getStartPosition())
                                                                     .append("^")
-                                                                    .repeat("-", (int) (diag.getEndPosition() - diag.getStartPosition() - 1))
-                                                                    .append("^");
-                                                            message += "\n" + pointer;
+                                                                    .repeat('-', (int) (diag.getEndPosition() - diag.getStartPosition() - 1))
+                                                                    .append('^');
                                                         }
-                                                        var problem = new StringBuffer();
-                                                        problem.repeat(" ", (int) diag.getPosition())
-                                                                .append("^");
-                                                        message += "\n" + problem;
-                                                        var l = new Label(message);
+                                                        message.append('\n')
+                                                                .repeat(' ', (int) diag.getPosition())
+                                                                .append('^');
+                                                        var l = new Label(message.toString());
                                                         l.getStyleClass().add("jshell_eval_erroneous");
                                                         l.setTooltip(new Tooltip(diag.getCode()));
                                                         Platform.runLater(() -> outputBox.getChildren().add(l));
@@ -382,6 +373,7 @@ public class JavaCellFactory implements CellFactory {
                     });
         }
 
+        @SuppressWarnings("UnusedMethod") // TODO: Remove if really unused
         private String format(Snippet snippet, String value, Snippet.Status status) {
             return "/" + snippet.kind() + "/ " + switch (snippet) {
                 case VarSnippet v ->
@@ -406,7 +398,7 @@ public class JavaCellFactory implements CellFactory {
             });
         }
 
-        private CompletionUpdate convert(String fullText, int startOfcompletionText, int caretPosition, String fullCompletionText) {
+        private CompletionUpdate convert(int startOfcompletionText, int caretPosition, String fullCompletionText) {
             int offset = caretPosition - startOfcompletionText; // length to strip from full completion text
             String remainingCompletion = fullCompletionText.substring(offset);
             return new CompletionUpdate(fullCompletionText, remainingCompletion);
@@ -417,19 +409,15 @@ public class JavaCellFactory implements CellFactory {
                 var distinctCompletionSuggestions = result.suggestions().stream().map(SourceCodeAnalysis.Suggestion::continuation).distinct().toList();
                 // only one completion - just do it
                 if (distinctCompletionSuggestions.size() == 1) {
-                    Platform.runLater(() -> consumer.accept(convert(text, result.anchor(), caretPos, distinctCompletionSuggestions.getFirst())));
+                    Platform.runLater(() -> consumer.accept(convert(result.anchor(), caretPos, distinctCompletionSuggestions.getFirst())));
                 } else {
                     String completableCommonPrefix = UiUtils.longestCommonPrefix(distinctCompletionSuggestions);
                     if (!completableCommonPrefix.isEmpty()
                             && !text.substring(result.anchor(), caretPos).equals(completableCommonPrefix)) {
-                        Platform.runLater(() -> consumer.accept(convert(text, result.anchor(), caretPos, completableCommonPrefix)));
+                        Platform.runLater(() -> consumer.accept(convert(result.anchor(), caretPos, completableCommonPrefix)));
                     } else {
                         completionPopup.getSuggestions().setAll(distinctCompletionSuggestions);
-                        completionPopup.setOnCompletion((event) -> {
-                            String withCompletion = text.substring(0, result.anchor()) + event.getSuggestion();
-                            int newCaretPos = withCompletion.length();
-                            Platform.runLater(() -> consumer.accept(convert(text, result.anchor(), caretPos, event.getSuggestion())));
-                        });
+                        completionPopup.setOnCompletion(event -> Platform.runLater(() -> consumer.accept(convert(result.anchor(), caretPos, event.getSuggestion()))));
                         Platform.runLater(() -> completionPopup.show(this.control.getScene().focusOwnerProperty().get(), caretOrigin));
                     }
                 }

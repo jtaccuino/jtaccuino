@@ -21,7 +21,8 @@ import org.jtaccuino.jshell.extensions.JShellExtension;
 
 public class FXChartsExtension implements JShellExtension {
 
-    private FXChartsExtension(ReactiveJShell jshell) {
+    private FXChartsExtension() {
+        // prevent instantiation
     }
 
     @Override
@@ -37,7 +38,7 @@ public class FXChartsExtension implements JShellExtension {
 
         @Override
         public FXChartsExtension createExtension(ReactiveJShell jshell) {
-            return new FXChartsExtension(jshell);
+            return new FXChartsExtension();
         }
     }
 }

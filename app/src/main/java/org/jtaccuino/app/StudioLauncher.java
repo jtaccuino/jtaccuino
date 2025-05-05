@@ -15,13 +15,16 @@
  */
 package org.jtaccuino.app;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class StudioLauncher {
 
     public static void main(String[] args) {
         try {
             Studio.main(args);
         } catch (Throwable t) {
-            t.printStackTrace();
+            Logger.getLogger(StudioLauncher.class.getName()).log(Level.SEVERE, null, t);
         }
     }
 }
