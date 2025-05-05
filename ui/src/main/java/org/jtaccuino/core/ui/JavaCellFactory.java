@@ -118,12 +118,6 @@ public class JavaCellFactory implements CellFactory {
 
     public static class JavaCellSkin extends AbstractCellSkin<JavaCell> {
 
-        @SuppressWarnings("UnusedVariable") // TODO: Remove if really unused
-        private static final PseudoClass HIGHLIGHT = PseudoClass.getPseudoClass("highlight");
-
-        @SuppressWarnings("UnusedVariable") // TODO: Remove if really unused
-        private static final KeyCodeCombination SHIFT_ENTER_KEY_COMBINATION
-                = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.SHIFT_DOWN);
 
         static final TextDecoration presetDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
                 .fontWeight(FontWeight.NORMAL).fontSize(13).build();
