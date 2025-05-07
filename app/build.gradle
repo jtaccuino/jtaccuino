@@ -47,6 +47,7 @@ dependencies {
 
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.2'
 
     testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher', version: versionJunitPlatformLauncher
 
@@ -106,4 +107,8 @@ run {
     jvmArgs getJvmAdditionalModules()
     jvmArgs '--add-opens'
     jvmArgs 'java.base/jdk.internal.misc=ALL-UNNAMED'
+}
+
+test {
+    useJUnitPlatform()
 }
