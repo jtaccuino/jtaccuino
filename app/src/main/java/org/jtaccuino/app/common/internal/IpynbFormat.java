@@ -15,14 +15,18 @@
  */
 package org.jtaccuino.app.common.internal;
 
+import jakarta.json.JsonArray;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 import jakarta.json.bind.annotation.JsonbTypeDeserializer;
 import jakarta.json.bind.serializer.DeserializationContext;
 import jakarta.json.bind.serializer.JsonbDeserializer;
 import jakarta.json.stream.JsonParser;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.jtaccuino.core.ui.api.CellData;
@@ -30,9 +34,34 @@ import org.jtaccuino.core.ui.api.CellData;
 public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbformat_minor, List<Cell> cells) implements IpynbFormatOperations {
 
     public static record CodeCell(String id, String cell_type, Map<String, Object> metadata, String source, List<Output> outputs, int execution_count) implements Cell {
+
+        @Override
+        public CellData toCellData() {
+            return CellData.of(
+                    CellData.Type.of(cell_type()),
+                    source(),
+                    Optional.ofNullable(id()).map(UUID::fromString).orElseGet(UUID::randomUUID),
+                    Objects.requireNonNullElse(outputs(), List.<Output>of()).stream()
+                            .map(o
+                                    -> CellData.OutputData.of(
+                                    CellData.OutputData.OutputType.of(o.output_type()),
+                                    o.data())
+                            )
+                            .toList()
+            );
+        }
     }
 
     public static record MarkdownCell(String id, String cell_type, Map<String, Object> metadata, String source) implements Cell {
+
+        @Override
+        public CellData toCellData() {
+            return CellData.of(
+                    CellData.Type.of(cell_type()),
+                    source(),
+                    Optional.ofNullable(id()).map(UUID::fromString).orElseGet(UUID::randomUUID)
+            );
+        }
     }
 
     public static record Output(String output_type, Map<String, String> data, Map<String, Object> metadata) {
@@ -41,13 +70,15 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
     @JsonbTypeDeserializer(CellDeserializer.class)
     public static sealed interface Cell permits CodeCell, MarkdownCell {
 
-        public Map<String, Object> metadata();
+        Map<String, Object> metadata();
 
-        public String cell_type();
+        String cell_type();
 
-        public String id();
+        String id();
 
-        public String source();
+        String source();
+
+        CellData toCellData();
     }
 
     public static class CellDeserializer implements JsonbDeserializer<Cell> {
@@ -57,11 +88,11 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
             var o = parser.getObject();
             var type = o.getString("cell_type");
             var id = o.getString("id");
-            var source = o.getString("source");
+            var source = multilineOrArrayToString(o.get("source"));
             return switch (type) {
                 case "code" -> {
                     var outputs = o.getJsonArray("outputs").stream()
-                            .map(v -> v.asJsonObject())
+                            .map(JsonValue::asJsonObject)
                             .map(ov
                                     -> new Output(
                                     ov.getString("output_type"),
@@ -79,34 +110,23 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
                     throw new IllegalStateException("Unsupported cell type found: " + type);
             };
         }
+
+        private String multilineOrArrayToString(JsonValue jsonValue) {
+            return switch (jsonValue) {
+                case JsonString js ->
+                    js.getString();
+                case JsonArray ja ->
+                    ja.stream().map(JsonValue::toString).collect(Collectors.joining("\n"));
+                default ->
+                    throw new IllegalStateException("Unsupported conversion to String from " + jsonValue);
+            };
+        }
     }
 
     @Override
     public List<CellData> toCellDataList() {
         return cells().stream()
-                .map(IpynbFormat::convertFromNotebookCell)
+                .map(Cell::toCellData)
                 .toList();
-    }
-
-    private static CellData convertFromNotebookCell(Cell cell) {
-        return switch (cell) {
-            case CodeCell c ->
-                CellData.of(
-                CellData.Type.of(c.cell_type()),
-                c.source(),
-                c.id() == null ? UUID.randomUUID() : UUID.fromString(c.id()),
-                c.outputs() != null ? c.outputs().stream().map(o
-                -> CellData.OutputData.of(
-                CellData.OutputData.OutputType.of(o.output_type()),
-                o.data())
-                ).toList() : new ArrayList<>()
-                );
-            case MarkdownCell m ->
-                CellData.of(
-                CellData.Type.of(m.cell_type()),
-                m.source(),
-                m.id() == null ? UUID.randomUUID() : UUID.fromString(m.id())
-                );
-        };
     }
 }
