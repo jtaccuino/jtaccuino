@@ -25,10 +25,10 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jtaccuino.app.common.internal.IpynbFormat;
-import org.jtaccuino.app.common.internal.IpynbFormatCompat;
 import org.jtaccuino.core.ui.api.CellData;
 import static org.jtaccuino.core.ui.api.CellData.Type.CODE;
 import static org.jtaccuino.core.ui.api.CellData.Type.MARKDOWN;
@@ -56,16 +56,8 @@ public class NotebookPersistence {
             return new NotebookImpl(ipynb, file.getName(), file);
         } catch (final Exception ex) {
             Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ex);
-            try {
-                Jsonb jsonb = JsonbBuilder.create();
-                var ipynb = jsonb.fromJson(new FileReader(file, Charset.forName("UTF-8")), IpynbFormatCompat.class);
-                jsonb.close();
-                return new NotebookImpl(ipynb, file.getName(), file);
-            } catch (Exception ee) {
-                // try compat mode
-                Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ee);
-            }
         }
+
         return null;
     }
 
@@ -82,8 +74,15 @@ public class NotebookPersistence {
     }
 
     private IpynbFormat toIpynbFormat(List<CellData> cells) {
-        java.util.List<org.jtaccuino.app.common.internal.IpynbFormat.Cell> nbCells = cells.stream().filter(c -> !c.isEmpty()).map(this::convertToNotebookCell).toList();
-        return new IpynbFormat(Map.of("kernel_info", Map.of("name", "JTaccuino", "version", "0.1"), "language_info", Map.of("name", "Java", "version", System.getProperty("java.specification.version"))), 4, 5, nbCells);
+        return new IpynbFormat(
+                Map.of(
+                        "kernel_info", Map.of("name", "JTaccuino", "version", "0.1"),
+                        "language_info", Map.of("name", "Java", "version", System.getProperty("java.specification.version"))),
+                4, 5,
+                cells.stream()
+                        .filter(Predicate.not(CellData::isEmpty))
+                        .map(this::convertToNotebookCell)
+                        .toList());
     }
 
     private IpynbFormat.Cell convertToNotebookCell(CellData cellData) {
