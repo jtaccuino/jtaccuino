@@ -9,13 +9,11 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven {
-        url "https://oss.sonatype.org/content/repositories/snapshots"
+        url = "https://oss.sonatype.org/content/repositories/snapshots"
     }
     // JPRO artifacts
-    repositories {
-        maven {
-            url "https://sandec.jfrog.io/artifactory/repo"
-        }
+    maven {
+        url = "https://sandec.jfrog.io/artifactory/repo"
     }
 }
 
