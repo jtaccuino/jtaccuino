@@ -77,6 +77,14 @@ allprojects {
 
     // now configuring for projects that contain code not just structuring the project
     if (childProjects.isEmpty()) {
+        // configuring standard java project
+        apply plugin: 'java-library'
+        apply plugin: 'jacoco'
+
+        tasks.named('test') {
+            finalizedBy jacocoTestReport
+        }
+
         // configuring Errorprone
         apply plugin: 'net.ltgt.errorprone'
 
