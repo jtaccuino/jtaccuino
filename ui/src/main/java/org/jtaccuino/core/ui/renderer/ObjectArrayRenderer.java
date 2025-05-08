@@ -15,12 +15,8 @@
  */
 package org.jtaccuino.core.ui.renderer;
 
-import java.util.Arrays;
 import java.util.Optional;
-import javafx.collections.FXCollections;
 import javafx.scene.Node;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TableView;
 import org.jtaccuino.core.ui.extensions.NodeRenderer;
 import org.jtaccuino.core.ui.extensions.NodeRenderer.Descriptor;
 
@@ -33,13 +29,8 @@ public class ObjectArrayRenderer implements NodeRenderer<Object[]> {
     }
 
     protected Node convertArrayToNode(Object[] objects) {
-        if (objects.length > 0 && null != objects[0] && objects[0].getClass().isRecord()) {
-            TableView<Object> tv = RenderHelper.recordsToTable(objects);
-            return tv;
-        }
-        var observableList = FXCollections.observableList(Arrays.stream(objects).map(String::valueOf).toList());
-        var lv = new ListView<String>(observableList);
-        lv.setMaxHeight(RenderHelper.CELL_MAX_HEIGHT);
-        return lv;
+        return objects.length > 0 && null != objects[0] && objects[0].getClass().isRecord()
+                ? RenderHelper.recordsToTable(objects)
+                : RenderHelper.arrayToListView(objects, String::valueOf);
     }
 }

@@ -26,6 +26,6 @@ public class DoubleArrayRenderer implements NodeRenderer<double[]> {
 
     @Override
     public Optional<Node> render(double[] object) {
-        return Optional.of(RenderHelper.convertArrayToListView(Arrays.stream(object).mapToObj(Double::valueOf).toArray()));
+        return Optional.of(RenderHelper.arrayToListView(Arrays.stream(object).boxed().toArray()));
     }
 }

@@ -18,11 +18,8 @@ package org.jtaccuino.core.ui.renderer;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
 import javafx.scene.Node;
-import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import org.jtaccuino.core.ui.extensions.NodeRenderer;
@@ -63,14 +60,10 @@ public class CollectionRenderer implements NodeRenderer<Collection<?>> {
             tv.getColumns().forEach(c -> c.setPrefWidth(RenderHelper.COLUMN_PREF_WIDTH));
             tv.setMaxHeight(RenderHelper.CELL_MAX_HEIGHT);
             return Optional.of(tv);
-        } else if(!collection.isEmpty() && collection.iterator().next().getClass().isRecord()) {
-            TableView<Object> tv = RenderHelper.recordsToTable(collection);
-            return Optional.of(tv);
+        } else if (!collection.isEmpty() && collection.iterator().next().getClass().isRecord()) {
+            return Optional.of(RenderHelper.recordsToTable(collection));
         } else {
-            var observableList = FXCollections.observableList(collection.stream().map(String::valueOf).toList());
-            var lv = new ListView<String>(observableList);
-            lv.setMaxHeight(RenderHelper.CELL_MAX_HEIGHT);
-            return Optional.of(lv);
+            return Optional.of(RenderHelper.collectionToListView(collection, String::valueOf));
         }
     }
 }
