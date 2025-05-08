@@ -17,7 +17,6 @@ package org.jtaccuino.core.ui;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -173,8 +172,7 @@ public class Sheet extends Control {
     }
 
     public <T> void executeAsync(Supplier<T> callable, Consumer<T> consumer) {
-        new SheetCompletableFuture<T>(worker)
-                .completeAsync(callable)
+        CompletableFuture.supplyAsync(callable, worker)
                 .thenAccept(consumer)
                 .exceptionally(t -> {
                     Logger.getLogger(Sheet.class.getName()).log(Level.SEVERE, null, t);
@@ -243,25 +241,6 @@ public class Sheet extends Control {
 
         public final ReadOnlyObjectProperty<Point2D> caretRowColumnProperty() {
             return ((CellFactory.AbstractCellSkin<? extends Cell>)getSkin()).caretRowColumnProperty();
-        }
-    }
-
-    private static class SheetCompletableFuture<T> extends CompletableFuture<T> {
-
-        Executor executor;
-
-        public SheetCompletableFuture(Executor executor) {
-            this.executor = executor;
-        }
-
-        @Override
-        public <U> CompletableFuture<U> newIncompleteFuture() {
-            return new SheetCompletableFuture<>(executor);
-        }
-
-        @Override
-        public Executor defaultExecutor() {
-            return executor;
         }
     }
 }
