@@ -26,6 +26,6 @@ public class IntArrayRenderer implements NodeRenderer<int[]> {
 
     @Override
     public Optional<Node> render(int[] object) {
-        return Optional.of(RenderHelper.convertArrayToListView(Arrays.stream(object).mapToObj(Double::valueOf).toArray()));
+        return Optional.of(RenderHelper.arrayToListView(Arrays.stream(object).boxed().toArray()));
     }
 }

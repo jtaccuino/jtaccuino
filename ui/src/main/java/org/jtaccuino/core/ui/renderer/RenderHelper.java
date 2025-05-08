@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
-import javafx.scene.Node;
+import javafx.collections.ObservableList;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -80,9 +80,24 @@ public class RenderHelper {
         };
     }
 
-    public static <T> Node convertArrayToListView(T[] a) {
-        var observableList = FXCollections.observableList(Arrays.stream(a).map(String::valueOf).toList());
-        var lv = new ListView<String>(observableList);
+    public static <T> ListView<T> arrayToListView(T[] a) {
+        return listToListViewImpl(FXCollections.observableArrayList(a));
+    }
+
+    public static <T, V> ListView<V> arrayToListView(T[] a, Function<T, V> valueConverter) {
+        return collectionToListView(Arrays.stream(a).map(valueConverter).toList());
+    }
+
+    public static <T> ListView<T> collectionToListView(Collection<T> list) {
+        return listToListViewImpl(FXCollections.observableArrayList(list));
+    }
+
+    public static <T, V> ListView<V> collectionToListView(Collection<T> list, Function<T, V> valueConverter) {
+        return listToListViewImpl(FXCollections.observableArrayList(list.stream().map(valueConverter).toList()));
+    }
+
+    private static <T> ListView<T> listToListViewImpl(ObservableList<T> list) {
+        var lv = new ListView<T>(list);
         lv.setMaxHeight(CELL_MAX_HEIGHT);
         return lv;
     }
