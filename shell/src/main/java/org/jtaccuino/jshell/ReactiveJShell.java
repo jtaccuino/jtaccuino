@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -127,9 +126,8 @@ public class ReactiveJShell {
     }
 
     public void evalAsync(Runnable preAction, String codeSnippet, Consumer<EvaluationResult> consumer) {
-        worker.execute(preAction);
-        new JShellCompletableFuture<EvaluationResult>(worker)
-                .completeAsync(() -> eval(codeSnippet)).thenAccept(consumer)
+        CompletableFuture.runAsync(preAction, worker)
+                .thenRun(() -> consumer.accept(eval(codeSnippet)))
                 .exceptionally(this::logThrowable);
     }
 
@@ -140,13 +138,14 @@ public class ReactiveJShell {
 
     public void completionAsync(String text, int caretPosition,
             Consumer<CompletionSuggestion> consumer) {
-        new JShellCompletableFuture<CompletionSuggestion>(worker)
-                .completeAsync(() -> {
+        CompletableFuture.supplyAsync(
+                () -> {
                     int[] anchor = new int[1];
                     var completionSuggestions = jshell.sourceCodeAnalysis().completionSuggestions(text, caretPosition, anchor);
                     System.out.println("Completion suggestions: " + completionSuggestions);
                     return new CompletionSuggestion(completionSuggestions, anchor[0]);
-                })
+                },
+                worker)
                 .thenAccept(consumer)
                 .exceptionally(this::logThrowable);
     }
@@ -160,8 +159,7 @@ public class ReactiveJShell {
     }
 
     public void highlightingAsync(String text, Consumer<List<SourceCodeAnalysis.Highlight>> consumer) {
-        new JShellCompletableFuture<List<SourceCodeAnalysis.Highlight>>(worker)
-                .completeAsync(() -> sourceCodeAnalysis().highlights(text))
+        CompletableFuture.supplyAsync(() -> sourceCodeAnalysis().highlights(text), worker)
                 .thenAccept(consumer)
                 .exceptionally(this::logThrowable);
     }
@@ -202,25 +200,6 @@ public class ReactiveJShell {
         jshell.stop();
         ExtensionManager.cleanup(uuid);
         System.out.println("JShell Shutdown complete");
-    }
-
-    private static class JShellCompletableFuture<T> extends CompletableFuture<T> {
-
-        Executor executor;
-
-        public JShellCompletableFuture(Executor executor) {
-            this.executor = executor;
-        }
-
-        @Override
-        public <U> CompletableFuture<U> newIncompleteFuture() {
-            return new JShellCompletableFuture<>(executor);
-        }
-
-        @Override
-        public Executor defaultExecutor() {
-            return executor;
-        }
     }
 
     public static record CompletionSuggestion(List<SourceCodeAnalysis.Suggestion> suggestions, int anchor) {
