@@ -25,6 +25,13 @@ jobs:
             PLAT: "win"
     runs-on: ${{ matrix.os }}
     steps:
+      
+      - name: Install packages (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install at-spi2-core build-essential libgtk-3-dev libxtst-dev libavcodec-dev libavformat-dev libasound2-dev libgl-dev      
+      
       - uses: actions/checkout@v4
 
       - name: Setup Java
@@ -39,8 +46,25 @@ jobs:
           p12-file-base64: ${{ secrets.CERTIFICATES_FILE_BASE64 }}
           p12-password: ${{ secrets.CERTIFICATES_PASSWORD }}
 
-      - name: Build and package
-        run: ./gradlew clean build
+      - name: Build project
+        run: ./gradlew -i build -x test
+        
+      - name: Run Tests (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          export DISPLAY=:90
+          Xvfb -ac :90 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+          ./gradlew -i test
+          
+      - name: Run Tests (MacOS)
+        if: runner.os == 'macOS'
+        run: |
+          ./gradlew -i test
+          
+      - name: Run Tests (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          ./gradlew -i test
 
       - name: Create Bundle using jpackage for macos
         if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
