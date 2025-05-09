@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,6 @@ public final class ExtensionManager {
     }
 
     public static void cleanup(UUID shellUuid) {
-        EXTENSION_REGISTRY.getOrDefault(shellUuid, Collections.emptyMap()).clear();
+        EXTENSION_REGISTRY.remove(shellUuid);
     }
 }
