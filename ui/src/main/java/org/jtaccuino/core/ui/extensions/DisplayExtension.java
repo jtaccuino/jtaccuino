@@ -128,7 +128,7 @@ public class DisplayExtension implements JShellExtension {
 
     private long lastEffect;
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes","unchecked"})
     private Optional<Node> convert(ServiceLoader.Provider<NodeRenderer> p, Object object) {
         Class<?> argumentType = p.type().getAnnotation(NodeRenderer.Descriptor.class).type();
         try {
