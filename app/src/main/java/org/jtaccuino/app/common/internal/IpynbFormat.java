@@ -116,7 +116,7 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
                 case JsonString js ->
                     js.getString();
                 case JsonArray ja ->
-                    ja.stream().map(JsonValue::toString).collect(Collectors.joining("\n"));
+                    ja.stream().map(JsonString.class::cast).map(JsonString::getString).collect(Collectors.joining());
                 default ->
                     throw new IllegalStateException("Unsupported conversion to String from " + jsonValue);
             };
