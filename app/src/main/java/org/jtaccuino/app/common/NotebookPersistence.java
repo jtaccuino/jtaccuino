@@ -93,7 +93,7 @@ public class NotebookPersistence {
                 cellData.getType().name().toLowerCase(Locale.ENGLISH),
                 Map.of(),
                 cellData.getSource(),
-                cellData.getOutputData().stream().map(od -> new IpynbFormat.Output(od.type().toOutputType(), od.mimeBundle(), Map.of())).toList(),
+                cellData.getOutputData().stream().map(IpynbFormat.Output::from).toList(),
                 0);
             case MARKDOWN ->
                 new IpynbFormat.MarkdownCell(

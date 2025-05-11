@@ -16,6 +16,8 @@
 package org.jtaccuino.app.common.internal;
 
 import jakarta.json.JsonArray;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 import jakarta.json.bind.annotation.JsonbTypeDeserializer;
@@ -42,11 +44,7 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
                     source(),
                     Optional.ofNullable(id()).map(UUID::fromString).orElseGet(UUID::randomUUID),
                     Objects.requireNonNullElse(outputs(), List.<Output>of()).stream()
-                            .map(o
-                                    -> CellData.OutputData.of(
-                                    CellData.OutputData.OutputType.of(o.output_type()),
-                                    o.data())
-                            )
+                            .map(Output::toOutputData)
                             .toList()
             );
         }
@@ -64,7 +62,93 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
         }
     }
 
-    public static record Output(String output_type, Map<String, String> data, Map<String, Object> metadata) {
+    public static record ExecuteResultOutput(String output_type, Map<String, String> data, Map<String, Object> metadata, Integer execution_count) implements Output {
+
+        private static ExecuteResultOutput from(JsonObject jsonObject) {
+            Integer executionCount = Optional.ofNullable(jsonObject.getJsonNumber("execution_count"))
+                    .map(JsonNumber::intValueExact)
+                    .orElse(null);
+
+            return new ExecuteResultOutput(
+                    jsonObject.getString("output_type"),
+                    stringStringMap(jsonObject.getJsonObject("data")),
+                    Map.of(),
+                    executionCount);
+        }
+
+        @Override
+        public CellData.OutputData toOutputData() {
+            return CellData.OutputData.of(
+                    CellData.OutputData.OutputType.of(output_type()),
+                    data());
+        }
+    }
+
+    public static record DisplayDataOutput(String output_type, Map<String, String> data, Map<String, Object> metadata) implements Output {
+
+        private static DisplayDataOutput from(JsonObject jsonObject) {
+            return new DisplayDataOutput(
+                    jsonObject.getString("output_type"),
+                    stringStringMap(jsonObject.getJsonObject("data")),
+                    Map.of());
+        }
+
+        @Override
+        public CellData.OutputData toOutputData() {
+            return CellData.OutputData.of(
+                    CellData.OutputData.OutputType.of(output_type()),
+                    data());
+        }
+    }
+
+    public static record StreamOutput(String output_type, String name, String text) implements Output {
+
+        private static StreamOutput from(JsonObject jsonObject) {
+            return new StreamOutput(
+                    jsonObject.getString("output_type"),
+                    jsonObject.getString("name"),
+                    multilineOrArrayToString(jsonObject.get("text")));
+        }
+
+        @Override
+        public CellData.OutputData toOutputData() {
+            return CellData.OutputData.of(
+                    CellData.OutputData.OutputType.of(output_type()),
+                    Map.of());
+        }
+    }
+
+    public static record ErrorOutput(String output_type, String ename, String evalue, List<String> traceback) implements Output {
+
+        private static ErrorOutput from(JsonObject jsonObject) {
+            return new ErrorOutput(
+                    jsonObject.getString("output_type"),
+                    jsonObject.getString("ename"),
+                    jsonObject.getString("evalue"),
+                    jsonObject.getJsonArray("traceback").stream()
+                            .map(JsonString.class::cast).map(JsonString::getString).toList());
+        }
+
+        @Override
+        public CellData.OutputData toOutputData() {
+            return CellData.OutputData.of(
+                    CellData.OutputData.OutputType.of(output_type()),
+                    Map.of());
+        }
+    }
+
+    public static sealed interface Output permits ExecuteResultOutput, DisplayDataOutput, StreamOutput, ErrorOutput {
+
+        String output_type();
+
+        CellData.OutputData toOutputData();
+
+        static Output from (CellData.OutputData outputData) {
+            return switch (outputData.type()) {
+                case DISPLAY_DATA -> new DisplayDataOutput(outputData.type().toOutputType(), outputData.mimeBundle(), Map.of());
+                case EXECUTION_DATA -> new ExecuteResultOutput(outputData.type().toOutputType(), outputData.mimeBundle(), Map.of(), null);
+            };
+        }
     }
 
     @JsonbTypeDeserializer(CellDeserializer.class)
@@ -93,14 +177,7 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
                 case "code" -> {
                     var outputs = o.getJsonArray("outputs").stream()
                             .map(JsonValue::asJsonObject)
-                            .map(ov
-                                    -> new Output(
-                                    ov.getString("output_type"),
-                                    ov.getJsonObject("data")
-                                            .entrySet()
-                                            .stream()
-                                            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toString())),
-                                    Map.of()))
+                            .map(this::deserializeOutput)
                             .toList();
                     yield new CodeCell(id, type, Map.of(), source, outputs, 0);
                 }
@@ -111,14 +188,19 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
             };
         }
 
-        private String multilineOrArrayToString(JsonValue jsonValue) {
-            return switch (jsonValue) {
-                case JsonString js ->
-                    js.getString();
-                case JsonArray ja ->
-                    ja.stream().map(JsonString.class::cast).map(JsonString::getString).collect(Collectors.joining());
+        private Output deserializeOutput(JsonObject jo) {
+            String outputType = jo.getString("output_type");
+            return switch (outputType) {
+                case "execute_result" ->
+                    ExecuteResultOutput.from(jo);
+                case "display_data" ->
+                    DisplayDataOutput.from(jo);
+                case "stream" ->
+                    StreamOutput.from(jo);
+                case "error" ->
+                    ErrorOutput.from(jo);
                 default ->
-                    throw new IllegalStateException("Unsupported conversion to String from " + jsonValue);
+                    throw new IllegalStateException("Unsupported output type found: " + outputType);
             };
         }
     }
@@ -128,5 +210,23 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
         return cells().stream()
                 .map(Cell::toCellData)
                 .toList();
+    }
+
+    private static String multilineOrArrayToString(JsonValue jsonValue) {
+        return switch (jsonValue) {
+            case JsonString js ->
+                js.getString();
+            case JsonArray ja ->
+                ja.stream().map(JsonString.class::cast).map(JsonString::getString).collect(Collectors.joining());
+            default ->
+                throw new IllegalStateException("Unsupported conversion to String from " + jsonValue);
+        };
+    }
+
+    private static Map<String, String> stringStringMap(JsonObject jsonObject) {
+        return jsonObject.entrySet().stream()
+                .collect(Collectors.toMap(
+                        e -> e.getKey(),
+                        e -> e.getValue().toString()));
     }
 }
