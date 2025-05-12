@@ -22,13 +22,17 @@ import com.gluonhq.richtextarea.model.DecorationModel;
 import com.gluonhq.richtextarea.model.Document;
 import com.gluonhq.richtextarea.model.ParagraphDecoration;
 import com.gluonhq.richtextarea.model.TextDecoration;
+import java.io.ByteArrayInputStream;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
@@ -39,6 +43,8 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.Skin;
 import javafx.scene.control.Tooltip;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -206,13 +212,29 @@ public class JavaCellFactory implements CellFactory {
                         }
                     });
 
+            var outputNodes = javaCell.getCellData().getOutputData().stream().map(od
+                    -> od.mimeBundle().entrySet().stream().map(me
+                            -> switch (me.getKey()) {
+                case "image/png" ->
+                    new ImageView(new Image(new ByteArrayInputStream(Base64.getDecoder().decode(me.getValue()))));
+                case "text/plain" ->
+                    new Label(me.getValue());
+                default ->
+                    new Label(me.getValue());
+            }
+                    ).toList()
+            ).toList();
+
+            outputNodes.forEach(nodes -> nodes.forEach(n -> outputBox.getChildren().add(n)));
+
             // works around not customizable input map from RTA (e.g. shift-enter for cell execution)
-            input.onKeyPressedProperty().addListener((ov, t, t1) -> {
-                if (t1 != getKeyHandler()) {
-                    input.setOnKeyPressed(getKeyHandler());
-                    delegateKeyEvents(t1);
-                }
-            });
+            input.onKeyPressedProperty()
+                    .addListener((ov, t, t1) -> {
+                        if (t1 != getKeyHandler()) {
+                            input.setOnKeyPressed(getKeyHandler());
+                            delegateKeyEvents(t1);
+                        }
+                    });
 
             input.addEventFilter(KeyEvent.KEY_PRESSED, t
                     -> {
