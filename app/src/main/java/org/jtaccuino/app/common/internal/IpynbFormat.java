@@ -240,7 +240,7 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
             case JsonNumber jn ->
                 jn.numberValue();
             default ->
-                throw new IllegalStateException("Unsupported value extraction from from " + jsonValue);
+                throw new IllegalStateException("Unsupported value extraction from " + jsonValue);
         };
     }
 }
