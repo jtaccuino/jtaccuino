@@ -103,26 +103,30 @@ public class ReactiveJShell {
         }
 
         if (snippetEventsCurrentSnippets.stream().allMatch(event -> Snippet.Kind.ERRONEOUS != event.snippet().kind() && Snippet.Status.VALID == event.status())) {
-            var lastEvent = snippetEventsCurrentSnippets.getLast();
-            if (lastEvent.snippet() instanceof VarSnippet v) {
-                var varName = v.name();
-                var varType = sourceCodeAnalysis().analyzeType(varName,
-                        varName.length());
-                var varValue = lastEvent.value();
-                if (varName.startsWith("$")) {
-                    return new EvaluationResult(snippetEventsCurrentSnippets, snippetEventsInfluencedSnippets, ResultStatus.SUCCESS, Optional.of(varValue), Optional.of(varType));
+            var mayBeLastEvent = Optional.ofNullable(snippetEventsCurrentSnippets.isEmpty() ? null : snippetEventsCurrentSnippets.getLast());
+            return mayBeLastEvent.map(lastEvent
+                    -> switch (lastEvent.snippet()) {
+                case VarSnippet v when v.name().startsWith("$") -> {
+                    var varName = v.name();
+                    var varType = sourceCodeAnalysis().analyzeType(varName,
+                            varName.length());
+                    var varValue = lastEvent.value();
+                    yield new EvaluationResult(snippetEventsCurrentSnippets, snippetEventsInfluencedSnippets,
+                    ResultStatus.SUCCESS, Optional.of(varValue), Optional.of(varType));
                 }
-            }
-            if (lastEvent.snippet() instanceof ExpressionSnippet e) {
-                var varName = e.name();
-                var varType = sourceCodeAnalysis().analyzeType(varName,
-                        varName.length());
-                var varValue = lastEvent.value();
-                return new EvaluationResult(snippetEventsCurrentSnippets, snippetEventsInfluencedSnippets, ResultStatus.SUCCESS, Optional.of(varValue), Optional.of(varType));
-            }
-            return new EvaluationResult(snippetEventsCurrentSnippets, snippetEventsInfluencedSnippets, ResultStatus.SUCCESS, Optional.empty(), Optional.empty());
+                case ExpressionSnippet e -> {
+                    var varName = e.name();
+                    var varType = sourceCodeAnalysis().analyzeType(varName,
+                            varName.length());
+                    var varValue = lastEvent.value();
+                    yield new EvaluationResult(snippetEventsCurrentSnippets, snippetEventsInfluencedSnippets,
+                    ResultStatus.SUCCESS, Optional.of(varValue), Optional.of(varType));
+                }
+                default -> null;
+            }).orElseGet(() -> new EvaluationResult(snippetEventsCurrentSnippets, snippetEventsInfluencedSnippets,
+                    ResultStatus.SUCCESS, Optional.empty(), Optional.empty()));
         }
-        return new EvaluationResult(snippetEventsCurrentSnippets, snippetEventsInfluencedSnippets,ResultStatus.FAILURE, Optional.empty(), Optional.empty());
+        return new EvaluationResult(snippetEventsCurrentSnippets, snippetEventsInfluencedSnippets, ResultStatus.FAILURE, Optional.empty(), Optional.empty());
     }
 
     public void evalAsync(Runnable preAction, String codeSnippet, Consumer<EvaluationResult> consumer) {
@@ -172,7 +176,7 @@ public class ReactiveJShell {
         JShellExtension extension = factory.createExtension(this);
         ExtensionManager.register(extension, uuid);
         extension.shellVariableName().ifPresent(shellVariablename -> {
-        String extensionVarInit = "var " + shellVariablename + " = org.jtaccuino.jshell.extensions.ExtensionManager.lookup(" + extension.getClass().getName() + ".class, _$jsci$uuid)";
+            String extensionVarInit = "var " + shellVariablename + " = org.jtaccuino.jshell.extensions.ExtensionManager.lookup(" + extension.getClass().getName() + ".class, _$jsci$uuid)";
             this.eval(extensionVarInit);
             this.getWrappedShell().onSnippetEvent((t) -> {
                 if (t.snippet().source().equals(extensionVarInit)) {
