@@ -64,6 +64,7 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
 
     public static record ExecuteResultOutput(String output_type, Map<String, String> data, Map<String, Object> metadata, Integer execution_count) implements Output {
 
+        @SuppressWarnings("unchecked")
         private static ExecuteResultOutput from(JsonObject jsonObject) {
             Integer executionCount = Optional.ofNullable(jsonObject.getJsonNumber("execution_count"))
                     .map(JsonNumber::intValueExact)
@@ -71,8 +72,8 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
 
             return new ExecuteResultOutput(
                     jsonObject.getString("output_type"),
-                    stringStringMap(jsonObject.getJsonObject("data")),
-                    Map.of(),
+                    (Map<String, String>) extractJsonData(jsonObject.getJsonObject("data")),
+                    (Map<String, Object>) extractJsonData(jsonObject.getJsonObject("metadata")),
                     executionCount);
         }
 
@@ -86,11 +87,12 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
 
     public static record DisplayDataOutput(String output_type, Map<String, String> data, Map<String, Object> metadata) implements Output {
 
+        @SuppressWarnings("unchecked")
         private static DisplayDataOutput from(JsonObject jsonObject) {
             return new DisplayDataOutput(
                     jsonObject.getString("output_type"),
-                    stringStringMap(jsonObject.getJsonObject("data")),
-                    Map.of());
+                    (Map<String, String>) extractJsonData(jsonObject.getJsonObject("data")),
+                    (Map<String, Object>) extractJsonData(jsonObject.getJsonObject("metadata")));
         }
 
         @Override
@@ -143,10 +145,12 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
 
         CellData.OutputData toOutputData();
 
-        static Output from (CellData.OutputData outputData) {
+        static Output from(CellData.OutputData outputData) {
             return switch (outputData.type()) {
-                case DISPLAY_DATA -> new DisplayDataOutput(outputData.type().toOutputType(), outputData.mimeBundle(), Map.of());
-                case EXECUTION_DATA -> new ExecuteResultOutput(outputData.type().toOutputType(), outputData.mimeBundle(), Map.of(), null);
+                case DISPLAY_DATA ->
+                    new DisplayDataOutput(outputData.type().toOutputType(), outputData.mimeBundle(), Map.of());
+                case EXECUTION_DATA ->
+                    new ExecuteResultOutput(outputData.type().toOutputType(), outputData.mimeBundle(), Map.of(), null);
             };
         }
     }
@@ -167,22 +171,24 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
 
     public static class CellDeserializer implements JsonbDeserializer<Cell> {
 
+        @SuppressWarnings("unchecked")
         @Override
         public Cell deserialize(JsonParser parser, DeserializationContext ctx, Type rtType) {
             var o = parser.getObject();
             var type = o.getString("cell_type");
             var id = o.getString("id");
             var source = multilineOrArrayToString(o.get("source"));
+            var metadata = (Map<String, Object>) extractJsonData(o.getJsonObject("metadata"));
             return switch (type) {
                 case "code" -> {
                     var outputs = o.getJsonArray("outputs").stream()
                             .map(JsonValue::asJsonObject)
                             .map(this::deserializeOutput)
                             .toList();
-                    yield new CodeCell(id, type, Map.of(), source, outputs, 0);
+                    yield new CodeCell(id, type, metadata, source, outputs, 0);
                 }
                 case "markdown" ->
-                    new MarkdownCell(id, type, Map.of(), source);
+                    new MarkdownCell(id, type, metadata, source);
                 default ->
                     throw new IllegalStateException("Unsupported cell type found: " + type);
             };
@@ -217,16 +223,24 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
             case JsonString js ->
                 js.getString();
             case JsonArray ja ->
-                ja.stream().map(JsonString.class::cast).map(JsonString::getString).collect(Collectors.joining());
+                ja.stream().map(IpynbFormat::multilineOrArrayToString).collect(Collectors.joining());
             default ->
                 throw new IllegalStateException("Unsupported conversion to String from " + jsonValue);
         };
     }
 
-    private static Map<String, String> stringStringMap(JsonObject jsonObject) {
-        return jsonObject.entrySet().stream()
-                .collect(Collectors.toMap(
-                        e -> e.getKey(),
-                        e -> e.getValue().toString()));
+    private static Object extractJsonData(JsonValue jsonValue) {
+        return switch (jsonValue) {
+            case JsonString js ->
+                js.getString();
+            case JsonArray ja ->
+                ja.stream().map(IpynbFormat::extractJsonData).toList();
+            case JsonObject jo ->
+                jo.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> extractJsonData(e.getValue())));
+            case JsonNumber jn ->
+                jn.numberValue();
+            default ->
+                throw new IllegalStateException("Unsupported value extraction from from " + jsonValue);
+        };
     }
 }
