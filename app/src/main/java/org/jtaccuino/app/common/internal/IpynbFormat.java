@@ -72,7 +72,7 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
 
             return new ExecuteResultOutput(
                     jsonObject.getString("output_type"),
-                    (Map<String, String>) extractJsonData(jsonObject.getJsonObject("data")),
+                    extractMimeBundle(jsonObject.getJsonObject("data")),
                     (Map<String, Object>) extractJsonData(jsonObject.getJsonObject("metadata")),
                     executionCount);
         }
@@ -91,7 +91,7 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
         private static DisplayDataOutput from(JsonObject jsonObject) {
             return new DisplayDataOutput(
                     jsonObject.getString("output_type"),
-                    (Map<String, String>) extractJsonData(jsonObject.getJsonObject("data")),
+                    extractMimeBundle(jsonObject.getJsonObject("data")),
                     (Map<String, Object>) extractJsonData(jsonObject.getJsonObject("metadata")));
         }
 
@@ -242,5 +242,9 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
             default ->
                 throw new IllegalStateException("Unsupported value extraction from " + jsonValue);
         };
+    }
+
+    private static Map<String,String> extractMimeBundle(JsonObject jsonObject) {
+        return jsonObject.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> multilineOrArrayToString(e.getValue())));
     }
 }
