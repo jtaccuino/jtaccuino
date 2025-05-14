@@ -15,7 +15,7 @@
  */
 
 plugins {
-    id 'com.diffplug.spotless' version '6.25.0'
+    id 'com.diffplug.spotless' version '7.0.3'
     id 'net.ltgt.errorprone' version '4.2.0' apply false
 }
 
@@ -26,32 +26,39 @@ allprojects {
 
     afterEvaluate {
         spotless {
-            format 'textBasedFiles', {
-                 target(
-                     '*.gradle',
-                     '**/*.gradle',
-                     '**/*.asciidoc',
-                     '**/*.adoc',
-                     '**/*.asc',
-                     '**/*.css',
-                     '**/*.json',
-                     '**/*.md',
-                     '**/*.properties',
-                     '.gitignore',
-                 )
-                 targetExclude(
-                     '.*/**',
-                 )
+            if (!System.env.CI) {
+                // https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
+                // only format files which have changed since this ref
+                // TODO: Figure out a way to get this working in CI (i.e. Github Workflows)
+                ratchetFrom 'origin/main'
+            }
 
-                 trimTrailingWhitespace()
-                 indentWithSpaces(4)
-                 endWithNewline()
-                 replaceRegex 'noMultipleEmptyLines', '\n{3,}', '\n\n'
+            format 'textBasedFiles', {
+                target(
+                    '*.gradle',
+                    '**/*.gradle',
+                    '**/*.asciidoc',
+                    '**/*.adoc',
+                    '**/*.asc',
+                    '**/*.css',
+                    '**/*.json',
+                    '**/*.md',
+                    '**/*.properties',
+                    '.gitignore',
+                )
+                targetExclude(
+                    '.*/**',
+                )
+
+                trimTrailingWhitespace()
+                leadingTabsToSpaces(4)
+                endWithNewline()
+                replaceRegex 'noMultipleEmptyLines', '\n{3,}', '\n\n'
             }
 
             def closure = {
                 trimTrailingWhitespace()
-                indentWithSpaces(4)
+                leadingTabsToSpaces(4)
                 endWithNewline()
 
                 replaceRegex 'noStarImports', /\nimport (static )?[a-zA-Z0-9.]*[.][\*];\n/, '\n'
@@ -68,10 +75,10 @@ allprojects {
             } else if (plugins.hasPlugin(JavaPlugin)) {
                 java(closure)
             }
+        }
 
-            tasks.named('check') {
-                dependsOn spotlessCheck
-            }
+        tasks.named('check') {
+            dependsOn spotlessCheck
         }
     }
 
