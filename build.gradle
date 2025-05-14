@@ -21,6 +21,22 @@ plugins {
 
 allprojects {
 
+    repositories {
+        mavenLocal()
+
+        // Use Maven Central for resolving dependencies.
+        mavenCentral()
+
+        maven {
+            url = "https://oss.sonatype.org/content/repositories/snapshots"
+        }
+
+        // JPRO artifacts
+        maven {
+            url = "https://sandec.jfrog.io/artifactory/repo"
+        }
+    }
+
     // configuring Spotless
     apply plugin: 'com.diffplug.spotless'
 
