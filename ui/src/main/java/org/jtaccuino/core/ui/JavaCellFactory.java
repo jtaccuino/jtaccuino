@@ -212,18 +212,22 @@ public class JavaCellFactory implements CellFactory {
                         }
                     });
 
-            var outputNodes = javaCell.getCellData().getOutputData().stream().map(od
-                    -> od.mimeBundle().entrySet().stream().map(me
-                            -> switch (me.getKey()) {
-                case "image/png" ->
-                    new ImageView(new Image(new ByteArrayInputStream(Base64.getDecoder().decode(me.getValue()))));
-                case "text/plain" ->
-                    new Label(me.getValue());
-                default ->
-                    new Label(me.getValue());
-            }
-                    ).toList()
-            ).toList();
+            var outputNodes = javaCell.getCellData().getOutputData().stream().map(outputData
+                    -> switch (outputData) {
+                case CellData.MimeTypeBasedOutputData od ->
+                    od.mimeBundle().entrySet().stream().map(me
+                    -> switch (me.getKey()) {
+                        case "image/png" ->
+                            new ImageView(new Image(new ByteArrayInputStream(Base64.getDecoder().decode(me.getValue()))));
+                        case "text/plain" ->
+                            new Label(me.getValue());
+                        default ->
+                            new Label(me.getValue());
+                    }
+                    ).toList();
+                case CellData.StreamBasedOutputData od ->
+                    List.of(new Label(od.data()));
+            }).toList();
 
             outputNodes.forEach(nodes -> nodes.forEach(n -> outputBox.getChildren().add(n)));
 
@@ -317,7 +321,9 @@ public class JavaCellFactory implements CellFactory {
                                         var result = new Label(resultData);
                                         result.getStyleClass().add("jshell_eval_result");
                                         outputBox.getChildren().add(result);
-                                        control.getCellData().getOutputData().add(new CellData.OutputData(org.jtaccuino.core.ui.api.CellData.OutputData.OutputType.DISPLAY_DATA, Map.of("text/plain", resultData)));
+                                        control.getCellData().getOutputData().add(
+                                                CellData.OutputData.of(org.jtaccuino.core.ui.api.CellData.OutputData.OutputType.DISPLAY_DATA,
+                                                        Map.of("text/plain", resultData)));
                                     });
                                 });
                             } else {

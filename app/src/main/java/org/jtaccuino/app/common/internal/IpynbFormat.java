@@ -146,11 +146,12 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
         CellData.OutputData toOutputData();
 
         static Output from(CellData.OutputData outputData) {
-            return switch (outputData.type()) {
-                case DISPLAY_DATA ->
-                    new DisplayDataOutput(outputData.type().toOutputType(), outputData.mimeBundle(), Map.of());
-                case EXECUTION_DATA ->
-                    new ExecuteResultOutput(outputData.type().toOutputType(), outputData.mimeBundle(), Map.of(), null);
+            return switch (outputData) {
+                case CellData.MimeTypeBasedOutputData od when CellData.OutputData.OutputType.DISPLAY_DATA == od.type() ->
+                    new DisplayDataOutput(outputData.type().toOutputType(), od.mimeBundle(), Map.of());
+                case CellData.MimeTypeBasedOutputData od when CellData.OutputData.OutputType.EXECUTION_DATA == od.type() ->
+                    new ExecuteResultOutput(outputData.type().toOutputType(), od.mimeBundle(), Map.of(), null);
+                default -> null;
             };
         }
     }
