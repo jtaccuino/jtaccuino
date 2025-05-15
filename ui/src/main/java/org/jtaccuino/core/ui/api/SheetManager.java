@@ -15,8 +15,6 @@
  */
 package org.jtaccuino.core.ui.api;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.ServiceLoader;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
@@ -35,8 +33,6 @@ public class SheetManager {
 
     private final ObjectProperty<Sheet> activeSheetProperty = new SimpleObjectProperty<>();
 
-    private final List<Sheet> sheets = new ArrayList<>();
-
     private final SheetManagerSPI sheetManagerSPI;
 
     private EventHandler<SheetEvent> onOpen = null;
@@ -50,15 +46,11 @@ public class SheetManager {
     }
 
     public Sheet of(Notebook notebook) {
-        var s = Sheet.of(notebook);
-        this.sheets.add(s);
-        return s;
+        return Sheet.of(notebook);
     }
 
     public Sheet of() {
-        var s = sheetManagerSPI.of();
-        this.sheets.add(s);
-        return s;
+        return sheetManagerSPI.of();
     }
 
     public void close(Sheet sheet) {
