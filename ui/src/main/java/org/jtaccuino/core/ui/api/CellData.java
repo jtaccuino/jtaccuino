@@ -101,32 +101,14 @@ public class CellData {
         return outputData;
     }
 
-    public static record OutputData(OutputType type, Map<String, String> mimeBundle) {
+    public static sealed interface OutputData permits MimeTypeBasedOutputData, StreamBasedOutputData {
 
-        public static enum MimeType {
-            TEXT_PLAIN("text/plain"),
-            IMAGE_PNG("image/png");
+        public static OutputData of(OutputType outputType, Map<String, String> mimeBundle) {
+            return new MimeTypeBasedOutputData(outputType, mimeBundle);
+        }
 
-            private final String mimeType;
-
-            public String toMimeType() {
-                return mimeType;
-            }
-
-            MimeType(String mimeType) {
-                this.mimeType = mimeType;
-            }
-
-            public static MimeType of(String mimeType) {
-                return switch (mimeType) {
-                    case "text/plain" ->
-                        TEXT_PLAIN;
-                    case "image/png" ->
-                        IMAGE_PNG;
-                    default ->
-                        TEXT_PLAIN;
-                };
-            }
+        public static OutputData of(OutputType outputType, String data) {
+            return new StreamBasedOutputData(outputType, data);
         }
 
         public static enum OutputType {
@@ -155,8 +137,37 @@ public class CellData {
             }
         }
 
-        public static OutputData of(OutputType outputType, Map<String, String> mimeBundle) {
-            return new OutputData(outputType, mimeBundle);
+        public OutputType type();
+    }
+
+    public static record MimeTypeBasedOutputData(OutputType type, Map<String, String> mimeBundle) implements OutputData {
+
+        public static enum MimeType {
+            TEXT_PLAIN("text/plain"),
+            IMAGE_PNG("image/png");
+
+            private final String mimeType;
+
+            public String toMimeType() {
+                return mimeType;
+            }
+
+            MimeType(String mimeType) {
+                this.mimeType = mimeType;
+            }
+
+            public static MimeType of(String mimeType) {
+                return switch (mimeType) {
+                    case "text/plain" ->
+                        TEXT_PLAIN;
+                    case "image/png" ->
+                        IMAGE_PNG;
+                    default ->
+                        TEXT_PLAIN;
+                };
+            }
         }
     }
+
+    public static record StreamBasedOutputData(OutputData.OutputType type, String data) implements OutputData { }
 }
