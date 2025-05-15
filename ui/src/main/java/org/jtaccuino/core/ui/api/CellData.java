@@ -148,12 +148,12 @@ public class CellData {
 
             private final String mimeType;
 
-            public String toMimeType() {
-                return mimeType;
-            }
-
             MimeType(String mimeType) {
                 this.mimeType = mimeType;
+            }
+
+            public String mimeType() {
+                return mimeType;
             }
 
             public static MimeType of(String mimeType) {
