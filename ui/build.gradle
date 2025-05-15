@@ -4,15 +4,6 @@ plugins {
     id 'com.google.osdetector' version '1.7.3'
 }
 
-repositories {
-    // Use Maven Central for resolving dependencies.
-    mavenLocal()
-    mavenCentral()
-    maven {
-        url = "https://oss.sonatype.org/content/repositories/snapshots"
-    }
-}
-
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(versionJavaLanguage)
