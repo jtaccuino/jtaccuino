@@ -15,8 +15,19 @@
  */
 
 plugins {
+    id 'java-platform'
     id 'com.diffplug.spotless' version '7.0.3'
     id 'net.ltgt.errorprone' version '4.2.0' apply false
+}
+
+// Configure JavaPlatform ...
+javaPlatform {
+    allowDependencies()
+}
+
+// ... and its dependencies
+dependencies {
+    api platform('org.junit:junit-bom:5.12.2')
 }
 
 allprojects {
@@ -104,8 +115,20 @@ allprojects {
         apply plugin: 'java-library'
         apply plugin: 'jacoco'
 
+        dependencies {
+            // get recommended versions from the platform project
+            api platform(rootProject)
+
+            // Use JUnit Jupiter for testing.
+            testImplementation 'org.junit.jupiter:junit-jupiter-api'
+            testImplementation 'org.junit.jupiter:junit-jupiter-params'
+            testRuntimeOnly group: 'org.junit.jupiter', name:'junit-jupiter-engine'
+            testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher'
+        }
+
         tasks.named('test') {
             finalizedBy jacocoTestReport
+            useJUnitPlatform()
         }
 
         // configuring Errorprone
