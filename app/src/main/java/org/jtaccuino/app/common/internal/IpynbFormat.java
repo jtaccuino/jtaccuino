@@ -116,7 +116,7 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
         public CellData.OutputData toOutputData() {
             return CellData.OutputData.of(
                     CellData.OutputData.OutputType.of(output_type()),
-                    Map.of());
+                    text);
         }
     }
 
