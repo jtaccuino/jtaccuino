@@ -47,12 +47,4 @@ dependencies {
     runtimeOnly group: 'org.eclipse', name:'yasson', version: versionYasson
 
     implementation project(":shell")
-
-    testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher', version: versionJunitPlatformLauncher
-    testRuntimeOnly group: 'org.junit.jupiter', name:'junit-jupiter-engine', version: versionJunit
-    testImplementation group: 'org.junit.jupiter', name:'junit-jupiter-api', version: versionJunit
-}
-
-test {
-    useJUnitPlatform()
 }

@@ -30,12 +30,6 @@ dependencies {
     javafx group: 'org.openjfx', name: 'javafx-web', version: versionJavafx, classifier: javaFxPlatform
     javafx group: 'org.openjfx', name: 'javafx-swing', version: versionJavafx, classifier: javaFxPlatform
 
-    // Use JUnit Jupiter for testing.
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.2'
-
-    testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher', version: versionJunitPlatformLauncher
-
     implementation group: 'kr.motd.maven', name:'os-maven-plugin', version: versionOsMavenPlugin
 
     implementation group: 'jakarta.json', name:'jakarta.json-api', version: versionJakartaJsonApi
@@ -85,8 +79,4 @@ run {
     jvmArgs getJvmAdditionalModules()
     jvmArgs '--add-opens'
     jvmArgs 'java.base/jdk.internal.misc=ALL-UNNAMED'
-}
-
-test {
-    useJUnitPlatform()
 }
