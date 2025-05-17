@@ -141,6 +141,15 @@ allprojects {
             testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher'
         }
 
+        tasks.withType(JavaCompile).configureEach {
+            options.compilerArgs.addAll([
+                    // lint everything except preview (as using preview features would generate a warning and thus break the build)
+                    '-Xlint:all,-preview',
+                    '-Werror',
+                    '-proc:none',
+            ])
+        }
+
         tasks.named('test') {
             finalizedBy jacocoTestReport
             useJUnitPlatform()

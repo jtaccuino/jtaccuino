@@ -1,12 +1,3 @@
-compileJava {
-    options.compilerArgs.addAll([
-            // lint everithing except preview (as using preview features would generate a warnig and thus break the build)
-            '-Xlint:all,-preview',
-            '-Werror',
-            '-proc:none',
-     ])
-}
-
 dependencies {
     implementation group: 'org.apache.maven', name:'maven-model', version: versionMaven
     implementation group: 'org.apache.maven', name:'maven-settings', version: versionMaven
