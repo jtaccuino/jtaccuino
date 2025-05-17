@@ -1,8 +1,3 @@
-plugins {
-    // Apply the application plugin to add support for building a CLI application in Java.
-    id 'com.google.osdetector' version '1.7.3'
-}
-
 compileJava {
     options.compilerArgs.addAll([
             // lint everithing except preview (as using preview features would generate a warnig and thus break the build)
@@ -10,11 +5,6 @@ compileJava {
             '-Werror',
             '-proc:none',
      ])
-}
-
-ext {
-    javaFxPlatform = osdetector.os == 'osx' ? 'mac' : osdetector.os == 'windows' ? 'win' : osdetector.os
-    javaFxPlatform = osdetector.arch == 'aarch_64' ? javaFxPlatform + '-aarch64' : javaFxPlatform
 }
 
 configurations {
