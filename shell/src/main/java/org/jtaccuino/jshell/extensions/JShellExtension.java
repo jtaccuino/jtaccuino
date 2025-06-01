@@ -22,6 +22,7 @@ import java.lang.annotation.Target;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.stream.Stream;
 import org.jtaccuino.jshell.ReactiveJShell;
 
 public interface JShellExtension {
@@ -32,26 +33,48 @@ public interface JShellExtension {
          */
         SYSTEM,
         /**
-         * Activated on event occuring in the system / shell,
-         * e.g. classpath change by addDependency - currently unused
+         * Activated on event occuring in the system / shell, e.g. classpath
+         * change by addDependency - currently unused
          */
         ON_EVENT,
         /**
-         * Activated on explicit request issued by shell interaction,
-         * possible future syntax e.g.
-         * {@snippet id='on_demand_example' :
-         *   use("MyExtensionIdentifier")
+         * Activated on explicit request issued by shell interaction, possible
+         * future syntax e.g. null null null         {@snippet id='on_demand_example' :
+         *   use(JTExtension.FX_CHARTS_EXTENSION)
          * }
-         * currently unused
          */
         ON_DEMAND;
 
-        public List<JShellExtension.Factory> getExtensionFactories() {
-            var factories = ServiceLoader.load(JShellExtension.Factory.class);
+        private Stream<ServiceLoader.Provider<JShellExtension.Factory>> factoryProvidersAsStream() {
+            var factories = ServiceLoader.load(Factory.class);
             return factories
                     .stream()
-                    .filter(p -> this == p.type().getAnnotation(JShellExtension.Descriptor.class).mode())
-                    .map(p -> p.get()).toList();
+                    .filter(p -> this == p.type().getAnnotation(Descriptor.class).mode());
+        }
+
+        public List<JShellExtension.Factory> getExtensionFactories() {
+            return factoryProvidersAsStream()
+                    .map(p -> p.get())
+                    .toList();
+        }
+
+        public List<? extends Class<? extends JShellExtension>> getExtensionClasses() {
+            return factoryProvidersAsStream()
+                    .map(p -> p.type().getAnnotation(Descriptor.class).type())
+                    .toList();
+        }
+
+        public Optional<Factory> getFactoryForExtension(Class<? extends JShellExtension> extensionClass) {
+            return factoryProvidersAsStream()
+                    .filter(p -> extensionClass == p.type().getAnnotation(Descriptor.class).type())
+                    .map(p -> p.get())
+                    .findFirst();
+        }
+
+        public Optional<Factory> getFactoryForExtension(String extensionShortName) {
+            return getExtensionFactories().stream()
+                    .filter(f -> f.getClass().getName().contains(extensionShortName))
+                    .findFirst();
         }
     }
 
@@ -60,10 +83,12 @@ public interface JShellExtension {
     public static @interface Descriptor {
 
         Mode mode() default Mode.ON_DEMAND;
+
         Class<? extends JShellExtension> type();
     }
 
     public static interface Factory {
+
         public JShellExtension createExtension(ReactiveJShell jshell);
     }
 
