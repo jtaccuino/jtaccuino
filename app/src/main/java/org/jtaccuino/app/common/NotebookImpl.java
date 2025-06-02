@@ -18,6 +18,9 @@ package org.jtaccuino.app.common;
 import java.io.File;
 import java.util.Arrays;
 import java.util.UUID;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.jtaccuino.app.common.internal.IpynbFormatOperations;
@@ -26,12 +29,12 @@ import org.jtaccuino.core.ui.api.Notebook;
 
 public class NotebookImpl implements Notebook{
 
-    private final String displayName;
+    private final StringProperty displayNameProperty = new SimpleStringProperty();
     private File file;
     private final ObservableList<CellData> cells = FXCollections.observableArrayList();
 
     NotebookImpl(IpynbFormatOperations ipynb, String displayName, File file) {
-        this.displayName = displayName;
+        this.displayNameProperty.set(displayName);
         this.file = file;
         this.cells.addAll(null != ipynb ? ipynb.toCellDataList()
                 : Arrays.asList(new CellData[]{CellData.of(CellData.Type.CODE, null, UUID.randomUUID())}));
@@ -43,8 +46,13 @@ public class NotebookImpl implements Notebook{
     }
 
     @Override
+    public ReadOnlyStringProperty displayNameProperty() {
+        return displayNameProperty;
+    }
+
+    @Override
     public String getDisplayName() {
-        return displayName;
+        return displayNameProperty.get();
     }
 
     @Override
@@ -58,8 +66,13 @@ public class NotebookImpl implements Notebook{
     }
 
     @Override
+    public void rename(String newName) {
+        this.displayNameProperty.set(newName);
+    }
+
+    @Override
     public void save() {
-        saveToFile(file);
+        saveToFile(this.file);
     }
 
     @Override
