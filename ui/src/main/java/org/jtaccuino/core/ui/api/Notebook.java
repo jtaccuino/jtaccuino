@@ -16,17 +16,22 @@
 package org.jtaccuino.core.ui.api;
 
 import java.io.File;
+import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.collections.ObservableList;
 
 public interface Notebook {
 
     public ObservableList<CellData> getCells();
 
+    public ReadOnlyStringProperty displayNameProperty();
+
     public String getDisplayName();
 
     public File getFile();
 
     public void setFile(File file);
+
+    public void rename(String newName);
 
     public void save();
 

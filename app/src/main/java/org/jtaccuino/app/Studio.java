@@ -98,6 +98,7 @@ public class Studio extends Application {
 
         TabSheet(Sheet sheet) {
             super(sheet.getNotebook().getDisplayName(), sheet);
+            this.textProperty().bind(sheet.getNotebook().displayNameProperty());
             this.sheet = sheet;
             this.onCloseRequestProperty().set((t) -> {
                 this.sheet.close();

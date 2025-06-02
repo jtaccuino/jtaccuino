@@ -23,6 +23,7 @@ import org.jtaccuino.app.studio.actions.NewAction;
 import org.jtaccuino.app.studio.actions.OpenAction;
 import org.jtaccuino.app.studio.actions.ResetAndExecuteNotebookAction;
 import org.jtaccuino.app.studio.actions.SaveAction;
+import org.jtaccuino.app.studio.actions.SaveAsAction;
 import org.jtaccuino.core.ui.actions.ChangeCellToJavaAction;
 import org.jtaccuino.core.ui.actions.ChangeCellToMarkdownAction;
 import org.jtaccuino.core.ui.actions.DeleteCellAction;
@@ -47,6 +48,7 @@ public class MenuBar {
         var newMenu = createMenuItem(NewAction.INSTANCE);
         var openMenu = createMenuItem(OpenAction.INSTANCE);
         var saveMenu = createMenuItem(SaveAction.INSTANCE);
+        var saveAsMenu = createMenuItem(SaveAsAction.INSTANCE);
 
         var fileMenu = new Menu("File");
         fileMenu.getItems().addAll(
@@ -54,7 +56,7 @@ public class MenuBar {
                 new SeparatorMenuItem(),
                 openMenu,
                 new SeparatorMenuItem(),
-                saveMenu);
+                saveMenu, saveAsMenu);
 
         var executeMenu = createMenuItem(ExecuteNotebookAction.INSTANCE);
         var resetAndExecuteMenu = createMenuItem(ResetAndExecuteNotebookAction.INSTANCE);
