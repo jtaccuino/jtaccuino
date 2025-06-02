@@ -65,6 +65,15 @@ public class ReactiveJShellProvider {
                 System.out.println(cwdDefResult.snippetEventsCurrent());
             }
         }
+        // add import module java.base by default
+        ReactiveJShell.EvaluationResult defaultImportsResult = rjs.eval("import module java.base;");
+        if (defaultImportsResult.status().isSuccess()) {
+            System.out.println("module java.base imported successfully");
+        } else {
+            System.out.println("import module java.base failed");
+            System.out.println(defaultImportsResult.snippetEventsCurrent());
+        }
+
         return addSystemExtensions(rjs);
     }
 
