@@ -35,7 +35,16 @@ public class ReactiveJShellProvider {
 
     private static ReactiveJShell initShell(ReactiveJShell rjs, UUID uuid, Path path) {
 
-        var uuidInitSource = "var _$jsci$uuid = java.util.UUID.fromString(\"" + uuid + "\");";
+        // add import module java.base by default
+        ReactiveJShell.EvaluationResult defaultImportsResult = rjs.eval("import module java.base;");
+        if (defaultImportsResult.status().isSuccess()) {
+            System.out.println("module java.base imported successfully");
+        } else {
+            System.out.println("import module java.base failed");
+            System.out.println(defaultImportsResult.snippetEventsCurrent());
+        }
+
+        var uuidInitSource = "var _$jsci$uuid = UUID.fromString(\"" + uuid + "\");";
 
         ReactiveJShell.EvaluationResult evalResult = rjs.eval(uuidInitSource);
         rjs.getWrappedShell().onSnippetEvent((t) -> {
@@ -55,7 +64,7 @@ public class ReactiveJShellProvider {
             if (IS_WINDOWS) {
                 pathString = path.toString().replaceAll("\\\\", "//");
             }
-            var cwdInitSource = "var cwd = java.nio.file.Paths.get(\"" + pathString + "\");";
+            var cwdInitSource = "var cwd = Paths.get(\"" + pathString + "\");";
             ReactiveJShell.EvaluationResult cwdDefResult = rjs.eval(cwdInitSource);
 
             if (cwdDefResult.status().isSuccess()) {
@@ -64,14 +73,6 @@ public class ReactiveJShellProvider {
                 System.out.println("cwd failed to set to " + pathString);
                 System.out.println(cwdDefResult.snippetEventsCurrent());
             }
-        }
-        // add import module java.base by default
-        ReactiveJShell.EvaluationResult defaultImportsResult = rjs.eval("import module java.base;");
-        if (defaultImportsResult.status().isSuccess()) {
-            System.out.println("module java.base imported successfully");
-        } else {
-            System.out.println("import module java.base failed");
-            System.out.println(defaultImportsResult.snippetEventsCurrent());
         }
 
         return addSystemExtensions(rjs);
