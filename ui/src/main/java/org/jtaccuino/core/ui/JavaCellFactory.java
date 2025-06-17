@@ -63,6 +63,7 @@ import jdk.jshell.StatementSnippet;
 import jdk.jshell.VarSnippet;
 import org.jtaccuino.core.ui.controls.JavaControl;
 import org.jtaccuino.core.ui.extensions.DisplayExtension;
+import org.jtaccuino.core.ui.extensions.PrintExtension;
 
 public class JavaCellFactory implements CellFactory {
 
@@ -140,6 +141,7 @@ public class JavaCellFactory implements CellFactory {
         private final VBox inputBox;
         private final RichTextArea input;
         private final VBox outputBox;
+        private final Label streamResult;
 //        private final BorderPane output;
         private final Label execResult;
         private final Region success;
@@ -184,6 +186,7 @@ public class JavaCellFactory implements CellFactory {
 //            output.setVisible(false);
             outputBox = new VBox();
             outputBox.getStyleClass().add("java-cell-output");
+            streamResult = new Label();
 //            output.setCenter(outputBox);
             var toolbar = createToolbar();
             toolbar.visibleProperty().bind(Bindings.or(input.focusedProperty(), toolbar.focusWithinProperty()));
@@ -200,9 +203,21 @@ public class JavaCellFactory implements CellFactory {
             AnchorPane.setRightAnchor(execResult, 5d);
             AnchorPane.setBottomAnchor(execResult, 2d);
 
+            streamResult.getStyleClass().add("jshell_stream_result");
             inputBox = new VBox(inputControl); //, outputBox);
 
             inputBox.getStyleClass().add("java-cell-meta");
+            streamResult.textProperty().addListener((ov, t, t1) -> {
+                Platform.runLater(() -> {
+                    if (t1.isEmpty()) {
+                        inputBox.getChildren().remove(streamResult);
+                    } else {
+                        if (!inputBox.getChildren().contains(streamResult)) {
+                            inputBox.getChildren().add(streamResult);
+                        }
+                    }
+                });
+            });
             outputBox.getChildren()
                     .addListener((ListChangeListener.Change<? extends Node> c) -> {
                         if (c.getList().isEmpty()) {
@@ -291,10 +306,14 @@ public class JavaCellFactory implements CellFactory {
         private void handleExecution() {
             var shell = this.control.getSheet().getReactiveJShell();
             var displayManager = shell.getExtension(DisplayExtension.class);
+            var printManager = shell.getExtension(PrintExtension.class);
             shell.evalAsync(() -> {
                 displayManager.setActiveOutput(outputBox);
                 displayManager.setCurrentCellData(control.getCellData());
+                printManager.setActiveStreamResult(streamResult);
+                printManager.setCurrentCellData(control.getCellData());
                 control.getCellData().getOutputData().clear();
+                Platform.runLater(() -> streamResult.setText(""));
                 Platform.runLater(outputBox.getChildren()::clear);
             },
                     input.getDocument().getText(),
