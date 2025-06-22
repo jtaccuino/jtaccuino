@@ -41,6 +41,7 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Skin;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
@@ -53,6 +54,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.FontWeight;
+import javax.swing.JProgressBar;
 import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.EvalException;
 import jdk.jshell.ExpressionSnippet;
@@ -146,6 +148,7 @@ public class JavaCellFactory implements CellFactory {
         private final Label execResult;
         private final Region success;
         private final Region failure;
+        private final ProgressIndicator running;
 
         private JavaCellSkin(JavaCell javaCell) {
             super(javaCell);
@@ -197,6 +200,11 @@ public class JavaCellFactory implements CellFactory {
             success.getStyleClass().addAll("toolbar-button-graphics", "code-success");
             failure = new Region();
             failure.getStyleClass().addAll("toolbar-button-graphics", "code-failure");
+
+            running = new ProgressIndicator();
+            running.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
+            running.getStyleClass().addAll("toolbar-button-graphics", "code-running");
+//            running.setPrefSize(20, 20);
 
             AnchorPane.setRightAnchor(toolbar, 5d);
             AnchorPane.setTopAnchor(toolbar, 0d);
@@ -308,13 +316,17 @@ public class JavaCellFactory implements CellFactory {
             var displayManager = shell.getExtension(DisplayExtension.class);
             var printManager = shell.getExtension(PrintExtension.class);
             shell.evalAsync(() -> {
-                displayManager.setActiveOutput(outputBox);
-                displayManager.setCurrentCellData(control.getCellData());
-                printManager.setActiveStreamResult(streamResult);
-                printManager.setCurrentCellData(control.getCellData());
-                control.getCellData().getOutputData().clear();
-                Platform.runLater(() -> streamResult.setText(""));
-                Platform.runLater(outputBox.getChildren()::clear);
+                Platform.runLater(() -> {
+                    displayManager.setActiveOutput(outputBox);
+                    displayManager.setCurrentCellData(control.getCellData());
+                    printManager.setActiveStreamResult(streamResult);
+                    printManager.setCurrentCellData(control.getCellData());
+                    control.getCellData().getOutputData().clear();
+                    streamResult.setText("");
+                    outputBox.getChildren().clear();
+                    execResult.setGraphic(running);
+                    execResult.setVisible(true);
+                });
             },
                     input.getDocument().getText(),
                     evalResult -> {
