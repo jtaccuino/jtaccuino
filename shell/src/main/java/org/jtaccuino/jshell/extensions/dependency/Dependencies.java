@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@ package org.jtaccuino.jshell.extensions.dependency;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -34,6 +33,8 @@ import org.eclipse.aether.resolution.DependencyRequest;
 import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.eclipse.aether.supplier.RepositorySystemSupplier;
 import org.eclipse.aether.supplier.SessionBuilderSupplier;
+import org.eclipse.aether.transfer.ArtifactNotFoundException;
+import org.eclipse.aether.transfer.RepositoryOfflineException;
 import org.eclipse.aether.util.filter.DependencyFilterUtils;
 
 final class Dependencies {
@@ -52,7 +53,7 @@ final class Dependencies {
         return result;
     }
 
-    static List<Path> resolve(String mavenCoordinates) {
+    static DependencyArtifact resolve(String mavenCoordinates) {
         try {
             RepositorySystem repoSystem = newRepositorySystem();
 
@@ -92,33 +93,51 @@ final class Dependencies {
 
             var dv = new DependencyVisitor() {
 
-                int depth = 0;
+                List<DependencyArtifact> deps = new ArrayList<>();
 
                 @Override
                 public boolean visitEnter(DependencyNode node) {
-                    System.out.println(" ".repeat(depth)
-                            + ":" + node.getDependency().getScope()
-                            + ":" + node.getDependency().getOptional()
-                            + ":" + node.getDependency().getArtifact()
-                            + " - " + node.getArtifact().getGroupId()
-                            + ":" + node.getArtifact().getArtifactId()
-                            + " Deps: " + node.getChildren().size());
-                    depth++;
+                    DependencyArtifact newDep = new DependencyArtifact(
+                            node.getDependency().getArtifact().getGroupId(),
+                            node.getDependency().getArtifact().getArtifactId(),
+                            node.getDependency().getArtifact().getClassifier(),
+                            node.getDependency().getArtifact().getBaseVersion(),
+                            node.getDependency().getArtifact().getVersion(),
+                            node.getDependency().getArtifact().getPath(),
+                            new ArrayList<>());
+                    if (!deps.isEmpty()) {
+                        deps.getLast().dependencies().add(newDep);
+                    }
+                    deps.addLast(newDep);
                     return true;
                 }
 
                 @Override
                 public boolean visitLeave(DependencyNode dn) {
-                    depth--;
+                    if (1 < deps.size()) {
+                        deps.removeLast();
+                    }
                     return true;
                 }
 
             };
-            dependencyResult.getRoot().accept(dv);
-            return dependencyResult.getArtifactResults().stream().map(a -> a.getLocalArtifactResult().getPath()).toList();
+            dependencyResult.getRoot()
+                    .accept(dv);
+            return dv.deps.getLast();
         } catch (DependencyResolutionException ex) {
-            Logger.getLogger(Dependencies.class.getName()).log(Level.SEVERE, null, ex);
-            return Collections.emptyList();
+            var message = ex.getResult().getArtifactResults().stream()
+                    .filter(ar -> !ar.isResolved())
+                    .flatMap(ar -> ar.getExceptions().stream())
+                    .map(e -> switch (e) {
+                case ArtifactNotFoundException anfe ->
+                    "Artifact not found " + anfe.getMessage();
+                case RepositoryOfflineException roe ->
+                    roe.getRepository().toString();
+                default ->
+                    ex.getMessage();
+            })
+                    .collect(Collectors.joining("\n"));
+            throw new DependencyException("Failure adding dependencies:\n" + message);
         }
     }
 }

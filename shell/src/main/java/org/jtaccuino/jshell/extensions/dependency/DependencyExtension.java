@@ -15,12 +15,12 @@
  */
 package org.jtaccuino.jshell.extensions.dependency;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Set;
+import java.util.TreeSet;
 import jdk.jshell.JShell;
 import org.jtaccuino.jshell.ReactiveJShell;
 import org.jtaccuino.jshell.extensions.JShellExtension;
@@ -29,7 +29,8 @@ public class DependencyExtension implements JShellExtension {
 
     private final ReactiveJShell reactiveJShell;
 
-    private final List<Path> paths = new ArrayList<>();
+    private final Set<String> paths = new TreeSet<>();
+    private final List<DependencyArtifact> artifacts = new ArrayList<>();
 
     @Descriptor(mode = Mode.SYSTEM, type = DependencyExtension.class)
     public static class Factory implements JShellExtension.Factory {
@@ -46,7 +47,6 @@ public class DependencyExtension implements JShellExtension {
 
     // This should end in the following code injected into the shell - hopefully not too much overhead (injected once and never changed)
     // var dependencyManager = ExtensionManager.lookup(DependencyExtension.class,_$jsci$uuid);
-
     @Override
     public Optional<String> shellVariableName() {
         return Optional.of("dependencyManager");
@@ -61,23 +61,24 @@ public class DependencyExtension implements JShellExtension {
     }
 
     public void resolve(String mavenCoordinates) {
-        try {
-            JShell jshell = reactiveJShell.getWrappedShell();
-            if (null == jshell) {
-                System.out.println("JShell is null");
-            } else {
-                System.out.println("Adding deps for " + mavenCoordinates);
-                Dependencies.resolve(mavenCoordinates).stream()
-                        .filter(p -> !paths.contains(p))
-                        .filter(p -> null != p)
-                        .peek(System.out::println)
-                        .forEach(p -> {
-                            jshell.addToClasspath(p.toString());
-                            paths.add(p);
-                        });
-            }
-        } catch (Throwable t) {
-            Logger.getLogger(DependencyExtension.class.getName()).log(Level.SEVERE, null, t);
+        JShell jshell = reactiveJShell.getWrappedShell();
+        if (null == jshell) {
+            System.out.println("JShell is null");
+        } else {
+            System.out.println("Adding deps for " + mavenCoordinates);
+            var depArtifact = Dependencies.resolve(mavenCoordinates);
+            depArtifact.stream()
+                    .filter(d -> !paths.contains(d.identifier()))
+                    .filter(d -> null != d.path())
+                    .forEach(d -> {
+                        jshell.addToClasspath(d.path().toString());
+                        paths.add(d.identifier());
+                        artifacts.add(d);
+                    });
         }
+    }
+
+    public List<DependencyArtifact> getUsedArtifactTrees() {
+        return List.copyOf(artifacts);
     }
 }
