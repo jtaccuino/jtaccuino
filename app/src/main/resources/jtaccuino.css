@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,23 @@ https://github.com/githubnext/monaspace
 */
 @font-face {
     font-family: 'Monaspace Radon';
+    font-weight: normal;
+    font-style: normal;
     src: url('MonaspaceRadon-Regular.otf');
+}
+
+@font-face {
+    font-family: 'Monaspace Radon';
+    font-weight: bold;
+    font-style: normal;
+    src: url('MonaspaceRadon-Bold.otf');
+}
+
+@font-face {
+    font-family: 'Monaspace Radon';
+    font-weight: italic;
+    font-style: normal;
+    src: url('MonaspaceRadon-Italic.otf');
 }
 
 .debug {
@@ -490,4 +506,27 @@ AUTHOR: ShopWare
 .md-editor > .paragraph-list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected {
     -fx-background: transparent;
     -fx-background-color: transparent;
+}
+
+.list-cell {
+    -fx-padding: 3px 5px;
+    -fx-font-family: "Monaspace Argon";
+    -fx-font-size: 11;
+}
+
+.list-cell.type-matches {
+    -fx-font-weight: bold;
+}
+
+.list-cell.separator-cell {
+    -fx-padding: 0;
+    -fx-pref-height: 2px;
+    -fx-min-height: 2px;
+    -fx-max-height: 2px;
+
+    -fx-background-color: #A9A9A9;
+
+    -fx-border-color: #696969;
+    -fx-border-width: 1px 0 0 0;
+    -fx-border-insets: 0;
 }

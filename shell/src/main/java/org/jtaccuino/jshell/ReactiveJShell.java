@@ -146,7 +146,6 @@ public class ReactiveJShell {
                 () -> {
                     int[] anchor = new int[1];
                     var completionSuggestions = jshell.sourceCodeAnalysis().completionSuggestions(text, caretPosition, anchor);
-                    System.out.println("Completion suggestions: " + completionSuggestions);
                     return new CompletionSuggestion(completionSuggestions, anchor[0]);
                 },
                 worker)
