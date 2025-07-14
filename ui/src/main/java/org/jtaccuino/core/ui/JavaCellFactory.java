@@ -15,6 +15,8 @@
  */
 package org.jtaccuino.core.ui;
 
+import org.jtaccuino.core.ui.completion.CompletionItem;
+import org.jtaccuino.core.ui.completion.CompletionPopup;
 import org.jtaccuino.core.ui.api.CellData;
 import com.gluonhq.richtextarea.RichTextArea;
 import com.gluonhq.richtextarea.Selection;
@@ -30,13 +32,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
-import javafx.css.PseudoClass;
 import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
@@ -47,14 +46,11 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.FontWeight;
-import javax.swing.JProgressBar;
 import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.EvalException;
 import jdk.jshell.ExpressionSnippet;
@@ -268,36 +264,30 @@ public class JavaCellFactory implements CellFactory {
                 if (KeyCode.TAB == t.getCode()) {
                     var oldCaretPosition = input.caretPositionProperty().get();
                     handleTabCompletion(input.getDocument().getText(), oldCaretPosition,
-                            input.getCaretOrigin(),
+                            input.getCaretOrigin().add(0, 13),
                             (completionUpdate) -> {
                                 if (null != completionUpdate) {
-                                    System.out.println("Text before: " + input.getDocument().getText());
-                                    System.out.println("Completion: " + completionUpdate.completion);
-                                    System.out.println("Completion to insert: " + completionUpdate.completionToInsert);
-                                    System.out.println("Decorations before: " + input.getDocument().getDecorations());
                                     input.getActionFactory().
                                             insertText(completionUpdate.completionToInsert).
                                             execute(new ActionEvent());
-                                    Platform.runLater(() -> {
-                                        System.out.println("Text after: " + input.getDocument().getText());
-                                        System.out.println("Decorations after: " + input.getDocument().getDecorations());
-                                    });
                                 }
                             });
                     t.consume();
                 } else {
-//                    input.setPrefRowCount((int) input.getText().chars().filter(c -> c == '\n').count() + 1);
                     Platform.runLater(() -> this.control.getSheet().ensureCellVisible(control));
                 }
             }
             );
-            input.caretPositionProperty()
-                    .addListener((observable) -> {
-                        if (completionPopup.isShowing()) {
-                            filterCompletion(input.getDocument().getText(), input.caretPositionProperty().get());
-                        }
-                    }
-                    );
+            input.documentProperty().addListener((observable, oldValue, newValue) -> {
+                if (completionPopup.isShowing()) {
+                    Platform.runLater(() -> filterCompletion(input.getDocument().getText(), input.getDocument().getCaretPosition()));
+                }
+            });
+            input.caretOriginProperty().addListener((observable, oldValue, newValue) -> {
+                 if (completionPopup.isShowing()) {
+                    Platform.runLater(() -> completionPopup.updateLocation(input.getCaretOrigin().add(0, 13)));
+                }
+            });
         }
 
         void requestFocus() {
@@ -452,8 +442,8 @@ public class JavaCellFactory implements CellFactory {
 
         private void filterCompletion(String text, int caretPos) {
             this.control.getSheet().getReactiveJShell().completionAsync(text, caretPos, result -> {
-                var distinctCompletionSuggestions = result.suggestions().stream().map(SourceCodeAnalysis.Suggestion::continuation).distinct().toList();
-                Platform.runLater(() -> completionPopup.getSuggestions().setAll(distinctCompletionSuggestions));
+                var distinctCompletionSuggestions = result.suggestions().stream().map(s -> CompletionItem.from(s, result.anchor())).distinct().toList();
+                Platform.runLater(() -> completionPopup.setSuggestions(distinctCompletionSuggestions));
             });
         }
 
@@ -465,19 +455,26 @@ public class JavaCellFactory implements CellFactory {
 
         private void handleTabCompletion(String text, int caretPos, Point2D caretOrigin, Consumer<CompletionUpdate> consumer) {
             this.control.getSheet().getReactiveJShell().completionAsync(text, caretPos, result -> {
-                var distinctCompletionSuggestions = result.suggestions().stream().map(SourceCodeAnalysis.Suggestion::continuation).distinct().toList();
+                var distinctCompletionSuggestions = result.suggestions().stream().map(s -> CompletionItem.from(s, result.anchor())).distinct().toList();
+                // no completions
+                if (distinctCompletionSuggestions.isEmpty()) {
+                    Platform.runLater(() -> completionPopup.hide());
+                    return;
+                }
                 // only one completion - just do it
                 if (distinctCompletionSuggestions.size() == 1) {
-                    Platform.runLater(() -> consumer.accept(convert(result.anchor(), caretPos, distinctCompletionSuggestions.getFirst())));
+                    Platform.runLater(() -> consumer.accept(convert(result.anchor(), caretPos, distinctCompletionSuggestions.getFirst().completion())));
                 } else {
-                    String completableCommonPrefix = UiUtils.longestCommonPrefix(distinctCompletionSuggestions);
+                    String completableCommonPrefix = CompletionItem.longestCommonPrefix(distinctCompletionSuggestions);
                     if (!completableCommonPrefix.isEmpty()
                             && !text.substring(result.anchor(), caretPos).equals(completableCommonPrefix)) {
                         Platform.runLater(() -> consumer.accept(convert(result.anchor(), caretPos, completableCommonPrefix)));
                     } else {
-                        completionPopup.getSuggestions().setAll(distinctCompletionSuggestions);
-                        completionPopup.setOnCompletion(event -> Platform.runLater(() -> consumer.accept(convert(result.anchor(), caretPos, event.getSuggestion()))));
-                        Platform.runLater(() -> completionPopup.show(this.control.getScene().focusOwnerProperty().get(), caretOrigin));
+                        completionPopup.setOnCompletion(event -> Platform.runLater(() -> consumer.accept(convert(event.getAnchor(), input.getCaretPosition(), event.getSuggestion()))));
+                        Platform.runLater(() -> {
+                            completionPopup.setSuggestions(distinctCompletionSuggestions);
+                            completionPopup.show(this.control.getScene().focusOwnerProperty().get(), caretOrigin);
+                        });
                     }
                 }
             });

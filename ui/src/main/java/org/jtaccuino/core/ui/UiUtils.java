@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.jtaccuino.core.ui;
 
-import java.util.List;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;
@@ -68,28 +67,5 @@ public class UiUtils {
         button.setGraphic(region);
         button.setOnAction(handler);
         return button;
-    }
-
-    public static String longestCommonPrefix(List<String> strings) {
-        return switch (strings) {
-            case null ->
-                "";
-            case List<String> l when l.isEmpty() ->
-                "";
-            default -> {
-                String firstString = strings.getFirst();
-                int minLen = firstString.length();
-
-                for (int i = 0; i < minLen; i++) {
-                    char currentChar = firstString.charAt(i);
-                    for (String str : strings) {
-                        if (str.length() < i + 1 || str.charAt(i) != currentChar) {
-                            yield firstString.substring(0, i);
-                        }
-                    }
-                }
-                yield firstString;
-            }
-        };
     }
 }
