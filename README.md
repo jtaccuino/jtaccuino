@@ -6,6 +6,12 @@ It is built for usages in education, interactive experimation with algorithms an
 
 Java code execution is provided by JShell, the awesome Java REPL.
 
+## Building and running JTaccuino from source
+Clone the repository and run on Linux and Mac
+`./gradlew app:run`
+or on Windows
+`./gradlew.bat app:run`
+
 ## Licenses and used 3rd party software / components
 
 ### Libraries
