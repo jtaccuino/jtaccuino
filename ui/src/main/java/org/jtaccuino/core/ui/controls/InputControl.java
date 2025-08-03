@@ -21,10 +21,12 @@ import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 
 sealed class InputControl extends AnchorPane permits JavaControl, MarkdownControl {
@@ -66,6 +68,12 @@ sealed class InputControl extends AnchorPane permits JavaControl, MarkdownContro
         input.setTranslateY(padding);
         rtaFocussedProperty.bind(input.focusedProperty());
         getStyleClass().add(type.styleClassPrefix + "-cell-input");
+
+        input.addEventFilter(MouseEvent.MOUSE_CLICKED, (EventHandler<MouseEvent>) event -> {
+            if (event.getSource() instanceof RichTextArea  r && !r.isFocused()) {
+                requestFocus();
+            }
+        });
     }
 
     protected int getCellNumber() {
