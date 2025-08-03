@@ -273,6 +273,24 @@ public class JavaCellFactory implements CellFactory {
                                 }
                             });
                     t.consume();
+                } else if (KeyCode.BACK_SPACE == t.getCode()) {
+                    var column = (int) input.getCaretRowColumn().getX();
+                    var row = (int) input.getCaretRowColumn().getY();
+                    if (0 == column && 0 == row) {
+                        // just consume the event to inhibt deletion of paragraph decoration
+                        t.consume();
+                    } else if (0 == column) {
+                        // automatically remove paragraph decoration in case at beginning of line
+                        input.getActionFactory().removeExtremesAndDecorate(
+                                new Selection(input.getCaretPosition() - 1, input.getCaretPosition()),
+                                ParagraphDecoration.builder().build()).execute(new ActionEvent());
+                    }
+                } else if (KeyCode.ENTER == t.getCode()) {
+                    var column = (int) input.getCaretRowColumn().getX();
+                    if (0 == column) {
+                        input.getActionFactory().insertText("\n").execute(new ActionEvent());
+                        t.consume();
+                    }
                 } else {
                     Platform.runLater(() -> this.control.getSheet().ensureCellVisible(control));
                 }
