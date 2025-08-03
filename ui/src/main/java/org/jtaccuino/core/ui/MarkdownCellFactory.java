@@ -145,7 +145,7 @@ public class MarkdownCellFactory implements CellFactory {
                                 new Selection(inputControl.getInput().getCaretPosition() - 1, inputControl.getInput().getCaretPosition()),
                                 ParagraphDecoration.builder().build()).execute(new ActionEvent());
                     }
-                } else if (KeyCode.ENTER == t.getCode()) {
+                } else if (KeyCode.ENTER == t.getCode() && !t.isShiftDown()) {
                     var column = (int) inputControl.getInput().getCaretRowColumn().getX();
                     if (0 == column) {
                         inputControl.getInput().getActionFactory().insertText("\n").execute(new ActionEvent());
