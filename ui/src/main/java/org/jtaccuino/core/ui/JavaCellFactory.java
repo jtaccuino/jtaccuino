@@ -285,7 +285,7 @@ public class JavaCellFactory implements CellFactory {
                                 new Selection(input.getCaretPosition() - 1, input.getCaretPosition()),
                                 ParagraphDecoration.builder().build()).execute(new ActionEvent());
                     }
-                } else if (KeyCode.ENTER == t.getCode()) {
+                } else if (KeyCode.ENTER == t.getCode() && !t.isShiftDown()) {
                     var column = (int) input.getCaretRowColumn().getX();
                     if (0 == column) {
                         input.getActionFactory().insertText("\n").execute(new ActionEvent());
