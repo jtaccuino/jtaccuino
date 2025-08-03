@@ -15,6 +15,7 @@
  */
 package org.jtaccuino.core.ui;
 
+import com.gluonhq.richtextarea.Selection;
 import com.gluonhq.richtextarea.model.DecorationModel;
 import com.gluonhq.richtextarea.model.Document;
 import com.gluonhq.richtextarea.model.ParagraphDecoration;
@@ -130,8 +131,29 @@ public class MarkdownCellFactory implements CellFactory {
                 }
             });
 
-            inputControl.getInput().addEventFilter(KeyEvent.KEY_PRESSED, t -> {
-                Platform.runLater(() -> this.control.getSheet().ensureCellVisible(control));
+            inputControl.getInput().addEventFilter(KeyEvent.KEY_PRESSED, t
+                    -> {
+                if (KeyCode.BACK_SPACE == t.getCode()) {
+                    var column = (int) inputControl.getInput().getCaretRowColumn().getX();
+                    var row = (int) inputControl.getInput().getCaretRowColumn().getY();
+                    if (0 == column && 0 == row) {
+                        // just consume the event to inhibt deletion of paragraph decoration
+                        t.consume();
+                    } else if (0 == column) {
+                        // automatically remove paragraph decoration in case at beginning of line
+                        inputControl.getInput().getActionFactory().removeExtremesAndDecorate(
+                                new Selection(inputControl.getInput().getCaretPosition() - 1, inputControl.getInput().getCaretPosition()),
+                                ParagraphDecoration.builder().build()).execute(new ActionEvent());
+                    }
+                } else if (KeyCode.ENTER == t.getCode()) {
+                    var column = (int) inputControl.getInput().getCaretRowColumn().getX();
+                    if (0 == column) {
+                        inputControl.getInput().getActionFactory().insertText("\n").execute(new ActionEvent());
+                        t.consume();
+                    }
+                } else {
+                    Platform.runLater(() -> this.control.getSheet().ensureCellVisible(control));
+                }
             });
 
             var toolbar = createToolbar();
