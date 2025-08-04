@@ -122,7 +122,8 @@ public class ReactiveJShell {
                     yield new EvaluationResult(snippetEventsCurrentSnippets, snippetEventsInfluencedSnippets,
                     ResultStatus.SUCCESS, Optional.of(varValue), Optional.of(varType));
                 }
-                default -> null;
+                default ->
+                    null;
             }).orElseGet(() -> new EvaluationResult(snippetEventsCurrentSnippets, snippetEventsInfluencedSnippets,
                     ResultStatus.SUCCESS, Optional.empty(), Optional.empty()));
         }
@@ -149,6 +150,17 @@ public class ReactiveJShell {
                     return new CompletionSuggestion(completionSuggestions, anchor[0]);
                 },
                 worker)
+                .thenAccept(consumer)
+                .exceptionally(this::logThrowable);
+    }
+
+    public void documentationAsync(String text, int caretPosition, Consumer<List<Documentation>> consumer) {
+        CompletableFuture.supplyAsync(()
+                -> jshell.sourceCodeAnalysis().documentation(text, caretPosition, true)
+                        .stream()
+                        .map(d -> new Documentation(d.signature(), d.javadoc()))
+                        .toList(),
+                 worker)
                 .thenAccept(consumer)
                 .exceptionally(this::logThrowable);
     }
@@ -224,5 +236,8 @@ public class ReactiveJShell {
         ResultStatus(boolean isSuccess) {
             this.isSuccess = isSuccess;
         }
+    }
+
+    public static record Documentation(String signature, String javadoc) {
     }
 }

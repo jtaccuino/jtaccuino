@@ -60,6 +60,8 @@ import jdk.jshell.SourceCodeAnalysis;
 import jdk.jshell.StatementSnippet;
 import jdk.jshell.VarSnippet;
 import org.jtaccuino.core.ui.controls.JavaControl;
+import org.jtaccuino.core.ui.documentation.DocumentationItem;
+import org.jtaccuino.core.ui.documentation.DocumentationPopup;
 import org.jtaccuino.core.ui.extensions.DisplayExtension;
 import org.jtaccuino.core.ui.extensions.PrintExtension;
 
@@ -136,6 +138,7 @@ public class JavaCellFactory implements CellFactory {
         private final JavaCell control;
 
         private final CompletionPopup completionPopup = new CompletionPopup();
+        private final DocumentationPopup documentationPopup = new DocumentationPopup();
         private final VBox inputBox;
         private final RichTextArea input;
         private final VBox outputBox;
@@ -263,15 +266,19 @@ public class JavaCellFactory implements CellFactory {
                     -> {
                 if (KeyCode.TAB == t.getCode()) {
                     var oldCaretPosition = input.caretPositionProperty().get();
-                    handleTabCompletion(input.getDocument().getText(), oldCaretPosition,
-                            input.getCaretOrigin().add(0, 13),
-                            (completionUpdate) -> {
-                                if (null != completionUpdate) {
-                                    input.getActionFactory().
-                                            insertText(completionUpdate.completionToInsert).
-                                            execute(new ActionEvent());
-                                }
-                            });
+                    if (t.isShiftDown()) {
+                        handleTabDocumentation(input.getDocument().getText(), oldCaretPosition, input.getCaretOrigin().add(0, 13));
+                    } else {
+                        handleTabCompletion(input.getDocument().getText(), oldCaretPosition,
+                                input.getCaretOrigin().add(0, 13),
+                                (completionUpdate) -> {
+                                    if (null != completionUpdate) {
+                                        input.getActionFactory().
+                                                insertText(completionUpdate.completionToInsert).
+                                                execute(new ActionEvent());
+                                    }
+                                });
+                    }
                     t.consume();
                 } else if (KeyCode.BACK_SPACE == t.getCode()) {
                     var column = (int) input.getCaretRowColumn().getX();
@@ -294,15 +301,15 @@ public class JavaCellFactory implements CellFactory {
                 } else {
                     Platform.runLater(() -> this.control.getSheet().ensureCellVisible(control));
                 }
-            }
-            );
+            });
+
             input.documentProperty().addListener((observable, oldValue, newValue) -> {
                 if (completionPopup.isShowing()) {
                     Platform.runLater(() -> filterCompletion(input.getDocument().getText(), input.getDocument().getCaretPosition()));
                 }
             });
             input.caretOriginProperty().addListener((observable, oldValue, newValue) -> {
-                 if (completionPopup.isShowing()) {
+                if (completionPopup.isShowing()) {
                     Platform.runLater(() -> completionPopup.updateLocation(input.getCaretOrigin().add(0, 13)));
                 }
             });
@@ -469,6 +476,19 @@ public class JavaCellFactory implements CellFactory {
             int offset = caretPosition - startOfcompletionText; // length to strip from full completion text
             String remainingCompletion = fullCompletionText.substring(offset);
             return new CompletionUpdate(fullCompletionText, remainingCompletion);
+        }
+
+        private void handleTabDocumentation(String text, int caretPos, Point2D caretOrigin) {
+            this.control.getSheet().getReactiveJShell().documentationAsync(text, caretPos, result -> {
+                Platform.runLater(() -> {
+                    if (result.isEmpty()) {
+                        documentationPopup.hide();
+                    } else {
+                        documentationPopup.setDocumentations(result.stream().map(d -> DocumentationItem.from(d.signature())).toList());
+                        documentationPopup.show(this.control.getScene().focusOwnerProperty().get(), caretOrigin);
+                    }
+                });
+            });
         }
 
         private void handleTabCompletion(String text, int caretPos, Point2D caretOrigin, Consumer<CompletionUpdate> consumer) {
