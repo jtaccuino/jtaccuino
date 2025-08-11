@@ -177,7 +177,10 @@ public record IpynbFormat(Map<String, Object> metadata, int nbformat, int nbform
         public Cell deserialize(JsonParser parser, DeserializationContext ctx, Type rtType) {
             var o = parser.getObject();
             var type = o.getString("cell_type");
-            var id = o.getString("id");
+            var id = o.containsKey("id")
+                    // Mandatory since nbformat v4.5. Did not exist prior to that
+                    ? o.getString("id")
+                    : UUID.randomUUID().toString();
             var source = multilineOrArrayToString(o.get("source"));
             var metadata = (Map<String, Object>) extractJsonData(o.getJsonObject("metadata"));
             return switch (type) {
