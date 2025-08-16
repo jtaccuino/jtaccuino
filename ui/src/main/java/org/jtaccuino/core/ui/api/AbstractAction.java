@@ -32,7 +32,7 @@ public abstract class AbstractAction implements Action {
 
     @Override
     public KeyCombination getAccelerator() {
-        return KeyCodeCombination.valueOf(this.keyCode);
+        return this.keyCode.isEmpty() ? KeyCodeCombination.NO_MATCH : KeyCodeCombination.valueOf(this.keyCode);
     }
 
     @Override

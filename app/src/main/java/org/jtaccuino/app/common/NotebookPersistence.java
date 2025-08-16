@@ -62,18 +62,22 @@ public class NotebookPersistence {
     }
 
     public void toFile(File selectedFile, List<CellData> cells) {
+        toFile(selectedFile, cells, true);
+    }
+
+    public void toFile(File selectedFile, List<CellData> cells, boolean includeOutput) {
         var config = new JsonbConfig();
         config.setProperty(JsonbConfig.FORMATTING, true);
         Jsonb jsonb = JsonbBuilder.create(config);
         try {
-            jsonb.toJson(toIpynbFormat(cells), new FileWriter(selectedFile, Charset.forName("UTF-8")));
+            jsonb.toJson(toIpynbFormat(cells, includeOutput), new FileWriter(selectedFile, Charset.forName("UTF-8")));
             jsonb.close();
         } catch (Exception ex) {
             Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    private IpynbFormat toIpynbFormat(List<CellData> cells) {
+    private IpynbFormat toIpynbFormat(List<CellData> cells, boolean includeOutput) {
         return new IpynbFormat(
                 Map.of(
                         "kernel_info", Map.of("name", "JTaccuino", "version", "0.1"),
@@ -81,11 +85,11 @@ public class NotebookPersistence {
                 4, 5,
                 cells.stream()
                         .filter(Predicate.not(CellData::isEmpty))
-                        .map(this::convertToNotebookCell)
+                        .map(c -> convertToNotebookCell(c, includeOutput))
                         .toList());
     }
 
-    private IpynbFormat.Cell convertToNotebookCell(CellData cellData) {
+    private IpynbFormat.Cell convertToNotebookCell(CellData cellData, boolean includeOutput) {
         return switch (cellData.getType()) {
             case CODE ->
                 new IpynbFormat.CodeCell(
@@ -93,7 +97,7 @@ public class NotebookPersistence {
                 cellData.getType().name().toLowerCase(Locale.ENGLISH),
                 Map.of(),
                 cellData.getSource(),
-                cellData.getOutputData().stream().map(IpynbFormat.Output::from).toList(),
+                includeOutput ? cellData.getOutputData().stream().map(IpynbFormat.Output::from).toList() : List.of(),
                 0);
             case MARKDOWN ->
                 new IpynbFormat.MarkdownCell(

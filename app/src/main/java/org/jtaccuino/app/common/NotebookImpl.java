@@ -79,4 +79,9 @@ public class NotebookImpl implements Notebook{
     public void saveToFile(File selectedFile) {
         NotebookPersistence.INSTANCE.toFile(selectedFile, cells);
     }
+
+    @Override
+    public void exportToFile(File selectedFile) {
+        NotebookPersistence.INSTANCE.toFile(selectedFile, cells, false);
+    }
 }
