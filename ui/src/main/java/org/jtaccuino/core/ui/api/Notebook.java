@@ -36,4 +36,6 @@ public interface Notebook {
     public void save();
 
     public void saveToFile(File selectedFile);
+
+    public void exportToFile(File selectedFile);
 }

@@ -19,6 +19,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import org.jtaccuino.app.studio.actions.ExecuteNotebookAction;
+import org.jtaccuino.app.studio.actions.ExportAction;
 import org.jtaccuino.app.studio.actions.NewAction;
 import org.jtaccuino.app.studio.actions.OpenAction;
 import org.jtaccuino.app.studio.actions.ResetAndExecuteNotebookAction;
@@ -49,6 +50,7 @@ public class MenuBar {
         var openMenu = createMenuItem(OpenAction.INSTANCE);
         var saveMenu = createMenuItem(SaveAction.INSTANCE);
         var saveAsMenu = createMenuItem(SaveAsAction.INSTANCE);
+        var exportMenu = createMenuItem(ExportAction.INSTANCE);
 
         var fileMenu = new Menu("File");
         fileMenu.getItems().addAll(
@@ -56,7 +58,7 @@ public class MenuBar {
                 new SeparatorMenuItem(),
                 openMenu,
                 new SeparatorMenuItem(),
-                saveMenu, saveAsMenu);
+                saveMenu, saveAsMenu, exportMenu);
 
         var executeMenu = createMenuItem(ExecuteNotebookAction.INSTANCE);
         var resetAndExecuteMenu = createMenuItem(ResetAndExecuteNotebookAction.INSTANCE);

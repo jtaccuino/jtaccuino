@@ -22,29 +22,27 @@ import org.jtaccuino.core.ui.Sheet;
 import org.jtaccuino.core.ui.api.SheetAction;
 import org.jtaccuino.core.ui.api.StatusDisplayer;
 
-public final class SaveAsAction extends SheetAction {
+public final class ExportAction extends SheetAction {
 
-    public static final SaveAsAction INSTANCE = new SaveAsAction();
+    public static final ExportAction INSTANCE = new ExportAction();
 
-    private SaveAsAction() {
-        super("file/save_as",
-                "Save As",
-                "Shift+Meta+S");
+    private ExportAction() {
+        super("file/export",
+                "Export",
+                "");
     }
 
     @Override
     protected void handle(Sheet sheet) {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Save Notebook File");
+        fileChooser.setTitle("Export Notebook File");
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Notebook Files", "*.ipynb"),
                 new FileChooser.ExtensionFilter("All Files", "*.*"));
         File selectedFile = fileChooser.showSaveDialog(WindowManager.getDefault().getMainWindow());
         if (null != selectedFile) {
-            sheet.getNotebook().rename(selectedFile.getName());
-            sheet.getNotebook().setFile(selectedFile);
-            sheet.getNotebook().save();
-            StatusDisplayer.display("Saved notebook " + sheet.getNotebook().getDisplayName() + ".");
+            sheet.getNotebook().exportToFile(selectedFile);
+            StatusDisplayer.display("Exported notebook " + sheet.getNotebook().getDisplayName() + ".");
         }
     }
 }
