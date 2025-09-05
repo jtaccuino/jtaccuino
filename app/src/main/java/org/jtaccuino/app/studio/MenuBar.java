@@ -15,28 +15,33 @@
  */
 package org.jtaccuino.app.studio;
 
+import java.io.File;
+import java.util.List;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import org.jtaccuino.app.studio.actions.AboutAction;
+import org.jtaccuino.app.common.NotebookPersistence;
 import org.jtaccuino.app.studio.actions.ExecuteNotebookAction;
 import org.jtaccuino.app.studio.actions.ExportAction;
 import org.jtaccuino.app.studio.actions.NewAction;
 import org.jtaccuino.app.studio.actions.OpenAction;
+import org.jtaccuino.app.studio.actions.RecentFileList;
 import org.jtaccuino.app.studio.actions.ResetAndExecuteNotebookAction;
 import org.jtaccuino.app.studio.actions.SaveAction;
 import org.jtaccuino.app.studio.actions.SaveAsAction;
 import org.jtaccuino.core.ui.actions.ChangeCellToJavaAction;
 import org.jtaccuino.core.ui.actions.ChangeCellToMarkdownAction;
-import org.jtaccuino.core.ui.actions.DeleteCellAction;
-import org.jtaccuino.core.ui.actions.ExecuteCellAction;
 import org.jtaccuino.core.ui.actions.InsertCellAboveAction;
 import org.jtaccuino.core.ui.actions.InsertCellBelowAction;
 import org.jtaccuino.core.ui.actions.MoveCellDownAction;
 import org.jtaccuino.core.ui.actions.MoveCellUpAction;
 import org.jtaccuino.core.ui.api.Action;
+import org.jtaccuino.core.ui.api.SheetManager;
 
 public class MenuBar {
+
+    private static final MenuItem MENU_PLACEHOLDER_ITEM = new MenuItem("No recent files");
 
     private MenuBar() {
     }
@@ -52,6 +57,9 @@ public class MenuBar {
         var saveMenu = createMenuItem(SaveAction.INSTANCE);
         var saveAsMenu = createMenuItem(SaveAsAction.INSTANCE);
         var exportMenu = createMenuItem(ExportAction.INSTANCE);
+        var recentFilesMenu = new Menu("Recent Files");
+        recentFilesMenu.getItems().add(MENU_PLACEHOLDER_ITEM);
+        recentFilesMenu.setOnShowing(event -> updateRecentFilesMenu(recentFilesMenu));
 
         var fileMenu = new Menu("File");
         fileMenu.getItems().addAll(
@@ -59,7 +67,9 @@ public class MenuBar {
                 new SeparatorMenuItem(),
                 openMenu,
                 new SeparatorMenuItem(),
-                saveMenu, saveAsMenu, exportMenu);
+                saveMenu, saveAsMenu, exportMenu,
+                new SeparatorMenuItem(),
+                recentFilesMenu);
 
         var executeMenu = createMenuItem(ExecuteNotebookAction.INSTANCE);
         var resetAndExecuteMenu = createMenuItem(ResetAndExecuteNotebookAction.INSTANCE);
@@ -105,5 +115,28 @@ public class MenuBar {
         item.setAccelerator(action.getAccelerator());
         item.setOnAction(action);
         return item;
+    }
+
+    private static String getFileName(String filePath) {
+        int slashIndex = filePath.lastIndexOf('/');
+        if (slashIndex == -1) {
+            return filePath;
+        }
+        return filePath.substring(slashIndex + 1);
+    }
+
+    private static void updateRecentFilesMenu(Menu recentFilesMenu) {
+        recentFilesMenu.getItems().clear();
+        List<String> recentFiles = RecentFileList.INSTANCE.get();
+        if (recentFiles.isEmpty()) {
+            recentFilesMenu.getItems().add(MENU_PLACEHOLDER_ITEM);
+        } else {
+            for (String fileName : RecentFileList.INSTANCE.get()) {
+                MenuItem item = new MenuItem(getFileName(fileName));
+                item.setOnAction(e -> SheetManager.getDefault().open(
+                        NotebookPersistence.INSTANCE.of(new File(fileName))));
+                recentFilesMenu.getItems().add(item);
+            }
+        }
     }
 }

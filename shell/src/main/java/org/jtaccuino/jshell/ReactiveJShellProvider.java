@@ -28,6 +28,8 @@ public class ReactiveJShellProvider {
     private static final String OS_NAME = System.getProperty("os.name").toLowerCase(Locale.ROOT);
     private static final boolean IS_WINDOWS = OS_NAME.contains("windows");
 
+    private ReactiveJShellProvider() {}
+
     public static ReactiveJShell createReactiveShell(UUID uuid, Path path) {
         ReactiveJShell rjs = ReactiveJShell.create(uuid);
         return initShell(rjs, uuid, path);
@@ -62,7 +64,7 @@ public class ReactiveJShellProvider {
         if (path != null) {
             var pathString = path.toString();
             if (IS_WINDOWS) {
-                pathString = path.toString().replaceAll("\\\\", "//");
+                pathString = path.toString().replace("\\\\", "//");
             }
             var cwdInitSource = "var cwd = Paths.get(\"" + pathString + "\");";
             ReactiveJShell.EvaluationResult cwdDefResult = rjs.eval(cwdInitSource);

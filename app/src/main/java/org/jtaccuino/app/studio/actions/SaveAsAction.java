@@ -15,30 +15,31 @@
  */
 package org.jtaccuino.app.studio.actions;
 
-import java.io.File;
 import javafx.stage.FileChooser;
 import org.jtaccuino.app.studio.WindowManager;
 import org.jtaccuino.core.ui.Sheet;
 import org.jtaccuino.core.ui.api.SheetAction;
 import org.jtaccuino.core.ui.api.StatusDisplayer;
 
+import java.io.File;
+
 public final class SaveAsAction extends SheetAction {
 
     public static final SaveAsAction INSTANCE = new SaveAsAction();
+    private final FileChooser fileChooser = new FileChooser();
 
     private SaveAsAction() {
         super("file/save_as",
                 "Save As",
                 "Shift+Meta+S");
-    }
-
-    @Override
-    protected void handle(Sheet sheet) {
-        FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Notebook File");
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Notebook Files", "*.ipynb"),
                 new FileChooser.ExtensionFilter("All Files", "*.*"));
+    }
+
+    @Override
+    protected void handle(Sheet sheet) {
         File selectedFile = fileChooser.showSaveDialog(WindowManager.getDefault().getMainWindow());
         if (null != selectedFile) {
             sheet.getNotebook().rename(selectedFile.getName());

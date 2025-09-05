@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ExtensionManager {
 
+    private ExtensionManager() {}
+
     private static final Map<UUID, Map<Class<? extends JShellExtension>, JShellExtension>> EXTENSION_REGISTRY = new ConcurrentHashMap<>();
 
     @SuppressWarnings("unchecked")

@@ -25,9 +25,9 @@ public abstract class SheetAction extends AbstractAction {
     }
 
     @Override
-    final public void handle(ActionEvent t) {
+    public final void handle(ActionEvent t) {
         handle(SheetManager.getDefault().getActiveSheet());
     }
 
-    abstract protected void handle(Sheet sheet);
+    protected abstract void handle(Sheet sheet);
 }

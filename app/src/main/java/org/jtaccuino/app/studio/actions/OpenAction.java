@@ -15,34 +15,37 @@
  */
 package org.jtaccuino.app.studio.actions;
 
-import java.io.File;
 import javafx.event.ActionEvent;
 import javafx.stage.FileChooser;
 import org.jtaccuino.app.common.NotebookPersistence;
-import org.jtaccuino.core.ui.api.SheetManager;
 import org.jtaccuino.app.studio.WindowManager;
 import org.jtaccuino.core.ui.api.AbstractAction;
+import org.jtaccuino.core.ui.api.SheetManager;
+
+import java.io.File;
 
 public final class OpenAction extends AbstractAction {
 
     public static final OpenAction INSTANCE = new OpenAction();
+    private final FileChooser fileChooser = new FileChooser();
+    private static final RecentFileList recentFiles = RecentFileList.INSTANCE;
 
     private OpenAction() {
         super("file/open",
             "Open",
             "Meta+O");
-    }
-
-    @Override
-    public void handle(ActionEvent t) {
-        FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Notebook File");
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Notebook Files", "*.ipynb"),
                 new FileChooser.ExtensionFilter("All Files", "*.*"));
+    }
+
+    @Override
+    public void handle(ActionEvent t) {
         File selectedFile = fileChooser.showOpenDialog(WindowManager.getDefault().getMainWindow());
         if (null != selectedFile) {
             SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of(selectedFile));
+            recentFiles.addFile(selectedFile.getPath());
         }
     }
 }
