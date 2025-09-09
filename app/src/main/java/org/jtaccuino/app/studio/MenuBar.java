@@ -18,6 +18,7 @@ package org.jtaccuino.app.studio;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import org.jtaccuino.app.studio.actions.AboutAction;
 import org.jtaccuino.app.studio.actions.ExecuteNotebookAction;
 import org.jtaccuino.app.studio.actions.ExportAction;
 import org.jtaccuino.app.studio.actions.NewAction;
@@ -68,8 +69,8 @@ public class MenuBar {
         runMenu.getItems().addAll(
                 executeMenu,
                 resetAndExecuteMenu
-//                new SeparatorMenuItem(),
-//                executeCellMenu
+        //                new SeparatorMenuItem(),
+        //                executeCellMenu
         );
 //        var deleteCell = createMenuItem(DeleteCellAction.INSTANCE);
         var moveCellUp = createMenuItem(MoveCellUpAction.INSTANCE);
@@ -80,7 +81,7 @@ public class MenuBar {
         var changeCellToMarkdown = createMenuItem(ChangeCellToMarkdownAction.INSTANCE);
         var sourceMenu = new Menu("Source");
         sourceMenu.getItems().addAll(
-//                deleteCell,
+                //                deleteCell,
                 moveCellUp,
                 moveCellDown,
                 insertCellAbove,
@@ -88,7 +89,14 @@ public class MenuBar {
                 changeCellToJava,
                 changeCellToMarkdown
         );
-        menuBar.getMenus().addAll(fileMenu, sourceMenu, runMenu);
+
+        var helpMenu = new Menu("Help");
+        var about = createMenuItem(AboutAction.INSTANCE);
+        helpMenu.getItems().addAll(
+                about
+        );
+
+        menuBar.getMenus().addAll(fileMenu, sourceMenu, runMenu, helpMenu);
         return menuBar;
     }
 
