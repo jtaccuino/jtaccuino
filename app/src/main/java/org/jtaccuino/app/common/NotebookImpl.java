@@ -16,6 +16,7 @@
 package org.jtaccuino.app.common;
 
 import java.io.File;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.UUID;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -27,15 +28,23 @@ import org.jtaccuino.app.common.internal.IpynbFormatOperations;
 import org.jtaccuino.core.ui.api.CellData;
 import org.jtaccuino.core.ui.api.Notebook;
 
-public class NotebookImpl implements Notebook{
+public class NotebookImpl implements Notebook {
 
     private final StringProperty displayNameProperty = new SimpleStringProperty();
     private File file;
+    private URI uri;
     private final ObservableList<CellData> cells = FXCollections.observableArrayList();
 
     NotebookImpl(IpynbFormatOperations ipynb, String displayName, File file) {
         this.displayNameProperty.set(displayName);
         this.file = file;
+        this.cells.addAll(null != ipynb ? ipynb.toCellDataList()
+                : Arrays.asList(new CellData[]{CellData.of(CellData.Type.CODE, null, UUID.randomUUID())}));
+    }
+    
+    NotebookImpl(IpynbFormatOperations ipynb, String displayName, URI uri) {
+        this.displayNameProperty.set(displayName);
+        this.uri = uri;
         this.cells.addAll(null != ipynb ? ipynb.toCellDataList()
                 : Arrays.asList(new CellData[]{CellData.of(CellData.Type.CODE, null, UUID.randomUUID())}));
     }
@@ -63,6 +72,15 @@ public class NotebookImpl implements Notebook{
     @Override
     public void setFile(File file) {
         this.file = file;
+    }
+    @Override
+    public URI getURI() {
+        return uri;
+    }
+
+    @Override
+    public void setURI(URI uri) {
+        this.uri = uri;
     }
 
     @Override

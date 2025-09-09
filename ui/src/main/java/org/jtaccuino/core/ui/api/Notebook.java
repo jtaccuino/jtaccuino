@@ -16,6 +16,7 @@
 package org.jtaccuino.core.ui.api;
 
 import java.io.File;
+import java.net.URI;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.collections.ObservableList;
 
@@ -30,6 +31,10 @@ public interface Notebook {
     public File getFile();
 
     public void setFile(File file);
+
+    public URI getURI();
+
+    public void setURI(URI uri);
 
     public void rename(String newName);
 

@@ -16,7 +16,11 @@
 package org.jtaccuino.app.studio;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
@@ -26,10 +30,12 @@ import org.jtaccuino.app.studio.actions.ExecuteNotebookAction;
 import org.jtaccuino.app.studio.actions.ExportAction;
 import org.jtaccuino.app.studio.actions.NewAction;
 import org.jtaccuino.app.studio.actions.OpenAction;
+import org.jtaccuino.app.studio.actions.OpenRemoteAction;
 import org.jtaccuino.app.studio.actions.RecentFileList;
 import org.jtaccuino.app.studio.actions.ResetAndExecuteNotebookAction;
 import org.jtaccuino.app.studio.actions.SaveAction;
 import org.jtaccuino.app.studio.actions.SaveAsAction;
+import org.jtaccuino.app.studio.util.Util;
 import org.jtaccuino.core.ui.actions.ChangeCellToJavaAction;
 import org.jtaccuino.core.ui.actions.ChangeCellToMarkdownAction;
 import org.jtaccuino.core.ui.actions.InsertCellAboveAction;
@@ -54,6 +60,7 @@ public class MenuBar {
         }
         var newMenu = createMenuItem(NewAction.INSTANCE);
         var openMenu = createMenuItem(OpenAction.INSTANCE);
+        var openRemoteMenu = createMenuItem(OpenRemoteAction.INSTANCE);
         var saveMenu = createMenuItem(SaveAction.INSTANCE);
         var saveAsMenu = createMenuItem(SaveAsAction.INSTANCE);
         var exportMenu = createMenuItem(ExportAction.INSTANCE);
@@ -66,6 +73,7 @@ public class MenuBar {
                 newMenu,
                 new SeparatorMenuItem(),
                 openMenu,
+                openRemoteMenu,
                 new SeparatorMenuItem(),
                 saveMenu, saveAsMenu, exportMenu,
                 new SeparatorMenuItem(),
@@ -117,14 +125,6 @@ public class MenuBar {
         return item;
     }
 
-    private static String getFileName(String filePath) {
-        int slashIndex = filePath.lastIndexOf('/');
-        if (slashIndex == -1) {
-            return filePath;
-        }
-        return filePath.substring(slashIndex + 1);
-    }
-
     private static void updateRecentFilesMenu(Menu recentFilesMenu) {
         recentFilesMenu.getItems().clear();
         List<String> recentFiles = RecentFileList.INSTANCE.get();
@@ -132,9 +132,20 @@ public class MenuBar {
             recentFilesMenu.getItems().add(MENU_PLACEHOLDER_ITEM);
         } else {
             for (String fileName : RecentFileList.INSTANCE.get()) {
-                MenuItem item = new MenuItem(getFileName(fileName));
-                item.setOnAction(e -> SheetManager.getDefault().open(
-                        NotebookPersistence.INSTANCE.of(new File(fileName))));
+                MenuItem item = new MenuItem(Util.getFileNamePartOf(fileName));
+                if (Util.isValidUrl(fileName)) {
+                    item.setOnAction(e -> {
+                        try {
+                            final URI uri = new URI(fileName);
+                            SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of(uri));
+                        } catch (URISyntaxException ex) {
+                            Logger.getLogger(MenuBar.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    });
+                } else {
+                    item.setOnAction(e -> SheetManager.getDefault().open(
+                            NotebookPersistence.INSTANCE.of(new File(fileName))));
+                }
                 recentFilesMenu.getItems().add(item);
             }
         }
