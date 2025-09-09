@@ -16,7 +16,6 @@
 package org.jtaccuino.app;
 
 import java.io.File;
-import java.util.Objects;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -85,7 +84,7 @@ public class Pad extends Application {
                     File selectedFile = fileChooser.showOpenDialog(stage);
                     if (selectedFile != null) {
                         System.out.println(selectedFile);
-                        var notebook = NotebookPersistence.INSTANCE.of(selectedFile);
+                        var notebook = NotebookPersistence.INSTANCE.of(selectedFile.toURI());
                         activateNotebook(notebook);
                     }
                 });
@@ -142,7 +141,7 @@ public class Pad extends Application {
         }
 
         void saveToFile(File selectedFile) {
-            this.sheet.getNotebook().saveToFile(selectedFile);
+            this.sheet.getNotebook().saveAs(selectedFile);
         }
     }
 }

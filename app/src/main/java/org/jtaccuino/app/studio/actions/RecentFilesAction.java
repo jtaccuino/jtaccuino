@@ -15,7 +15,7 @@
  */
 package org.jtaccuino.app.studio.actions;
 
-import java.nio.file.Path;
+import java.net.URI;
 import java.util.List;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyListWrapper;
@@ -36,16 +36,16 @@ public class RecentFilesAction extends AbstractAction implements DynamicAction {
 
     private static class RecentFileAction extends AbstractAction {
 
-        private final Path path;
+        private final URI uri;
 
-        private RecentFileAction(String displayText, Path path, boolean mnemonicEnabled) {
+        private RecentFileAction(String displayText, URI uri, boolean mnemonicEnabled) {
             super("file/recent/" + displayText, displayText, mnemonicEnabled ? "Meta+Shift+T" : "");
-            this.path = path;
+            this.uri = uri;
         }
 
         @Override
         public void handle(ActionEvent event) {
-            SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of(path.toFile()));
+            SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of(uri));
         }
     }
 
@@ -73,8 +73,8 @@ public class RecentFilesAction extends AbstractAction implements DynamicAction {
     private void updateActions(List<? extends SheetManager.RecentFile> recentFiles) {
         recentFileActions.clear();
         boolean isFirstAction = true;
-        for (var rf: recentFiles) {
-            recentFileActions.add(new RecentFileAction(rf.displayName(), rf.path(), isFirstAction));
+        for (var rf : recentFiles) {
+            recentFileActions.add(new RecentFileAction(rf.displayName(), rf.uri(), isFirstAction));
             isFirstAction = false;
         }
     }

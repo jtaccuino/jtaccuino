@@ -16,7 +16,10 @@
 package org.jtaccuino.app.common;
 
 import java.io.File;
+import java.net.URI;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.UUID;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -27,17 +30,118 @@ import org.jtaccuino.app.common.internal.IpynbFormatOperations;
 import org.jtaccuino.core.ui.api.CellData;
 import org.jtaccuino.core.ui.api.Notebook;
 
-public class NotebookImpl implements Notebook{
+public class NotebookImpl implements Notebook {
+
+    private static class NullStorageImpl implements NullStorage {
+
+        @Override
+        public FileStorage toFileStorage(File file) {
+            return new FileStorageImpl(file);
+        }
+
+        @Override
+        public boolean isLocal() {
+            return false;
+        }
+
+        @Override
+        public Optional<Path> getLocalFolder() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<URI> getURI() {
+            return Optional.empty();
+        }
+    }
+
+    private static class FileStorageImpl implements FileStorage {
+
+        private final File file;
+
+        private FileStorageImpl(File file) {
+            this.file = file;
+        }
+
+        @Override
+        public File getFile() {
+            return this.file;
+        }
+
+        @Override
+        public boolean isLocal() {
+            return true;
+        }
+
+        @Override
+        public Optional<Path> getLocalFolder() {
+            return Optional.of(this.file.getParentFile().toPath());
+        }
+
+        @Override
+        public Optional<URI> getURI() {
+            return Optional.of(this.file.toURI());
+        }
+    }
+
+    private static class URIStorageImpl implements URIStorage {
+
+        private final URI uri;
+
+        private URIStorageImpl(URI uri) {
+            this.uri = uri;
+        }
+
+        @Override
+        public FileStorage toFileStorage(File file) {
+            return new FileStorageImpl(file);
+        }
+
+        @Override
+        public boolean isLocal() {
+            return false;
+        }
+
+        @Override
+        public Optional<Path> getLocalFolder() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<URI> getURI() {
+            return Optional.of(this.uri);
+        }
+    }
 
     private final StringProperty displayNameProperty = new SimpleStringProperty();
-    private File file;
+    private final StringProperty locationProperty = new SimpleStringProperty();
     private final ObservableList<CellData> cells = FXCollections.observableArrayList();
 
-    NotebookImpl(IpynbFormatOperations ipynb, String displayName, File file) {
+    private Storage storage;
+
+    NotebookImpl(IpynbFormatOperations ipynb, String displayName, URI uri) {
         this.displayNameProperty.set(displayName);
-        this.file = file;
         this.cells.addAll(null != ipynb ? ipynb.toCellDataList()
                 : Arrays.asList(new CellData[]{CellData.of(CellData.Type.CODE, null, UUID.randomUUID())}));
+        if (null == uri) {
+            this.storage = new NullStorageImpl();
+            this.locationProperty.set("No Location. Not persistent yet!");
+        } else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            this.storage = new FileStorageImpl(Path.of(uri).toFile());
+            this.locationProperty.set(this.storage.getURI().get().toString());
+        } else if ("http".equalsIgnoreCase(uri.getScheme())
+                || "https".equalsIgnoreCase(uri.getScheme())
+                || "jar".equalsIgnoreCase(uri.getScheme())) {
+            this.storage = new URIStorageImpl(uri);
+            this.locationProperty.set(this.storage.getURI().get().toString());
+        } else {
+            throw new IllegalArgumentException("Unsupported URIs scheme " + uri.getScheme());
+        }
+    }
+
+    @Override
+    public Storage getStorage() {
+        return this.storage;
     }
 
     @Override
@@ -56,32 +160,37 @@ public class NotebookImpl implements Notebook{
     }
 
     @Override
-    public File getFile() {
-        return file;
+    public ReadOnlyStringProperty locationProperty() {
+        return locationProperty;
     }
 
     @Override
-    public void setFile(File file) {
-        this.file = file;
-    }
-
-    @Override
-    public void rename(String newName) {
-        this.displayNameProperty.set(newName);
+    public String getLocation() {
+        return locationProperty.get();
     }
 
     @Override
     public void save() {
-        saveToFile(this.file);
+        this.storage.getURI().ifPresent(uri
+                -> NotebookPersistence.INSTANCE.toFile(Path.of(uri).toFile(), cells)
+        );
     }
 
     @Override
-    public void saveToFile(File selectedFile) {
+    public void saveAs(File selectedFile) {
         NotebookPersistence.INSTANCE.toFile(selectedFile, cells);
+        this.storage = new FileStorageImpl(selectedFile);
+        this.displayNameProperty.set(selectedFile.getName());
+        this.locationProperty.set(this.storage.getURI().get().toString());
     }
 
     @Override
-    public void exportToFile(File selectedFile) {
-        NotebookPersistence.INSTANCE.toFile(selectedFile, cells, false);
+    public void export(ExportMode exportMode, File selectedFile) {
+        switch (exportMode) {
+            case NO_OUTPUTS ->
+                NotebookPersistence.INSTANCE.toFile(selectedFile, cells, false);
+            case MARKDOWN ->
+                throw new IllegalArgumentException("Markdown export not yet supported");
+        }
     }
 }

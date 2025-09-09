@@ -31,10 +31,10 @@ public final class SaveAction extends SheetAction {
 
     @Override
     protected void handle(Sheet sheet) {
-        if(null == sheet.getNotebook().getFile()) {
+        if (!sheet.getNotebook().getStorage().isLocal()) {
             SaveAsAction.INSTANCE.handle(sheet);
         } else {
-            sheet.getNotebook().saveToFile(sheet.getNotebook().getFile());
+            sheet.getNotebook().save();
             StatusDisplayer.display("Saved notebook " + sheet.getNotebook().getDisplayName() + ".");
         }
     }

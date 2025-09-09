@@ -19,8 +19,9 @@ import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.InputStreamReader;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
@@ -29,8 +30,10 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jtaccuino.app.common.internal.IpynbFormat;
+import org.jtaccuino.app.studio.util.Util;
 import org.jtaccuino.core.ui.api.CellData;
 import static org.jtaccuino.core.ui.api.CellData.Type.CODE;
+
 import static org.jtaccuino.core.ui.api.CellData.Type.MARKDOWN;
 
 public class NotebookPersistence {
@@ -45,17 +48,22 @@ public class NotebookPersistence {
     }
 
     public NotebookImpl of() {
-        return new NotebookImpl(null, "Scratch", null);
+        return new NotebookImpl(null, "Scratch", (URI) null);
     }
 
-    public NotebookImpl of(File file) {
-        try {
-            var jsonb = JsonbBuilder.create();
-            var ipynb = jsonb.fromJson(new FileReader(file, StandardCharsets.UTF_8), IpynbFormat.class);
-            jsonb.close();
-            return new NotebookImpl(ipynb, file.getName(), file);
-        } catch (final Exception ex) {
+    public NotebookImpl of(URI uri) {
+        var jsonb = JsonbBuilder.create();
+        try (InputStreamReader reader = new InputStreamReader(uri.toURL().openStream(), StandardCharsets.UTF_8)) {
+            IpynbFormat ipynb = jsonb.fromJson(reader, IpynbFormat.class);
+            return new NotebookImpl(ipynb, Util.getFileNamePartOf(uri.toString()), uri);
+        } catch (Exception ex) {
             Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                jsonb.close();
+            } catch (Exception ex) {
+                Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
         return null;

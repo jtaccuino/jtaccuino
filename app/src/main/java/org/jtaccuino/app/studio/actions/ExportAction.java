@@ -19,6 +19,7 @@ import java.io.File;
 import javafx.stage.FileChooser;
 import org.jtaccuino.app.studio.WindowManager;
 import org.jtaccuino.core.ui.Sheet;
+import org.jtaccuino.core.ui.api.Notebook;
 import org.jtaccuino.core.ui.api.SheetAction;
 import org.jtaccuino.core.ui.api.StatusDisplayer;
 
@@ -41,7 +42,7 @@ public final class ExportAction extends SheetAction {
                 new FileChooser.ExtensionFilter("All Files", "*.*"));
         File selectedFile = fileChooser.showSaveDialog(WindowManager.getDefault().getMainWindow());
         if (null != selectedFile) {
-            sheet.getNotebook().exportToFile(selectedFile);
+            sheet.getNotebook().export(Notebook.ExportMode.NO_OUTPUTS, selectedFile);
             StatusDisplayer.display("Exported notebook " + sheet.getNotebook().getDisplayName() + ".");
         }
     }

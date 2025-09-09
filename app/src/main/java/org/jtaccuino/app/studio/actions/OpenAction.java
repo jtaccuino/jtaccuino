@@ -29,8 +29,8 @@ public final class OpenAction extends AbstractAction {
 
     private OpenAction() {
         super("file/open",
-            "Open",
-            "Meta+O");
+                "Open",
+                "Meta+O");
     }
 
     @Override
@@ -42,7 +42,7 @@ public final class OpenAction extends AbstractAction {
                 new FileChooser.ExtensionFilter("All Files", "*.*"));
         File selectedFile = fileChooser.showOpenDialog(WindowManager.getDefault().getMainWindow());
         if (null != selectedFile) {
-            SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of(selectedFile));
+            SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of(selectedFile.toURI()));
         }
     }
 }

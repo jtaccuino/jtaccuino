@@ -15,9 +15,9 @@
  */
 package org.jtaccuino.app.studio;
 
-import java.util.List;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
+import java.util.List;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
@@ -27,6 +27,7 @@ import org.jtaccuino.app.studio.actions.ExportAction;
 import org.jtaccuino.app.studio.actions.NewAction;
 import org.jtaccuino.app.studio.actions.OpenAction;
 import org.jtaccuino.app.studio.actions.RecentFilesAction;
+import org.jtaccuino.app.studio.actions.OpenRemoteAction;
 import org.jtaccuino.app.studio.actions.ResetAndExecuteNotebookAction;
 import org.jtaccuino.app.studio.actions.SaveAction;
 import org.jtaccuino.app.studio.actions.SaveAsAction;
@@ -52,6 +53,7 @@ public class MenuBar {
         }
         var newMenu = createMenuItem(NewAction.INSTANCE);
         var openMenu = createMenuItem(OpenAction.INSTANCE);
+        var openRemoteMenu = createMenuItem(OpenRemoteAction.INSTANCE);
         var saveMenu = createMenuItem(SaveAction.INSTANCE);
         var saveAsMenu = createMenuItem(SaveAsAction.INSTANCE);
         var exportMenu = createMenuItem(ExportAction.INSTANCE);
@@ -62,6 +64,7 @@ public class MenuBar {
                 newMenu,
                 new SeparatorMenuItem(),
                 openMenu,
+                openRemoteMenu,
                 new SeparatorMenuItem(),
                 recentFilesMenu,
                 new SeparatorMenuItem(),
@@ -111,7 +114,6 @@ public class MenuBar {
         if (action instanceof DynamicAction dynAction) {
             var menu = new Menu(dynAction.getDisplayString());
             menu.disableProperty().bind(dynAction.enabledProperty().not());
-
             dynAction.actions().addListener(new ListChangeListener<Action>() {
                 @Override
                 public void onChanged(ListChangeListener.Change<? extends Action> c) {
@@ -128,7 +130,6 @@ public class MenuBar {
             item.disableProperty().bind(action.enabledProperty().not());
             return item;
         }
-        // TBD -> sealed interface
     }
 
     private static void updateMenu(Menu menu, List<? extends Action> actions) {

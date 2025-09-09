@@ -57,7 +57,7 @@ public class Sheet extends Control {
     private Sheet(Notebook notebook) {
         this.uuid = UUID.randomUUID();
         this.notebook = notebook;
-        reactiveJShellProperty.set(ReactiveJShellProvider.createReactiveShell(uuid, null != this.notebook.getFile() ? this.notebook.getFile().getParentFile().toPath() : null));
+        reactiveJShellProperty.set(ReactiveJShellProvider.createReactiveShell(uuid, this.notebook.getStorage().getLocalFolder().orElse(null)));
         activeCellProperty.subscribe(c -> {
             if (c != null) {
                 activeCellNumberProperty.set(c.cellNumber);
@@ -84,7 +84,7 @@ public class Sheet extends Control {
     public void resetAndExecute() {
         worker.execute(() -> {
             getReactiveJShell().shutdown();
-            reactiveJShellProperty.set(ReactiveJShellProvider.createReactiveShell(uuid, null != notebook ? notebook.getFile().getParentFile().toPath() : null));
+            reactiveJShellProperty.set(ReactiveJShellProvider.createReactiveShell(uuid, this.notebook.getStorage().getLocalFolder().orElse(null)));
             execute();
         });
     }
@@ -102,7 +102,7 @@ public class Sheet extends Control {
     }
 
     public int getCellIndex(Cell cell) {
-        return ((SheetSkin)getSkin()).getCellIndex(cell);
+        return ((SheetSkin) getSkin()).getCellIndex(cell);
     }
 
     public void moveFocusToNextCell(Cell currentCell) {
@@ -240,7 +240,7 @@ public class Sheet extends Control {
         }
 
         public final ReadOnlyObjectProperty<Point2D> caretRowColumnProperty() {
-            return ((CellFactory.AbstractCellSkin<? extends Cell>)getSkin()).caretRowColumnProperty();
+            return ((CellFactory.AbstractCellSkin<? extends Cell>) getSkin()).caretRowColumnProperty();
         }
     }
 }

@@ -20,6 +20,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
@@ -92,9 +93,7 @@ public class Studio extends Application {
             sheetPane.getTabs().add(new TabSheet(SheetManager.getDefault().of(NotebookPersistence.INSTANCE.of())));
         } else {
             openFiles.forEach(file -> {
-                if (file.path().toFile().exists()) {
-                    SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of(file.path().toFile()));
-                }
+                SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of(file.uri()));
             });
         }
     }
@@ -106,13 +105,13 @@ public class Studio extends Application {
                 .filter(t -> t instanceof TabSheet)
                 .map(t -> (TabSheet) t)
                 .forEach(t -> {
-                    if (null != t.sheet.getNotebook().getFile()) {
-                        files.add(new FilePersistence.OpenFile(t.sheet.getNotebook().getFile().toPath()));
-                    }
+                    t.sheet.getNotebook().getStorage().getURI().ifPresent(uri
+                            -> files.add(new FilePersistence.OpenFile(uri))
+                    );
                     t.close(false);
                 });
         SheetManager.getDefault().getRecentFiles().forEach(rf -> {
-            files.add(new FilePersistence.RecentFile(rf.path()));
+            files.add(new FilePersistence.RecentFile(rf.uri()));
         });
 
         PersistenceManager.writePersistenceFile("files", files);
@@ -129,6 +128,10 @@ public class Studio extends Application {
             this.onCloseRequestProperty().set((t) -> {
                 this.close(true);
             });
+            sheet.getNotebook().getStorage().getURI().ifPresentOrElse(uri
+                    -> this.setTooltip(new Tooltip(uri.toString())),
+                    () -> this.setTooltip(new Tooltip("No Location")));
+            this.getTooltip().textProperty().bind(sheet.getNotebook().locationProperty());
         }
 
         void close(boolean makeNotebookRecent) {

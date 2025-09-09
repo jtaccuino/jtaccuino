@@ -15,26 +15,29 @@
  */
 package org.jtaccuino.app.studio;
 
-import java.nio.file.Path;
+import java.net.URI;
 import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.jtaccuino.app.common.NotebookPersistence;
 import org.jtaccuino.app.persistence.FilePersistence;
+import org.jtaccuino.app.studio.util.Util;
 import org.jtaccuino.core.ui.Sheet;
 import org.jtaccuino.core.ui.api.SheetManager;
 import org.jtaccuino.core.ui.spi.SheetManagerSPI;
 
-public class SheetManagerSPIImpl extends SheetManagerSPI{
+public class SheetManagerSPIImpl extends SheetManagerSPI {
 
-    private ObservableList<SheetManager.RecentFile> recentFiles =
-            FXCollections.observableArrayList(
-                    FilePersistence.getDefault().getRecentFiles().stream().map(rf -> from(rf.path())).toList());
+    private ObservableList<SheetManager.RecentFile> recentFiles
+            = FXCollections.observableArrayList(
+                    FilePersistence.getDefault()
+                            .getRecentFiles().stream()
+                            .map(rf -> from(rf.uri())).toList());
     private ReadOnlyListWrapper<SheetManager.RecentFile> unmodifiableRecentFiles = new ReadOnlyListWrapper<>(recentFiles);
 
-    private static SheetManager.RecentFile from(Path path) {
-        return new SheetManager.RecentFile(path.toFile().getName(), path);
+    private static SheetManager.RecentFile from(URI uri) {
+        return new SheetManager.RecentFile(Util.getFileNamePartOf(uri.getPath()), uri);
     }
 
     @Override
@@ -43,8 +46,8 @@ public class SheetManagerSPIImpl extends SheetManagerSPI{
     }
 
     @Override
-    public void addToRecentNotebooks(Path filePath) {
-        var recentFileCandidate = from(filePath);
+    public void addToRecentNotebooks(URI uri) {
+        var recentFileCandidate = from(uri);
         recentFiles.remove(recentFileCandidate);
         recentFiles.add(0, recentFileCandidate);
         while (Integer.getInteger("org.jtaccuino.recentFiles.max", 5) < recentFiles.size()) {
@@ -53,8 +56,8 @@ public class SheetManagerSPIImpl extends SheetManagerSPI{
     }
 
     @Override
-    public void removeFromRecentNotebooks(Path filePath) {
-        var recentFileCandidate = from(filePath);
+    public void removeFromRecentNotebooks(URI uri) {
+        var recentFileCandidate = from(uri);
         recentFiles.remove(recentFileCandidate);
     }
 
