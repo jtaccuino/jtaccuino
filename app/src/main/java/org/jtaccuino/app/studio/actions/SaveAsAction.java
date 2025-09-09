@@ -41,9 +41,7 @@ public final class SaveAsAction extends SheetAction {
                 new FileChooser.ExtensionFilter("All Files", "*.*"));
         File selectedFile = fileChooser.showSaveDialog(WindowManager.getDefault().getMainWindow());
         if (null != selectedFile) {
-            sheet.getNotebook().rename(selectedFile.getName());
-            sheet.getNotebook().setFile(selectedFile);
-            sheet.getNotebook().save();
+            sheet.getNotebook().saveAs(selectedFile);
             StatusDisplayer.display("Saved notebook " + sheet.getNotebook().getDisplayName() + ".");
         }
     }

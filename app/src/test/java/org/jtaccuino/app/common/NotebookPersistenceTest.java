@@ -48,11 +48,11 @@ public class NotebookPersistenceTest {
     @MethodSource("exampleNotebookFiles")
     void canNotebookPersistenceReadWriteFile(File notebookFile) {
         // first read the notebook
-        NotebookImpl nb = NotebookPersistence.INSTANCE.of(notebookFile);
+        NotebookImpl nb = NotebookPersistence.INSTANCE.of(notebookFile.toURI());
         System.out.println("Loaded notebook: " + nb);
 
         // then write the notebook
-        nb.saveToFile(new File(tempDir, "writtenNotebook.ipynb"));
+        nb.saveAs(new File(tempDir, "writtenNotebook.ipynb"));
     }
 
     @ParameterizedTest

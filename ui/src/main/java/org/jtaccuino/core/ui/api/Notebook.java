@@ -16,10 +16,42 @@
 package org.jtaccuino.core.ui.api;
 
 import java.io.File;
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.Optional;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.collections.ObservableList;
 
 public interface Notebook {
+
+    public static enum ExportMode {
+        NO_OUTPUTS,
+        MARKDOWN
+    }
+
+    public static sealed interface Storage permits FileStorage, NullStorage, URIStorage {
+
+        public boolean isLocal();
+
+        public Optional<Path> getLocalFolder();
+
+        public Optional<URI> getURI();
+    }
+
+    public static non-sealed interface NullStorage extends Storage {
+
+        public FileStorage toFileStorage(File file);
+    }
+
+    public static non-sealed interface URIStorage extends Storage {
+
+        public FileStorage toFileStorage(File file);
+    }
+
+    public static non-sealed interface FileStorage extends Storage {
+
+        public File getFile();
+    }
 
     public ObservableList<CellData> getCells();
 
@@ -27,15 +59,15 @@ public interface Notebook {
 
     public String getDisplayName();
 
-    public File getFile();
+    public ReadOnlyStringProperty locationProperty();
 
-    public void setFile(File file);
-
-    public void rename(String newName);
+    public String getLocation();
 
     public void save();
 
-    public void saveToFile(File selectedFile);
+    public void saveAs(File selectedFile);
 
-    public void exportToFile(File selectedFile);
+    public void export(ExportMode mode, File file);
+
+    public Storage getStorage();
 }

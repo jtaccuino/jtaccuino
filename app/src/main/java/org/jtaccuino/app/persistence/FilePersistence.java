@@ -15,20 +15,21 @@
  */
 package org.jtaccuino.app.persistence;
 
-import java.nio.file.Path;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class FilePersistence {
 
-    private static final FilePersistence INSTANCE =
-            PersistenceManager.readPersistenceFile("files", FilePersistence.class).orElse(new FilePersistence());
+    private static final FilePersistence INSTANCE
+            = PersistenceManager.readPersistenceFile("files", FilePersistence.class)
+                    .orElse(new FilePersistence());
 
-    public static record OpenFile(Path path) {
+    public static record OpenFile(URI uri) {
     }
 
-    public static record RecentFile(Path path) {
+    public static record RecentFile(URI uri) {
     }
 
     public static FilePersistence getDefault() {

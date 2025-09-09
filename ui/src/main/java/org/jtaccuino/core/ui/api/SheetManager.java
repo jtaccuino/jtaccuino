@@ -15,7 +15,7 @@
  */
 package org.jtaccuino.core.ui.api;
 
-import java.nio.file.Path;
+import java.net.URI;
 import java.util.ServiceLoader;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
@@ -31,7 +31,7 @@ import org.jtaccuino.core.ui.spi.SheetManagerSPI;
  */
 public class SheetManager {
 
-    public static record RecentFile(String displayName, Path path) {
+    public static record RecentFile(String displayName, URI uri) {
     }
 
     private static final SheetManager INSTANCE = new SheetManager();
@@ -60,8 +60,9 @@ public class SheetManager {
 
     public void close(Sheet sheet, boolean makeNotebookRecent) {
         sheet.close();
-        if (makeNotebookRecent && null != sheet.getNotebook().getFile()) {
-            addToRecentNotebooks(sheet.getNotebook().getFile().toPath());
+        if (makeNotebookRecent) {
+            sheet.getNotebook().getStorage()
+                    .getURI().ifPresent(uri -> addToRecentNotebooks(uri));
         }
     }
 
@@ -70,7 +71,8 @@ public class SheetManager {
         setActiveSheet(sheet);
         if (null != onOpen) {
             onOpen.handle(new SheetEvent(sheet, SheetEvent.SHEET_OPENED));
-            removeFromRecentNotebooks(sheet.getNotebook().getFile().toPath());
+            sheet.getNotebook().getStorage()
+                    .getURI().ifPresent(uri -> removeFromRecentNotebooks(uri));
         }
     }
 
@@ -96,12 +98,12 @@ public class SheetManager {
         return activeSheetProperty;
     }
 
-    private void addToRecentNotebooks(Path filePath) {
-        sheetManagerSPI.addToRecentNotebooks(filePath);
+    private void addToRecentNotebooks(URI uri) {
+        sheetManagerSPI.addToRecentNotebooks(uri);
     }
 
-    private void removeFromRecentNotebooks(Path filePath) {
-        sheetManagerSPI.removeFromRecentNotebooks(filePath);
+    private void removeFromRecentNotebooks(URI uri) {
+        sheetManagerSPI.removeFromRecentNotebooks(uri);
     }
 
     public SimpleListProperty<RecentFile> getRecentFiles() {
