@@ -15,18 +15,9 @@
  */
 package org.jtaccuino.core.ui.api;
 
-import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.scene.input.KeyCombination;
+import javafx.beans.property.SimpleListProperty;
 
-public interface Action extends EventHandler<ActionEvent> {
+public interface DynamicAction extends Action {
 
-    public KeyCombination getAccelerator();
-
-    public String getDisplayString();
-
-    public String getName();
-
-    public ReadOnlyBooleanProperty enabledProperty();
+    public SimpleListProperty<Action> actions();
 }

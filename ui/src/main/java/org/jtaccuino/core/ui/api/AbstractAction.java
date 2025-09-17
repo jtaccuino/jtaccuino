@@ -15,6 +15,9 @@
  */
 package org.jtaccuino.core.ui.api;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 
@@ -23,6 +26,7 @@ public abstract class AbstractAction implements Action {
     private final String name;
     private final String displayText;
     private final String keyCode;
+    private final SimpleBooleanProperty enabledProperty = new SimpleBooleanProperty(true);
 
     protected AbstractAction(String name, String displayText, String keyCode) {
         this.name = name;
@@ -43,5 +47,22 @@ public abstract class AbstractAction implements Action {
     @Override
     public String getName() {
         return this.name;
+    }
+
+    @Override
+    public ReadOnlyBooleanProperty enabledProperty() {
+        return enabledProperty;
+    }
+
+    protected BooleanProperty enabled() {
+        return enabledProperty;
+    }
+
+    protected void enable() {
+        enabledProperty.set(true);
+    }
+
+    protected void disable() {
+        enabledProperty.set(false);
     }
 }
