@@ -26,6 +26,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.jtaccuino.app.common.NotebookPersistence;
+import org.jtaccuino.app.persistence.FilePersistence;
+import org.jtaccuino.app.persistence.PersistenceManager;
 import org.jtaccuino.app.studio.MenuBar;
 import org.jtaccuino.app.studio.StatusLine;
 import org.jtaccuino.core.ui.api.SheetManager;
@@ -61,8 +63,6 @@ public class Studio extends Application {
         var bp = new BorderPane();
         sheetPane = new TabPane();
 
-        var notebook = NotebookPersistence.INSTANCE.of();
-
         SheetManager.getDefault().setOnOpen(evt -> {
             var ts = new TabSheet(evt.getSource());
             sheetPane.getTabs().add(ts);
@@ -70,9 +70,9 @@ public class Studio extends Application {
         });
 
         sheetPane.getSelectionModel().selectedItemProperty().subscribe((t) -> {
-           if (t instanceof TabSheet tabSheet) {
-               SheetManager.getDefault().setActiveSheet(tabSheet.sheet);
-           }
+            if (t instanceof TabSheet tabSheet) {
+                SheetManager.getDefault().setActiveSheet(tabSheet.sheet);
+            }
         });
 
         bp.setCenter(sheetPane);
@@ -81,15 +81,41 @@ public class Studio extends Application {
                 ToolBar.createMainToolBar()));
         bp.setBottom(StatusLine.getDefault().getNode());
 
-        sheetPane.getTabs().add(new TabSheet(SheetManager.getDefault().of(notebook)));
+        initTabs();
 
         return bp;
     }
 
-    public void shutdown() {
+    private void initTabs() {
+        var openFiles = FilePersistence.getDefault().getOpenFiles();
+        if (openFiles.isEmpty()) {
+            sheetPane.getTabs().add(new TabSheet(SheetManager.getDefault().of(NotebookPersistence.INSTANCE.of())));
+        } else {
+            openFiles.forEach(file -> {
+                if (file.path().toFile().exists()) {
+                    SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of(file.path().toFile()));
+                }
+            });
+        }
+    }
+
+    private void shutdown() {
+        var files = FilePersistence.getDefault();
+        files.reset();
         sheetPane.getTabs().stream()
                 .filter(t -> t instanceof TabSheet)
-                .forEach(t -> ((TabSheet) t).close());
+                .map(t -> (TabSheet) t)
+                .forEach(t -> {
+                    if (null != t.sheet.getNotebook().getFile()) {
+                        files.add(new FilePersistence.OpenFile(t.sheet.getNotebook().getFile().toPath()));
+                    }
+                    t.close(false);
+                });
+        SheetManager.getDefault().getRecentFiles().forEach(rf -> {
+            files.add(new FilePersistence.RecentFile(rf.path()));
+        });
+
+        PersistenceManager.writePersistenceFile("files", files);
     }
 
     static class TabSheet extends Tab {
@@ -101,12 +127,12 @@ public class Studio extends Application {
             this.textProperty().bind(sheet.getNotebook().displayNameProperty());
             this.sheet = sheet;
             this.onCloseRequestProperty().set((t) -> {
-                this.sheet.close();
+                this.close(true);
             });
         }
 
-        void close() {
-            this.sheet.close();
+        void close(boolean makeNotebookRecent) {
+            SheetManager.getDefault().close(this.sheet, makeNotebookRecent);
         }
     }
 }

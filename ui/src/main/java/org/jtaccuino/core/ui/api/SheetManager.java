@@ -15,9 +15,11 @@
  */
 package org.jtaccuino.core.ui.api;
 
+import java.nio.file.Path;
 import java.util.ServiceLoader;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.event.EventHandler;
 import org.jtaccuino.core.ui.Sheet;
@@ -28,6 +30,9 @@ import org.jtaccuino.core.ui.spi.SheetManagerSPI;
  * states, e.g. presentation mode.
  */
 public class SheetManager {
+
+    public static record RecentFile(String displayName, Path path) {
+    }
 
     private static final SheetManager INSTANCE = new SheetManager();
 
@@ -53,8 +58,11 @@ public class SheetManager {
         return sheetManagerSPI.of();
     }
 
-    public void close(Sheet sheet) {
+    public void close(Sheet sheet, boolean makeNotebookRecent) {
         sheet.close();
+        if (makeNotebookRecent && null != sheet.getNotebook().getFile()) {
+            addToRecentNotebooks(sheet.getNotebook().getFile().toPath());
+        }
     }
 
     public void open(Notebook notebook) {
@@ -62,6 +70,7 @@ public class SheetManager {
         setActiveSheet(sheet);
         if (null != onOpen) {
             onOpen.handle(new SheetEvent(sheet, SheetEvent.SHEET_OPENED));
+            removeFromRecentNotebooks(sheet.getNotebook().getFile().toPath());
         }
     }
 
@@ -76,10 +85,26 @@ public class SheetManager {
     public void setActiveSheet(Sheet sheet) {
         activeSheetProperty.set(sheet);
 
-        Platform.runLater(() -> sheet.getActiveCell().requestFocus());
+        Platform.runLater(() -> {
+            if (null != sheet.getActiveCell()) {
+                sheet.getActiveCell().requestFocus();
+            }
+        });
     }
 
     public ObjectProperty<Sheet> activeSheet() {
         return activeSheetProperty;
+    }
+
+    private void addToRecentNotebooks(Path filePath) {
+        sheetManagerSPI.addToRecentNotebooks(filePath);
+    }
+
+    private void removeFromRecentNotebooks(Path filePath) {
+        sheetManagerSPI.removeFromRecentNotebooks(filePath);
+    }
+
+    public SimpleListProperty<RecentFile> getRecentFiles() {
+        return sheetManagerSPI.getRecentFiles();
     }
 }

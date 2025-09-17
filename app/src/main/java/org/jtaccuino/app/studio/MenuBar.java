@@ -15,6 +15,9 @@
  */
 package org.jtaccuino.app.studio;
 
+import java.util.List;
+import javafx.beans.binding.Bindings;
+import javafx.collections.ListChangeListener;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
@@ -23,18 +26,18 @@ import org.jtaccuino.app.studio.actions.ExecuteNotebookAction;
 import org.jtaccuino.app.studio.actions.ExportAction;
 import org.jtaccuino.app.studio.actions.NewAction;
 import org.jtaccuino.app.studio.actions.OpenAction;
+import org.jtaccuino.app.studio.actions.RecentFilesAction;
 import org.jtaccuino.app.studio.actions.ResetAndExecuteNotebookAction;
 import org.jtaccuino.app.studio.actions.SaveAction;
 import org.jtaccuino.app.studio.actions.SaveAsAction;
 import org.jtaccuino.core.ui.actions.ChangeCellToJavaAction;
 import org.jtaccuino.core.ui.actions.ChangeCellToMarkdownAction;
-import org.jtaccuino.core.ui.actions.DeleteCellAction;
-import org.jtaccuino.core.ui.actions.ExecuteCellAction;
 import org.jtaccuino.core.ui.actions.InsertCellAboveAction;
 import org.jtaccuino.core.ui.actions.InsertCellBelowAction;
 import org.jtaccuino.core.ui.actions.MoveCellDownAction;
 import org.jtaccuino.core.ui.actions.MoveCellUpAction;
 import org.jtaccuino.core.ui.api.Action;
+import org.jtaccuino.core.ui.api.DynamicAction;
 
 public class MenuBar {
 
@@ -52,6 +55,7 @@ public class MenuBar {
         var saveMenu = createMenuItem(SaveAction.INSTANCE);
         var saveAsMenu = createMenuItem(SaveAsAction.INSTANCE);
         var exportMenu = createMenuItem(ExportAction.INSTANCE);
+        var recentFilesMenu = createMenuItem(RecentFilesAction.INSTANCE);
 
         var fileMenu = new Menu("File");
         fileMenu.getItems().addAll(
@@ -59,7 +63,10 @@ public class MenuBar {
                 new SeparatorMenuItem(),
                 openMenu,
                 new SeparatorMenuItem(),
-                saveMenu, saveAsMenu, exportMenu);
+                recentFilesMenu,
+                new SeparatorMenuItem(),
+                saveMenu, saveAsMenu, exportMenu
+        );
 
         var executeMenu = createMenuItem(ExecuteNotebookAction.INSTANCE);
         var resetAndExecuteMenu = createMenuItem(ResetAndExecuteNotebookAction.INSTANCE);
@@ -101,9 +108,37 @@ public class MenuBar {
     }
 
     private static MenuItem createMenuItem(Action action) {
-        var item = new MenuItem(action.getDisplayString());
-        item.setAccelerator(action.getAccelerator());
-        item.setOnAction(action);
-        return item;
+        if (action instanceof DynamicAction dynAction) {
+            var menu = new Menu(dynAction.getDisplayString());
+            menu.disableProperty().bind(dynAction.enabledProperty().not());
+
+            dynAction.actions().addListener(new ListChangeListener<Action>() {
+                @Override
+                public void onChanged(ListChangeListener.Change<? extends Action> c) {
+                    updateMenu(menu, c.getList());
+                }
+
+            });
+            updateMenu(menu, dynAction.actions());
+            return menu;
+        } else {
+            var item = new MenuItem(action.getDisplayString());
+            item.setAccelerator(action.getAccelerator());
+            item.setOnAction(action);
+            item.disableProperty().bind(action.enabledProperty().not());
+            return item;
+        }
+        // TBD -> sealed interface
+    }
+
+    private static void updateMenu(Menu menu, List<? extends Action> actions) {
+        menu.getItems().clear();
+        actions.forEach(a -> {
+            var item = new MenuItem(a.getDisplayString());
+            item.setAccelerator(a.getAccelerator());
+            item.setOnAction(a);
+            item.disableProperty().bind(Bindings.not(a.enabledProperty()));
+            menu.getItems().add(item);
+        });
     }
 }

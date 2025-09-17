@@ -15,9 +15,18 @@
  */
 package org.jtaccuino.core.ui.spi;
 
+import java.nio.file.Path;
+import javafx.beans.property.SimpleListProperty;
 import org.jtaccuino.core.ui.Sheet;
+import org.jtaccuino.core.ui.api.SheetManager.RecentFile;
 
 public abstract class SheetManagerSPI {
 
     public abstract Sheet of();
+
+    public abstract void addToRecentNotebooks(Path filePath);
+
+    public abstract void removeFromRecentNotebooks(Path filePath);
+
+    public abstract SimpleListProperty<RecentFile> getRecentFiles();
 }

@@ -21,6 +21,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.Map;
@@ -111,7 +112,7 @@ public class DisplayExtension implements JShellExtension {
                                 eos);
                         baos.flush();
                         baos.close();
-                        var displayData = new String(baos.toByteArray(), Charset.forName("UTF-8"));
+                        var displayData = new String(baos.toByteArray(), StandardCharsets.UTF_8);
                         aC.getOutputData().add(CellData.OutputData.of(
                                 CellData.OutputData.OutputType.DISPLAY_DATA,
                                 Map.of("image/png", displayData)

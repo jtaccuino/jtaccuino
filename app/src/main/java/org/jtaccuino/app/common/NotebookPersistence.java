@@ -21,7 +21,7 @@ import jakarta.json.bind.JsonbConfig;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -51,7 +51,7 @@ public class NotebookPersistence {
     public NotebookImpl of(File file) {
         try {
             var jsonb = JsonbBuilder.create();
-            var ipynb = jsonb.fromJson(new FileReader(file, Charset.forName("UTF-8")), IpynbFormat.class);
+            var ipynb = jsonb.fromJson(new FileReader(file, StandardCharsets.UTF_8), IpynbFormat.class);
             jsonb.close();
             return new NotebookImpl(ipynb, file.getName(), file);
         } catch (final Exception ex) {
@@ -70,7 +70,7 @@ public class NotebookPersistence {
         config.setProperty(JsonbConfig.FORMATTING, true);
         Jsonb jsonb = JsonbBuilder.create(config);
         try {
-            jsonb.toJson(toIpynbFormat(cells, includeOutput), new FileWriter(selectedFile, Charset.forName("UTF-8")));
+            jsonb.toJson(toIpynbFormat(cells, includeOutput), new FileWriter(selectedFile, StandardCharsets.UTF_8));
             jsonb.close();
         } catch (Exception ex) {
             Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ex);
