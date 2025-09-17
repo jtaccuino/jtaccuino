@@ -126,7 +126,7 @@ allprojects {
             withSourcesJar()
             // Apply a specific Java toolchain to ease working on different environments.
             toolchain {
-                languageVersion.set(JavaLanguageVersion.of(24))
+                languageVersion.set(JavaLanguageVersion.of(25))
             }
         }
 
