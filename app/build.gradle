@@ -69,4 +69,5 @@ run {
     jvmArgs getJvmAdditionalModules()
     jvmArgs '--add-opens'
     jvmArgs 'java.base/jdk.internal.misc=ALL-UNNAMED'
+    jvmArgs '--enable-native-access=javafx.graphics'
 }
