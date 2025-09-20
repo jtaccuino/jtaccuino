@@ -16,18 +16,18 @@ configurations {
 }
 
 dependencies {
-    javafx group: 'org.openjfx', name: 'javafx-base', version: versionJavafx, classifier: javaFxPlatform
-    javafx group: 'org.openjfx', name: 'javafx-graphics', version: versionJavafx, classifier: javaFxPlatform
-    javafx group: 'org.openjfx', name: 'javafx-fxml', version: versionJavafx, classifier: javaFxPlatform
-    javafx group: 'org.openjfx', name: 'javafx-controls', version: versionJavafx, classifier: javaFxPlatform
-    javafx group: 'org.openjfx', name: 'javafx-media', version: versionJavafx, classifier: javaFxPlatform
-    javafx group: 'org.openjfx', name: 'javafx-web', version: versionJavafx, classifier: javaFxPlatform
-    javafx group: 'org.openjfx', name: 'javafx-swing', version: versionJavafx, classifier: javaFxPlatform
+    javafx 'org.openjfx:javafx-base:' + versionJavafx + ':' + javaFxPlatform
+    javafx 'org.openjfx:javafx-graphics:' + versionJavafx + ':' + javaFxPlatform
+    javafx 'org.openjfx:javafx-fxml:' + versionJavafx + ':' + javaFxPlatform
+    javafx 'org.openjfx:javafx-controls:' + versionJavafx+':' + javaFxPlatform
+    javafx 'org.openjfx:javafx-media:' + versionJavafx+':' + javaFxPlatform
+    javafx 'org.openjfx:javafx-web:' + versionJavafx + ':' + javaFxPlatform
+    javafx 'org.openjfx:javafx-swing:' + versionJavafx + ':' + javaFxPlatform
 
-    implementation group: 'kr.motd.maven', name:'os-maven-plugin', version: versionOsMavenPlugin
+    implementation 'kr.motd.maven:os-maven-plugin:' + versionOsMavenPlugin
 
-    implementation group: 'jakarta.json', name:'jakarta.json-api', version: versionJakartaJsonApi
-    implementation group: 'jakarta.json.bind', name:'jakarta.json.bind-api', version: versionJakartaJsonBindApi
+    implementation 'jakarta.json:jakarta.json-api:' + versionJakartaJsonApi
+    implementation 'jakarta.json.bind:jakarta.json.bind-api:' + versionJakartaJsonBindApi
 
     implementation project(':shell')
     implementation project(':ui')

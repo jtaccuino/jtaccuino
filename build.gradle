@@ -137,8 +137,8 @@ allprojects {
             // Use JUnit Jupiter for testing.
             testImplementation 'org.junit.jupiter:junit-jupiter-api'
             testImplementation 'org.junit.jupiter:junit-jupiter-params'
-            testRuntimeOnly group: 'org.junit.jupiter', name:'junit-jupiter-engine'
-            testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher'
+            testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+            testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
         }
 
         tasks.withType(JavaCompile).configureEach {
