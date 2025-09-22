@@ -56,6 +56,21 @@ application {
     mainClass = 'org.jtaccuino.app.Studio'
 }
 
+task generateAppProperties(type: WriteProperties) {
+    destinationFile = file("$buildDir/resources/main/app-info.properties")
+
+    properties(
+        'application.version': project.version,
+    )
+
+    comment = "Generated build properties - DO NOT EDIT"
+    encoding = "UTF-8"
+}
+
+processResources {
+    dependsOn generateAppProperties
+}
+
 compileJava {
     options.compilerArgs.addAll([
             '--module-path',
@@ -72,7 +87,7 @@ run {
     jvmArgs '--add-modules'
     jvmArgs getJvmAdditionalModules()
     jvmArgs '--add-modules'
-    jvmArgs 'jdk.incubator.vector'
+    jvmArgs additional_jdk_modules
     jvmArgs '--add-opens'
     jvmArgs 'java.base/jdk.internal.misc=ALL-UNNAMED'
     jvmArgs '--enable-native-access=javafx.graphics'

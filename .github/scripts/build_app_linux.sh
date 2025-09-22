@@ -6,16 +6,14 @@
 # binaries (java home), and the project version as defined inside the pom.xml
 # file, e.g. 1.0-SNAPSHOT.
 #
-# PROJECT_VERSION: version used in pom.xml, e.g. 1.0-SNAPSHOT
-# APP_VERSION: the application version, e.g. 1.0.0, shown in "about" dialog
+# VERSION: version used in pom.xml, e.g. 1.0-SNAPSHOT , shown in "about" dialog
+# APP_VERSION: the application version, e.g. 1.0.0 
 
-JAVA_VERSION=23
-MAIN_JAR="app.jar"
-
-APP_VERSION=1.0.0
+JAVA_VERSION=25
+MAIN_JAR="app-${VERSION}.jar"
 
 echo "java home: $JAVA_HOME"
-echo "project version: $PROJECT_VERSION"
+echo "project version: $VERSION"
 echo "app version: $APP_VERSION"
 echo "main JAR file: $MAIN_JAR"
 
@@ -28,8 +26,8 @@ rm -rfd target/installer/input
 
 mkdir -p target/installer/input/libs/
 
-unzip app/build/distributions/app.zip -d target/installer/input
-cp target/installer/input/app/lib/* target/installer/input/libs
+unzip app/build/distributions/app-${VERSION}.zip -d target/installer/input
+cp target/installer/input/app-${VERSION}/lib/* target/installer/input/libs
 
 # ------ REQUIRED MODULES ---------------------------------------------------
 # Use jlink to detect all modules that are required to run the application.
@@ -60,7 +58,9 @@ echo "detected modules: ${detected_modules}"
 # Don't forget the leading ','!
 
 manual_modules=,java.desktop,java.naming,jdk.unsupported,jdk.jshell,java.logging,java.net.http,java.sql,java.sql.rowset,java.transaction.xa,java.xml,jdk.localedata
+incubating_modules=,jdk.incubator.vector
 echo "manual modules: ${manual_modules}"
+echo "incubating modules: ${incubating_modules}"
 
 # ------ RUNTIME IMAGE ------------------------------------------------------
 # Use the jlink tool to create a runtime image for our application. We are
@@ -75,7 +75,7 @@ $JAVA_HOME/bin/jlink \
   --no-man-pages  \
   --compress=2  \
   --strip-debug \
-  --add-modules "${detected_modules}${manual_modules}" \
+  --add-modules "${detected_modules}${manual_modules}${incubating_modules}" \
   --include-locales=en,de \
   --output target/java-runtime
 
@@ -85,15 +85,16 @@ $JAVA_HOME/bin/jlink \
 echo "Creating installer of type $INSTALLER_TYPE"
 
 $JAVA_HOME/bin/jpackage \
+--verbose \
 --dest target/installer \
 --input target/installer/input/libs \
 --name JTaccuinoStudio \
 --main-class org.jtaccuino.app.StudioLauncher \
 --main-jar ${MAIN_JAR} \
---java-options "-Xmx2048m --enable-preview" \
+--java-options "--enable-preview --add-modules jdk.incubator.vector --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --enable-native-access=ALL-UNNAMED" \
 --runtime-image target/java-runtime \
 --icon app/src/main/logo/linux/notebook.png \
 --app-version ${APP_VERSION} \
+--copyright "Copyright © 2025 JTaccuino Project" \
 --vendor JTaccuino \
---copyright "Copyright © 2024 JTaccuino Project" \
 "$@"
