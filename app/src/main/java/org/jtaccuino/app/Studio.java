@@ -15,6 +15,8 @@
  */
 package org.jtaccuino.app;
 
+import java.io.IOException;
+import java.util.Properties;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -25,8 +27,24 @@ import org.jtaccuino.app.ui.WindowSystem;
 public class Studio extends Application {
 
     private static final String TITLE = "JTaccuino Studio - A scientific notebook powered by Java";
+    private static final Properties PROPS = new Properties();
+
+    static {
+
+        try (var input = Studio.class.getResourceAsStream("/app-info.properties")) {
+            PROPS.load(input);
+        } catch (IOException ex) {
+            System.getLogger(Studio.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+        }
+    }
+
+    public static String getVersion() {
+        return PROPS.getProperty("application.version");
+    }
 
     public static void main(String[] args) {
+        System.out.println("JTaccuino Studio\n\t Version: " + getVersion());
+        System.out.println("================");
         launch(args);
     }
 
