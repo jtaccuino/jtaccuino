@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public class MdUtils {
         // prevent instantiation
     }
 
-    public static Document render(String text) {
+    public static Document render(String text, StyleableMarkdown styleableMarkdown) {
         MutableDataSet options = new MutableDataSet();
 
         // uncomment to set optional extensions
@@ -78,24 +78,71 @@ public class MdUtils {
         final List<DecorationModel> decorationList = new ArrayList<>();
         final StringBuilder theText = new StringBuilder();
         final ParagraphDecoration presetParagraphDecoration = ParagraphDecoration.builder().presets().build();
-        final TextDecoration headingOneTextDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontWeight(BOLD).fontSize(20).build();
+
+        final TextDecoration headingOneTextDecoration = TextDecoration.builder().presets()
+                .fontFamily(styleableMarkdown.getMarkdownHeadingOneFont().getFamily())
+                .fontWeight(BOLD)
+                .fontSize(styleableMarkdown.getMarkdownHeadingOneFont().getSize()).build();
         final ParagraphDecoration headingOneParagraph = ParagraphDecoration.builder().presets().alignment(TextAlignment.LEFT).topInset(0).bottomInset(4).build();
-        final TextDecoration headingTwoTextDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontWeight(BOLD).fontSize(18).build();
+
+        final TextDecoration headingTwoTextDecoration = TextDecoration.builder().presets()
+                .fontFamily(styleableMarkdown.getMarkdownHeadingTwoFont().getFamily())
+                .fontWeight(BOLD)
+                .fontSize(styleableMarkdown.getMarkdownHeadingTwoFont().getSize()).build();
         final ParagraphDecoration headingTwoParagraph = ParagraphDecoration.builder().presets().alignment(TextAlignment.LEFT).topInset(5).bottomInset(2).build();
-        final TextDecoration headingThreeTextDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontWeight(BOLD).fontSize(16).build();
+
+        final TextDecoration headingThreeTextDecoration = TextDecoration.builder().presets().
+                fontFamily(styleableMarkdown.getMarkdownHeadingrThreeFont().getFamily())
+                .fontWeight(BOLD)
+                .fontSize(styleableMarkdown.getMarkdownHeadingrThreeFont().getSize()).build();
         final ParagraphDecoration headingThreeParagraph = ParagraphDecoration.builder().presets().alignment(TextAlignment.LEFT).topInset(5).bottomInset(0).build();
-        final TextDecoration headingFourTextDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontWeight(BOLD).fontSize(14).build();
+
+        final TextDecoration headingFourTextDecoration = TextDecoration.builder().presets()
+                .fontFamily(styleableMarkdown.getMarkdownHeadingrFourFont().getFamily())
+                .fontWeight(BOLD)
+                .fontSize(styleableMarkdown.getMarkdownHeadingrFourFont().getSize()).build();
         final ParagraphDecoration headingFourParagraph = ParagraphDecoration.builder().presets().alignment(TextAlignment.LEFT).topInset(5).bottomInset(0).build();
-        final TextDecoration headingFiveTextDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontWeight(BOLD).fontSize(12).build();
+
+        final TextDecoration headingFiveTextDecoration = TextDecoration.builder().presets()
+                .fontFamily(styleableMarkdown.getMarkdownHeadingFiveFont().getFamily())
+                .fontWeight(BOLD)
+                .fontSize(styleableMarkdown.getMarkdownHeadingFiveFont().getSize()).build();
         final ParagraphDecoration headingFiveParagraph = ParagraphDecoration.builder().presets().alignment(TextAlignment.LEFT).topInset(5).bottomInset(0).build();
-        final TextDecoration.Builder presetTextDecorationBuilder = TextDecoration.builder().presets().fontFamily("Arial").fontSize(12);
+
+        final TextDecoration headingSixTextDecoration = TextDecoration.builder().presets()
+                .fontFamily(styleableMarkdown.getMarkdownHeadingSixFont().getFamily())
+                .fontWeight(BOLD)
+                .fontSize(styleableMarkdown.getMarkdownHeadingSixFont().getSize()).build();
+        final ParagraphDecoration headingSixParagraph = ParagraphDecoration.builder().presets().alignment(TextAlignment.LEFT).topInset(5).bottomInset(0).build();
+
+        final TextDecoration.Builder presetTextDecorationBuilder = TextDecoration.builder().presets()
+                .fontFamily(styleableMarkdown.getMarkdownBaseFont().getFamily())
+                .fontSize(styleableMarkdown.getMarkdownBaseFont().getSize());
+
         final TextDecoration presetTextDecoration = presetTextDecorationBuilder.build();
-        final TextDecoration monospaceDecoration = TextDecoration.builder().presets().fontFamily("Monospace").background(Color.GAINSBORO.toString()).foreground(Color.BLACK.toString()).build();
-        final TextDecoration emphasisDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontPosture(FontPosture.ITALIC).build();
-        final TextDecoration strongEmphasisDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontWeight(BOLD).build();
+
+        final TextDecoration monospaceDecoration = TextDecoration.builder().presets()
+                .fontFamily(styleableMarkdown.getMarkdownMonospaceFont().getFamily())
+                .background(Color.GAINSBORO.toString())
+                .foreground(Color.BLACK.toString())
+                .fontSize(styleableMarkdown.getMarkdownMonospaceFont().getSize()).build();
+
+        final TextDecoration emphasisDecoration = TextDecoration.builder().presets()
+                .fontFamily(styleableMarkdown.getMarkdownEmphasisFont().getFamily())
+                .fontPosture(FontPosture.ITALIC)
+                .fontSize(styleableMarkdown.getMarkdownEmphasisFont().getSize()).build();
+
+        final TextDecoration strongEmphasisDecoration = TextDecoration.builder().presets()
+                .fontFamily(styleableMarkdown.getMarkdownStrongEmphasisFont().getFamily())
+                .fontWeight(BOLD)
+                .fontSize(styleableMarkdown.getMarkdownStrongEmphasisFont().getSize()).build();
+
 //        @SuppressWarnings("UnusedVariable") // TODO: Check if it is used and remove if not
 //        final TextDecoration bothEmphasisDecoration = TextDecoration.builder().presets().fontFamily("Arial").fontPosture(FontPosture.ITALIC).fontWeight(BOLD).build();
-        final TextDecoration strikethroughDecoration = TextDecoration.builder().presets().strikethrough(true).fontFamily("Arial").build();
+        final TextDecoration strikethroughDecoration = TextDecoration.builder().presets()
+                .strikethrough(true)
+                .fontFamily(styleableMarkdown.getMarkdownStrikethroughFont().getFamily())
+                .fontSize(styleableMarkdown.getMarkdownStrikethroughFont().getSize()).build();
 
         final ParagraphDecoration bulletItemLevelOneDecoration = ParagraphDecoration.builder().presets()
                 .graphicType(ParagraphDecoration.GraphicType.BULLETED_LIST)
@@ -190,6 +237,16 @@ public class MdUtils {
                         theText.append("\n");
                         decorationList.add(new DecorationModel(start, 1, presetTextDecoration, presetParagraphDecoration));
                     }
+                    case Heading h when h.getLevel() == 6 -> {
+                        paragraphDecorations.push(headingSixParagraph);
+                        textDecorations.push(headingSixTextDecoration);
+                        visitChildren(h);
+                        paragraphDecorations.pop();
+                        textDecorations.pop();
+                        var start = theText.length();
+                        theText.append("\n");
+                        decorationList.add(new DecorationModel(start, 1, presetTextDecoration, presetParagraphDecoration));
+                    }
                     case Paragraph p -> {
                         visitChildren(p);
                         if (!p.getParent().isOrDescendantOfType(com.vladsch.flexmark.util.ast.Document.class) || !p.getParent().getLastChild().equals(p)) {
@@ -231,7 +288,7 @@ public class MdUtils {
                         var emojiAsString = EmojiData.emojiFromShortName(e.getText().toString()).map(com.gluonhq.emoji.Emoji::character).orElse("");
                         var length = emojiAsString.length();
                         theText.append(emojiAsString);
-                        decorationList.add(new DecorationModel(start, length, presetTextDecoration, presetParagraphDecoration));
+                        decorationList.add(new DecorationModel(start, length, textDecorations.peek(), paragraphDecorations.peek()));
                     }
                     case Text t -> {
                         var start = theText.length();

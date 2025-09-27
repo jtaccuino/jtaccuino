@@ -15,6 +15,7 @@
  */
 package org.jtaccuino.core.ui;
 
+import org.jtaccuino.rta.StyleableMarkdown;
 import com.gluonhq.richtextarea.Selection;
 import com.gluonhq.richtextarea.model.DecorationModel;
 import com.gluonhq.richtextarea.model.Document;
@@ -22,8 +23,15 @@ import com.gluonhq.richtextarea.model.ParagraphDecoration;
 import com.gluonhq.richtextarea.model.TextDecoration;
 import java.util.List;
 import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
-import javafx.css.PseudoClass;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.css.CssMetaData;
+import javafx.css.Styleable;
+import javafx.css.StyleableProperty;
+import javafx.css.StyleablePropertyFactory;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.scene.control.Skin;
@@ -32,6 +40,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import org.jtaccuino.core.ui.api.CellData;
 import org.jtaccuino.core.ui.controls.MarkdownControl;
@@ -45,15 +54,251 @@ public class MarkdownCellFactory implements CellFactory {
         return cell;
     }
 
-    public static class MarkdownCell extends Sheet.Cell {
+    public static class MarkdownCell extends Sheet.Cell implements StyleableMarkdown {
 
+        private static final StyleablePropertyFactory<MarkdownCell> FACTORY = new StyleablePropertyFactory<>(MarkdownCell.getClassCssMetaData());
+
+        @SuppressWarnings("this-escape")
         public MarkdownCell(CellData cellData, VBox parent, Sheet sheet, int cellNumber) {
             super(cellData, sheet, cellNumber);
+            getStyleClass().add("markdown-cell");
         }
+
+        // Basic font styling for editing
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> baseEditorFontProperty() {
+            return (ObservableValue<Font>) baseEditorFont;
+        }
+
+        public final Font getBaseEditorFont() {
+            return baseEditorFont.getValue();
+        }
+
+        public final void setBaseEditorFont(Font baseEditorFont) {
+            this.baseEditorFont.setValue(baseEditorFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> baseEditorFont
+                = FACTORY.createStyleableFontProperty(this, "baseEditorFont", "-base-editor-font", f -> f.baseEditorFont);
+
+        // Basic font styling for markdown rendering
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> markdownBaseFontProperty() {
+            return (ObservableValue<Font>) markdownBaseFont;
+        }
+
+        @Override
+        public final Font getMarkdownBaseFont() {
+            return markdownBaseFont.getValue();
+        }
+
+        public final void setMarkdownBaseFont(Font markdownBaseFont) {
+            this.markdownBaseFont.setValue(markdownBaseFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> markdownBaseFont
+                = FACTORY.createStyleableFontProperty(this, "markdownBaseFont", "-markdown-base-font", f -> f.markdownBaseFont);
+
+        // Heading one font styling for markdown rendering
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> markdownHeadingOneFontProperty() {
+            return (ObservableValue<Font>) markdownHeadingOneFont;
+        }
+
+        @Override
+        public final Font getMarkdownHeadingOneFont() {
+            return markdownHeadingOneFont.getValue();
+        }
+
+        public final void setMarkdownHeadingOneFont(Font markdownHeadingOneFont) {
+            this.markdownHeadingOneFont.setValue(markdownHeadingOneFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> markdownHeadingOneFont
+                = FACTORY.createStyleableFontProperty(this, "markdownHeadingOneFont", "-markdown-heading-one-font", f -> f.markdownHeadingOneFont);
+
+        // Heading two font styling for markdown rendering
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> markdownHeadingTwoFontProperty() {
+            return (ObservableValue<Font>) markdownHeadingTwoFont;
+        }
+
+        @Override
+        public final Font getMarkdownHeadingTwoFont() {
+            return markdownHeadingTwoFont.getValue();
+        }
+
+        public final void setMarkdownHeadingTwoFont(Font markdownHeadingTwoFont) {
+            this.markdownHeadingTwoFont.setValue(markdownHeadingTwoFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> markdownHeadingTwoFont
+                = FACTORY.createStyleableFontProperty(this, "markdownHeadingTwoFont", "-markdown-heading-two-font", f -> f.markdownHeadingTwoFont);
+
+        // Heading three font styling for markdown rendering
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> markdownHeadingThreeFontProperty() {
+            return (ObservableValue<Font>) markdownHeadingThreeFont;
+        }
+
+        @Override
+        public final Font getMarkdownHeadingrThreeFont() {
+            return markdownHeadingThreeFont.getValue();
+        }
+
+        public final void setMarkdownHeadingThreeFont(Font markdownHeadingThreeFont) {
+            this.markdownHeadingThreeFont.setValue(markdownHeadingThreeFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> markdownHeadingThreeFont
+                = FACTORY.createStyleableFontProperty(this, "markdownHeadingThreeFont", "-markdown-heading-three-font", f -> f.markdownHeadingThreeFont);
+
+        // Heading four font styling for markdown rendering
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> markdownHeadingFourFontProperty() {
+            return (ObservableValue<Font>) markdownHeadingFourFont;
+        }
+
+        @Override
+        public final Font getMarkdownHeadingrFourFont() {
+            return markdownHeadingFourFont.getValue();
+        }
+
+        public final void setMarkdownHeadingFourFont(Font markdownHeadingFourFont) {
+            this.markdownHeadingFourFont.setValue(markdownHeadingFourFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> markdownHeadingFourFont
+                = FACTORY.createStyleableFontProperty(this, "markdownHeadingFourFont", "-markdown-heading-four-font", f -> f.markdownHeadingFourFont);
+
+        // Heading five font styling for markdown rendering
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> markdownHeadingFiveFontProperty() {
+            return (ObservableValue<Font>) markdownHeadingFiveFont;
+        }
+
+        @Override
+        public final Font getMarkdownHeadingFiveFont() {
+            return markdownHeadingFiveFont.getValue();
+        }
+
+        public final void setMarkdownHeadingFiveFont(Font markdownHeadingFiveFont) {
+            this.markdownHeadingFiveFont.setValue(markdownHeadingFiveFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> markdownHeadingFiveFont
+                = FACTORY.createStyleableFontProperty(this, "markdownHeadingFiveFont", "-markdown-heading-five-font", f -> f.markdownHeadingFiveFont);
+
+        // Heading five font styling for markdown rendering
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> markdownHeadingSixFontProperty() {
+            return (ObservableValue<Font>) markdownHeadingSixFont;
+        }
+
+        @Override
+        public final Font getMarkdownHeadingSixFont() {
+            return markdownHeadingSixFont.getValue();
+        }
+
+        public final void setMarkdownHeadingSixFont(Font markdownHeadingSixFont) {
+            this.markdownHeadingSixFont.setValue(markdownHeadingSixFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> markdownHeadingSixFont
+                = FACTORY.createStyleableFontProperty(this, "markdownHeadingSixFont", "-markdown-heading-six-font", f -> f.markdownHeadingSixFont);
+
+        // Monospace font styling for markdown rendering
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> markdownMonospaceFontProperty() {
+            return (ObservableValue<Font>) markdownMonospaceFont;
+        }
+
+        @Override
+        public final Font getMarkdownMonospaceFont() {
+            return markdownMonospaceFont.getValue();
+        }
+
+        public final void setMarkdownMonospaceFont(Font markdownMonospaceFont) {
+            this.markdownMonospaceFont.setValue(markdownMonospaceFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> markdownMonospaceFont
+                = FACTORY.createStyleableFontProperty(this, "markdownMonospaceFont", "-markdown-monospace-font", f -> f.markdownMonospaceFont);
+
+        // Emphasis font styling for markdown rendering
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> markdownEmphasisFontProperty() {
+            return (ObservableValue<Font>) markdownEmphasisFont;
+        }
+
+        @Override
+        public final Font getMarkdownEmphasisFont() {
+            return markdownEmphasisFont.getValue();
+        }
+
+        public final void setMarkdownEmphasisFont(Font markdownEmphasisFont) {
+            this.markdownEmphasisFont.setValue(markdownEmphasisFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> markdownEmphasisFont
+                = FACTORY.createStyleableFontProperty(this, "markdownEmphasisFont", "-markdown-emphasis-font", f -> f.markdownEmphasisFont);
+
+        // Strong Emphasis font styling for markdown rendering
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> markdownStrongEmphasisFontProperty() {
+            return (ObservableValue<Font>) markdownStrongEmphasisFont;
+        }
+
+        @Override
+        public final Font getMarkdownStrongEmphasisFont() {
+            return markdownStrongEmphasisFont.getValue();
+        }
+
+        public final void setMarkdownStrongEmphasisFont(Font markdownStrongEmphasisFont) {
+            this.markdownStrongEmphasisFont.setValue(markdownStrongEmphasisFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> markdownStrongEmphasisFont
+                = FACTORY.createStyleableFontProperty(this, "markdownStrongEmphasisFont", "-markdown-strong-emphasis-font", f -> f.markdownStrongEmphasisFont);
+
+        // Strong Emphasis font styling for markdown rendering
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> markdownStrikethroughFontProperty() {
+            return (ObservableValue<Font>) markdownStrikethroughFont;
+        }
+
+        @Override
+        public final Font getMarkdownStrikethroughFont() {
+            return markdownStrikethroughFont.getValue();
+        }
+
+        public final void setMarkdownStrikethroughFont(Font markdownStrikethroughFont) {
+            this.markdownStrikethroughFont.setValue(markdownStrikethroughFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> markdownStrikethroughFont
+                = FACTORY.createStyleableFontProperty(this, "markdownStrikethroughFont", "-markdown-strikethrough-font", f -> f.markdownStrikethroughFont);
 
         @Override
         protected Skin<?> createDefaultSkin() {
             return new MarkdownCellSkin(this);
+        }
+
+        @Override
+        public List<CssMetaData<? extends Styleable, ?>> getControlCssMetaData() {
+            return FACTORY.getCssMetaData();
         }
 
         @Override
@@ -83,7 +328,7 @@ public class MarkdownCellFactory implements CellFactory {
 
     public static class MarkdownCellSkin extends AbstractCellSkin<MarkdownCell> {
 
-        static final TextDecoration presetDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Radon")
+        static TextDecoration presetDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Radon")
                 .fontWeight(FontWeight.NORMAL).fontSize(13).build();
 
         private static final ParagraphDecoration parPreset
@@ -100,6 +345,28 @@ public class MarkdownCellFactory implements CellFactory {
         private MarkdownCellSkin(MarkdownCell markdownCell) {
             super(markdownCell);
             this.control = markdownCell;
+            this.control.baseEditorFontProperty().addListener(new ChangeListener<Font>() {
+                @Override
+                public void changed(ObservableValue<? extends Font> observable, Font oldValue, Font newValue) {
+                    presetDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
+                            .fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize()).build();
+                    String source = markdownCell.getCellData().getSource();
+                    if (null != source) {
+                        inputControl.openDocument(
+                                new Document(
+                                        source,
+                                        List.of(new DecorationModel(0, source.length(), presetDecoration, parPreset)),
+                                        source.length() - 1
+                                ));
+                    } else {
+                        inputControl.openDocument(
+                                new Document("",
+                                        List.of(new DecorationModel(0, 0, presetDecoration, parPreset)),
+                                        0
+                                ));
+                    }
+                }
+            });
             pane = new BorderPane();
             pane.getStyleClass().add("md-cell-meta");
 
@@ -185,8 +452,16 @@ public class MarkdownCellFactory implements CellFactory {
         @Override
         public void execute() {
             if (inputControl.getInput().isVisible()) {
+                this.control.markdownBaseFontProperty().addListener(new InvalidationListener() {
+                    @Override
+                    public void invalidated(Observable observable) {
+                        var doc = MdUtils.render(control.getCellData().getSource(), getSkinnable());
+                        inputControl.updateRenderedView(doc);;
+                    }
+                });
+
                 this.control.getSheet().executeAsync(
-                        () -> MdUtils.render(this.control.getCellData().getSource()),
+                        () -> MdUtils.render(this.control.getCellData().getSource(), this.getSkinnable()),
                         doc -> Platform.runLater(() -> {
                             inputControl.switchToRenderedView(doc);
                         }));
