@@ -95,6 +95,10 @@ public final class MarkdownControl extends InputControl {
         return RTA_LINE_HEIGHT;
     }
 
+    public void updateRenderedView(Document doc) {
+        mdRenderArea.getActionFactory().open(doc).execute(new ActionEvent());
+    }
+
     public void switchToRenderedView(Document doc) {
         mdRenderArea = new RichTextArea();
 
