@@ -35,7 +35,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
+import javafx.css.CssMetaData;
+import javafx.css.Styleable;
+import javafx.css.StyleableProperty;
+import javafx.css.StyleablePropertyFactory;
 import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
@@ -50,6 +56,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.EvalException;
@@ -77,15 +84,41 @@ public class JavaCellFactory implements CellFactory {
 
     public static class JavaCell extends Sheet.Cell {
 
+        private static final StyleablePropertyFactory<JavaCell> FACTORY = new StyleablePropertyFactory<>(JavaCell.getClassCssMetaData());
+
+        @SuppressWarnings("unchecked")
+        public ObservableValue<Font> baseEditorFontProperty() {
+            return (ObservableValue<Font>) baseEditorFont;
+        }
+
+        public final Font getBaseEditorFont() {
+            return baseEditorFont.getValue();
+        }
+
+        public final void setBaseEditorFont(Font baseEditorFont) {
+            this.baseEditorFont.setValue(baseEditorFont);
+        }
+
+        @SuppressWarnings("this-escape")
+        private final StyleableProperty<Font> baseEditorFont
+                = FACTORY.createStyleableFontProperty(this, "baseEditorFont", "-base-editor-font", f -> f.baseEditorFont);
+
         private List<String> snippetIds = Collections.emptyList();
 
+        @SuppressWarnings("this-escape")
         public JavaCell(CellData cellData, VBox parent, Sheet sheet, int cellNumber) {
             super(cellData, sheet, cellNumber);
+            getStyleClass().add("java-cell");
         }
 
         @Override
         protected Skin<?> createDefaultSkin() {
             return new JavaCellSkin(this);
+        }
+
+        @Override
+        public List<CssMetaData<? extends Styleable, ?>> getControlCssMetaData() {
+            return FACTORY.getCssMetaData();
         }
 
         @Override
@@ -125,8 +158,14 @@ public class JavaCellFactory implements CellFactory {
 
     public static class JavaCellSkin extends AbstractCellSkin<JavaCell> {
 
-        static final TextDecoration presetDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
+        static TextDecoration presetDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
                 .fontWeight(FontWeight.NORMAL).fontSize(13).build();
+
+        static TextDecoration declarationDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
+                .underline(Boolean.TRUE).fontWeight(FontWeight.NORMAL).fontSize(13).build();
+
+        static TextDecoration keywordDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
+                .fontWeight(FontWeight.BOLD).fontSize(13).build();
 
         private static final ParagraphDecoration parPreset
                 = ParagraphDecoration.builder().presets()
@@ -152,6 +191,18 @@ public class JavaCellFactory implements CellFactory {
         private JavaCellSkin(JavaCell javaCell) {
             super(javaCell);
             this.control = javaCell;
+            this.control.baseEditorFontProperty().addListener(new ChangeListener<Font>() {
+                @Override
+                public void changed(ObservableValue<? extends Font> observable, Font oldValue, Font newValue) {
+                    presetDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
+                            .fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize()).build();
+                    declarationDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
+                            .underline(Boolean.TRUE).fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize()).build();
+                    keywordDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
+                            .fontWeight(FontWeight.BOLD).fontSize(newValue.getSize()).build();
+                    handleSyntaxHighlighting(input.getDocument().getText());
+                }
+            });
             var inputControl = new JavaControl(control.cellNumber);
             input = inputControl.getInput();
             caretRowColumnProperty.bind(input.caretRowColumnProperty());
@@ -210,7 +261,8 @@ public class JavaCellFactory implements CellFactory {
             AnchorPane.setRightAnchor(execResult, 5d);
             AnchorPane.setBottomAnchor(execResult, 2d);
 
-            streamResult.getStyleClass().add("jshell_stream_result");
+            streamResult.getStyleClass().add("jshell-stream-result");
+            execResult.getStyleClass().add("jshell-exec-result");
             inputBox = new VBox(inputControl); //, outputBox);
 
             inputBox.getStyleClass().add("java-cell-meta");
@@ -230,7 +282,9 @@ public class JavaCellFactory implements CellFactory {
                         if (c.getList().isEmpty()) {
                             inputBox.getChildren().remove(outputBox);
                         } else {
-                            inputBox.getChildren().add(outputBox);
+                            if (!inputBox.getChildren().contains(outputBox)) {
+                                inputBox.getChildren().add(outputBox);
+                            }
                         }
                     });
 
@@ -362,8 +416,9 @@ public class JavaCellFactory implements CellFactory {
                                     execResult.setGraphic(success);
                                     execResult.setVisible(true);
                                     this.control.getSheet().moveFocusToNextCell(control);
-                                    evalResult.lastValueAsString().ifPresent(action -> {
-                                        var resultData = evalResult.typeOfLastValue().get() + ": " + evalResult.lastValueAsString().get();
+                                    evalResult.lastValueAsString().ifPresent(s -> {
+                                        var resultData = evalResult.typeOfLastValue().get() + ": " +
+                                                s.replace("\\n", "\n").replace("\\\"","\"");
                                         var result = new Label(resultData);
                                         result.getStyleClass().add("jshell_eval_result");
                                         outputBox.getChildren().add(result);
@@ -517,11 +572,6 @@ public class JavaCellFactory implements CellFactory {
                 }
             });
         }
-
-        static final TextDecoration declarationDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
-                .underline(Boolean.TRUE).fontWeight(FontWeight.NORMAL).fontSize(13).build();
-        static final TextDecoration keywordDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
-                .fontWeight(FontWeight.BOLD).fontSize(13).build();
 
         private void handleSyntaxHighlighting(String text) {
             this.control.getSheet().getReactiveJShell().highlightingAsync(text, highlights -> {

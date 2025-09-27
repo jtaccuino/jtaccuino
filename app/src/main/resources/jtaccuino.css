@@ -363,7 +363,7 @@ AUTHOR: ShopWare
 .jshell_eval_exception {
     -fx-background-color: derive(pink, 30%);
     -fx-font-family: 'Monaspace Argon';
-    -fx-font-size: 10pt;
+    -fx-font-size: 90%;
     -fx-background-radius: 5;
     -fx-max-width: infinity;
     -fx-padding: 5px;
@@ -371,7 +371,7 @@ AUTHOR: ShopWare
 
 .jshell_eval_result {
     -fx-font-family: 'Monaspace Argon';
-    -fx-font-size: 10pt;
+    -fx-font-size: 90%;
     -fx-max-width: infinity;
     -fx-padding: 5px;
 }
@@ -379,7 +379,7 @@ AUTHOR: ShopWare
 .jshell_eval_erroneous {
     -fx-background-color: derive(pink, 30%);
     -fx-font-family: 'Monaspace Argon';
-    -fx-font-size: 10pt;
+    -fx-font-size: 90%;
     -fx-background-radius: 5;
     -fx-max-width: infinity;
     -fx-padding: 5px;
@@ -393,7 +393,7 @@ AUTHOR: ShopWare
 }
 
 .java-cell-input {
-   -fx-max-width: infinity;
+    -fx-max-width: infinity;
 }
 
 .java-cell-meta {
@@ -413,7 +413,7 @@ AUTHOR: ShopWare
 }
 
 .md-cell-input {
-   -fx-max-width: infinity;
+    -fx-max-width: infinity;
 }
 
 .md-cell-meta {
@@ -431,6 +431,42 @@ AUTHOR: ShopWare
     -fx-border-color: derive(skyblue, -10%);
 }
 
+.java-cell {
+    -base-editor-font-family: "Monaspace Argon";
+    -base-editor-font-size: 100%;
+}
+
+.markdown-cell {
+    -base-editor-font-family: "Monaspace Radon";
+    -base-editor-font-size: 100%;
+
+    -markdown-base-font-family: "Arial";
+    -markdown-base-font-size: 100%;
+
+    -markdown-heading-one-font-family: "Arial";
+    -markdown-heading-one-font-size: 200%;
+    -markdown-heading-two-font-family: "Arial";
+    -markdown-heading-two-font-size: 175%;
+    -markdown-heading-three-font-family: "Arial";
+    -markdown-heading-three-font-size: 150%;
+    -markdown-heading-four-font-family: "Arial";
+    -markdown-heading-four-font-size: 125%;
+    -markdown-heading-five-font-family: "Arial";
+    -markdown-heading-five-font-size: 110%;
+    -markdown-heading-six-font-family: "Arial";
+    -markdown-heading-six-font-size: 100%;
+
+    -markdown-monospace-font-family: "Monaspace Argon";
+    -markdown-monospace-font-size: 110%;
+    -markdown-emphasis-font-family: "Arial";
+    -markdown-emphasis-font-size: 100%;
+    -markdown-strong-emphasis-font-family: "Arial";
+    -markdown-strong-emphasis-font-size: 100%;
+    -markdown-strikethrough-font-family: "Arial";
+    -markdown-strikethrough-font-size: 100%;
+
+}
+
 .java-cell-output {
     /*-fx-padding: 5px 0px 5cpx 0px;*/
     -fx-spacing: 5px;
@@ -438,7 +474,7 @@ AUTHOR: ShopWare
 
 .java-editor {
     -fx-background-color: whitesmoke;
-/*    -fx-padding: 10; */
+    /*    -fx-padding: 10; */
 }
 
 .java-editor > .paragraph-list-view {
@@ -461,7 +497,8 @@ AUTHOR: ShopWare
     -fx-pref-width: 20;
     -fx-text-fill: #AEB3C2;
     -fx-font-family: "Monaspace Argon";
-    -fx-font-size: 13;
+    -fx-font-size: 100%;
+    ;
 }
 
 .java-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell,
@@ -474,7 +511,7 @@ AUTHOR: ShopWare
 
 .md-editor {
     -fx-background-color: whitesmoke;
-/*    -fx-padding: 10; */
+    /*    -fx-padding: 10; */
 }
 
 .md-editor > .paragraph-list-view {
@@ -529,6 +566,11 @@ AUTHOR: ShopWare
     -fx-border-color: #696969;
     -fx-border-width: 1px 0 0 0;
     -fx-border-insets: 0;
+}
+
+.jshell-stream-result {
+    -fx-font-family: "Monaspace Argon";
+    -fx-font-size: 90%;
 }
 
 .about-title {

@@ -19,8 +19,8 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 
 /**
- * Central hub for interacting with the core UI Elements of JTaccuino
- * In a first prototype everthing is simply implemented here
+ * Central hub for interacting with the core UI Elements of JTaccuino In a first
+ * prototype everthing is simply implemented here
  */
 public class WindowManager {
 
@@ -32,6 +32,7 @@ public class WindowManager {
 
     /**
      * Get the default instance of the window manager
+     *
      * @return instance of window manager
      */
     public static WindowManager getDefault() {
@@ -39,8 +40,9 @@ public class WindowManager {
     }
 
     /**
-     * Returns the main window of JTaccuino.
-     * This shall be used only in cases, where access o the windows hierarchy is necessary.
+     * Returns the main window of JTaccuino. This shall be used only in cases,
+     * where access o the windows hierarchy is necessary.
+     *
      * @return the JavaFX window reference
      */
     public Window getMainWindow() {

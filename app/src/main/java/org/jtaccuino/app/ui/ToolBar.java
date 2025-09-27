@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jtaccuino.app.studio;
+package org.jtaccuino.app.ui;
 
+import javafx.scene.Node;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import org.jtaccuino.app.studio.actions.ExecuteNotebookAction;
@@ -26,10 +27,19 @@ import static org.jtaccuino.core.ui.UiUtils.createSVGToolbarButton;
 
 public class ToolBar {
 
+    private static Node toolbarNode;
+
     private ToolBar() {
     }
 
-    public static HBox createMainToolBar() {
+    public static Node getMainToolBar() {
+        if (null == toolbarNode) {
+            toolbarNode = createMainToolBar();
+        }
+        return toolbarNode;
+    }
+
+    private static HBox createMainToolBar() {
         var empty = createSVGToolbarButton("empty-notebook", "Empty Notebook", "main-toolbar-button", NewAction.INSTANCE);
         var load = createSVGToolbarButton("load-notebook", "Load Notebook", "main-toolbar-button", OpenAction.INSTANCE);
         var save = createSVGToolbarButton("save-notebook", "Save Notebook", "main-toolbar-button", SaveAction.INSTANCE);
@@ -41,5 +51,13 @@ public class ToolBar {
         toolbar.maxWidthProperty().bind(toolbar.prefWidthProperty());
         toolbar.getStyleClass().add("main-toolbar");
         return toolbar;
+    }
+
+    public static void hideToolBar() {
+        getMainToolBar().getParent().setVisible(false);
+    }
+
+    public static void showToolBar() {
+        getMainToolBar().getParent().setVisible(true);
     }
 }
