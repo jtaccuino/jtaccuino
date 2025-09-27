@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jtaccuino.app.studio;
+package org.jtaccuino.app.ui;
 
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
@@ -26,6 +26,7 @@ import org.jtaccuino.app.studio.actions.ExecuteNotebookAction;
 import org.jtaccuino.app.studio.actions.ExportAction;
 import org.jtaccuino.app.studio.actions.NewAction;
 import org.jtaccuino.app.studio.actions.OpenAction;
+import org.jtaccuino.app.studio.actions.PresentationModeAction;
 import org.jtaccuino.app.studio.actions.RecentFilesAction;
 import org.jtaccuino.app.studio.actions.OpenRemoteAction;
 import org.jtaccuino.app.studio.actions.ResetAndExecuteNotebookAction;
@@ -39,6 +40,7 @@ import org.jtaccuino.core.ui.actions.MoveCellDownAction;
 import org.jtaccuino.core.ui.actions.MoveCellUpAction;
 import org.jtaccuino.core.ui.api.Action;
 import org.jtaccuino.core.ui.api.DynamicAction;
+import org.jtaccuino.core.ui.api.ToggleAction;
 
 public class MenuBar {
 
@@ -69,6 +71,13 @@ public class MenuBar {
                 recentFilesMenu,
                 new SeparatorMenuItem(),
                 saveMenu, saveAsMenu, exportMenu
+        );
+
+        var presentationModeMenu = createMenuItem(PresentationModeAction.INSTANCE);
+
+        var viewMenu = new Menu("View");
+        viewMenu.getItems().addAll(
+                presentationModeMenu
         );
 
         var executeMenu = createMenuItem(ExecuteNotebookAction.INSTANCE);
@@ -106,7 +115,7 @@ public class MenuBar {
                 about
         );
 
-        menuBar.getMenus().addAll(fileMenu, sourceMenu, runMenu, helpMenu);
+        menuBar.getMenus().addAll(fileMenu, viewMenu, sourceMenu, runMenu, helpMenu);
         return menuBar;
     }
 
@@ -123,6 +132,16 @@ public class MenuBar {
             });
             updateMenu(menu, dynAction.actions());
             return menu;
+        } else if (action instanceof ToggleAction t) {
+            var item = new MenuItem(t.getDisplayString());
+            item.setAccelerator(t.getAccelerator());
+            item.setOnAction((event) -> {
+                action.handle(event);
+                item.setAccelerator(t.getAccelerator());
+                item.setText(t.getDisplayString());
+            });
+            item.disableProperty().bind(action.enabledProperty().not());
+            return item;
         } else {
             var item = new MenuItem(action.getDisplayString());
             item.setAccelerator(action.getAccelerator());

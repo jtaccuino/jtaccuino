@@ -24,13 +24,11 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.ActionEvent;
 import javafx.scene.Group;
 import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
 import javafx.scene.input.MouseEvent;
 
 public final class MarkdownControl extends InputControl {
 
     private final static double RTA_LINE_HEIGHT = 25;
-    private ListView<?> paragraphListView;
     private Group group;
 
     private final double padding = 0;
@@ -48,7 +46,7 @@ public final class MarkdownControl extends InputControl {
         return mdRenderAreaFocusedProperty;
     }
 
-    public Optional<RichTextArea>  getMdRenderArea() {
+    public Optional<RichTextArea> getMdRenderArea() {
         return Optional.of(mdRenderArea);
     }
 
@@ -79,20 +77,21 @@ public final class MarkdownControl extends InputControl {
     private double computePreviewRTAPrefHeight(double width) {
         if (group == null) {
             group = (Group) mdRenderArea.lookup(".sheet");
-            paragraphListView = (ListView<?>) mdRenderArea.lookup(".paragraph-list-view");
         }
         if (null != group) {
-            double averageCellHeight = group.getChildren().stream()
+            double sumCellHeight = group.getChildren().stream()
                     .filter(ListCell.class::isInstance)
                     .map(ListCell.class::cast)
                     .filter(cell -> cell.getGraphic() != null)
                     .mapToDouble(n -> n.prefHeight(width))
-                    .average()
-                    .orElse(RTA_LINE_HEIGHT);
-            return Math.max(RTA_LINE_HEIGHT,
-                    averageCellHeight * paragraphListView.getItems().size() + 2);
+                    .sum();
+            return sumCellHeight;
         }
         return RTA_LINE_HEIGHT;
+    }
+
+    public void updateRenderedView(Document doc) {
+        mdRenderArea.getActionFactory().open(doc).execute(new ActionEvent());
     }
 
     public void switchToRenderedView(Document doc) {
