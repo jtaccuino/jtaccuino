@@ -1,0 +1,7 @@
+dependencies {
+    implementation project(':shell')
+
+    compileOnly "dev.langchain4j:langchain4j:1.6.0"
+    compileOnly "dev.langchain4j:langchain4j-core:1.6.0"
+    compileOnly "dev.langchain4j:langchain4j-ollama:1.6.0"
+}
