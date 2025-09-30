@@ -9,7 +9,7 @@
 # PROJECT_VERSION: version used in pom.xml, e.g. 1.0-SNAPSHOT
 # APP_VERSION: the application version, e.g. 1.0.0, shown in "about" dialog
 
-JAVA_VERSION=23
+JAVA_VERSION=25
 MAIN_JAR="app.jar"
 
 APP_VERSION=1.0.0
@@ -87,7 +87,7 @@ $JAVA_HOME/bin/jlink \
 
 echo "Creating installer of type $INSTALLER_TYPE"
 
-$JAVA_HOME/bin/jpackage \
+$JPACKAGE_HOME/bin/jpackage \
 --type $INSTALLER_TYPE \
 --dest target/installer \
 --input target/installer/input/libs \
