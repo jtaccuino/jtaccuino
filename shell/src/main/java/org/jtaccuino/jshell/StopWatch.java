@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-plugins {
-    // Apply the foojay-resolver plugin to allow automatic download of JDKs
-    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.4.0'
-}
+package org.jtaccuino.jshell;
 
-rootProject.name = 'jtaccuino'
-include('app')
-include('ui')
-include('shell')
-include('extensions:deepnetts')
-include('extensions:dflib')
-include('extensions:langchain4j')
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface StopWatch {
+}
