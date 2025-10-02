@@ -437,6 +437,7 @@ public class MarkdownCellFactory implements CellFactory {
             });
 
             inputControl.mdRenderAreaFocused().addListener((ov, t, t1) -> {
+                System.out.println("ov" + ov + " from " + t + " to " + t1);
                 Platform.runLater(() -> {
                     this.control.getSheet().moveFocusToNextCell(control);
                 });
