@@ -17,17 +17,14 @@ package org.jtaccuino.core.ui.controls;
 
 import com.gluonhq.richtextarea.RichTextArea;
 import com.gluonhq.richtextarea.model.Document;
-import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.Group;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.util.Subscription;
 
 sealed class InputControl extends AnchorPane permits JavaControl, MarkdownControl {
 
@@ -45,7 +42,6 @@ sealed class InputControl extends AnchorPane permits JavaControl, MarkdownContro
     }
 
     private final double padding = 0;
-    private final double MIN_WIDTH = 100;
     private final double inputPadding;
 
     private final Type type;
@@ -53,6 +49,9 @@ sealed class InputControl extends AnchorPane permits JavaControl, MarkdownContro
     private final RichTextArea input;
     private final int cellNumber;
     private final SimpleBooleanProperty rtaFocussedProperty = new SimpleBooleanProperty();
+
+    private Subscription inputHeightSubscription = null;
+    private Subscription widthSubscription = null;
 
     @SuppressWarnings("this-escape")
     public InputControl(int cellNumber, Type type) {
@@ -70,10 +69,11 @@ sealed class InputControl extends AnchorPane permits JavaControl, MarkdownContro
         getStyleClass().add(type.styleClassPrefix + "-cell-input");
 
         input.addEventFilter(MouseEvent.MOUSE_CLICKED, (EventHandler<MouseEvent>) event -> {
-            if (event.getSource() instanceof RichTextArea  r && !r.isFocused()) {
+            if (event.getSource() instanceof RichTextArea r && !r.isFocused()) {
                 requestFocus();
             }
         });
+        subscribeToInput();
     }
 
     protected int getCellNumber() {
@@ -115,49 +115,30 @@ sealed class InputControl extends AnchorPane permits JavaControl, MarkdownContro
         input.getStyleClass().add(type.styleClassPrefix + "-editor");
         input.setAutoSave(true);
 
-        input.documentProperty().subscribe(d
-                -> Platform.runLater(()
-                        -> recalculateRTA(Math.max(MIN_WIDTH, getWidth()))));
-        input.heightProperty().subscribe((h0, h) -> {
-            double newHeight = h.doubleValue() + 2 * padding;
-            setMinHeight(newHeight);
-            setPrefHeight(newHeight);
-            setMaxHeight(newHeight);
-            requestLayout();
-        });
         widthProperty().subscribe(w -> recalculateRTA(w.doubleValue()));
+    }
+
+    final protected void subscribeToInput() {
+        inputHeightSubscription = input.fullHeightProperty().subscribe((h) -> recalculateRTA(getWidth()));
+        widthSubscription = widthProperty().subscribe((w) -> recalculateRTA(w.doubleValue()));
+    }
+
+    final protected void unsubscribeFromInput() {
+        inputHeightSubscription.unsubscribe();
+        widthSubscription.unsubscribe();
     }
 
     private void recalculateRTA(double width) {
         input.setPrefWidth(width - 2);
-        double textAreaHeight = computeRTAPrefHeight(input.getWidth()) + inputPadding;
+        double textAreaHeight = input.getFullHeight() + inputPadding;
         input.setMinHeight(textAreaHeight);
         input.setPrefHeight(textAreaHeight);
         input.setMaxHeight(textAreaHeight);
         input.requestLayout();
-    }
 
-    private final static double RTA_LINE_HEIGHT = 25;
-
-    private ListView<?> paragraphListView;
-    private Group sheet;
-
-    private double computeRTAPrefHeight(double textAreaWidth) {
-        if (sheet == null) {
-            sheet = (Group) input.lookup(".sheet");
-            paragraphListView = (ListView<?>) input.lookup(".paragraph-list-view");
-        }
-        if (sheet != null) {
-            double cellHeight = sheet.getChildren().stream()
-                    .filter(ListCell.class::isInstance)
-                    .map(ListCell.class::cast)
-                    .filter(cell -> cell.getGraphic() != null)
-                    .mapToDouble(n -> n.prefHeight(textAreaWidth))
-                    .findFirst()
-                    .orElse(RTA_LINE_HEIGHT);
-            return Math.max(RTA_LINE_HEIGHT,
-                    cellHeight * paragraphListView.getItems().size() + 2);
-        }
-        return RTA_LINE_HEIGHT;
+        double newHeight = textAreaHeight + 2;
+        setMinHeight(newHeight);
+        setPrefHeight(newHeight);
+        setMaxHeight(newHeight);
     }
 }

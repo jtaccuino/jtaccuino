@@ -23,12 +23,11 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.ActionEvent;
 import javafx.scene.Group;
-import javafx.scene.control.ListCell;
 import javafx.scene.input.MouseEvent;
+import javafx.util.Subscription;
 
 public final class MarkdownControl extends InputControl {
 
-    private final static double RTA_LINE_HEIGHT = 25;
     private Group group;
 
     private final double padding = 0;
@@ -37,6 +36,9 @@ public final class MarkdownControl extends InputControl {
 
     private RichTextArea mdRenderArea;
     private final SimpleBooleanProperty mdRenderAreaFocusedProperty = new SimpleBooleanProperty();
+
+    private Subscription heightSubscription = null;
+    private Subscription widthSubscription = null;
 
     public MarkdownControl(int cellNumber) {
         super(cellNumber, Type.MARKDOWN);
@@ -61,7 +63,7 @@ public final class MarkdownControl extends InputControl {
 
     private void recalculatePreviewRTA(double width) {
         mdRenderArea.setPrefWidth(width - 2);
-        double textAreaHeight = computePreviewRTAPrefHeight(mdRenderArea.getWidth()) + inputPadding;
+        double textAreaHeight = mdRenderArea.getFullHeight() + inputPadding;
         mdRenderArea.setMinHeight(textAreaHeight);
         mdRenderArea.setPrefHeight(textAreaHeight);
         mdRenderArea.setMaxHeight(textAreaHeight);
@@ -74,24 +76,10 @@ public final class MarkdownControl extends InputControl {
         requestLayout();
     }
 
-    private double computePreviewRTAPrefHeight(double width) {
-        if (group == null) {
-            group = (Group) mdRenderArea.lookup(".sheet");
-        }
-        if (null != group) {
-            double sumCellHeight = group.getChildren().stream()
-                    .filter(ListCell.class::isInstance)
-                    .map(ListCell.class::cast)
-                    .filter(cell -> cell.getGraphic() != null)
-                    .mapToDouble(n -> n.prefHeight(width))
-                    .sum();
-            return sumCellHeight;
-        }
-        return RTA_LINE_HEIGHT;
-    }
-
     public void updateRenderedView(Document doc) {
-        mdRenderArea.getActionFactory().open(doc).execute(new ActionEvent());
+        if (null != mdRenderArea) {
+            mdRenderArea.getActionFactory().open(doc).execute(new ActionEvent());
+        }
     }
 
     public void switchToRenderedView(Document doc) {
@@ -114,29 +102,25 @@ public final class MarkdownControl extends InputControl {
         mdRenderArea.addEventFilter(MouseEvent.MOUSE_CLICKED, t -> {
             if (1 == t.getClickCount() && t.isShiftDown()) {
                 getChildren().remove(mdRenderArea);
-                getInput().setVisible(true);
                 // getChildren().add(0, getInput());
-                double newHeight = getInput().heightProperty().doubleValue() + 2 * padding;
-                setMinHeight(newHeight);
-                setPrefHeight(newHeight);
-                setMaxHeight(newHeight);
+                heightSubscription.unsubscribe();
+                widthSubscription.unsubscribe();
+                subscribeToInput();
+                getInput().setManaged(true);
+                getChildren().add(getInput());
                 mdRenderArea = null;
                 group = null;
                 t.consume();
             }
         });
-        mdRenderArea.heightProperty().subscribe((h0, h) -> {
-            double newHeight = h.doubleValue() + 2 * padding;
-            setMinHeight(newHeight);
-            setPrefHeight(newHeight);
-            setMaxHeight(newHeight);
-            requestLayout();
-        });
+        unsubscribeFromInput();
+        heightSubscription = mdRenderArea.fullHeightProperty().subscribe((h) -> recalculatePreviewRTA(getWidth()));
+        widthSubscription = widthProperty().subscribe((w) -> recalculatePreviewRTA(w.doubleValue()));
 
         //getChildren().remove(getInput());
-
+        getInput().setManaged(false);
+        getChildren().remove(getInput());
         getChildren().add(mdRenderArea);
-        getInput().setVisible(false);
         mdRenderArea.documentProperty().subscribe((ov, nv) -> {
             if (nv != null) {
                 recalculatePreviewRTA(Math.max(MIN_WIDTH, getWidth()));
