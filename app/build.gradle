@@ -67,6 +67,8 @@ run {
     jvmArgs getJvmModulePath()
     jvmArgs '--add-modules'
     jvmArgs getJvmAdditionalModules()
+    jvmArgs '--add-modules'
+    jvmArgs 'jdk.incubator.vector'
     jvmArgs '--add-opens'
     jvmArgs 'java.base/jdk.internal.misc=ALL-UNNAMED'
     jvmArgs '--enable-native-access=javafx.graphics'
