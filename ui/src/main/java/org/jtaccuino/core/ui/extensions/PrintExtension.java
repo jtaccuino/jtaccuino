@@ -54,6 +54,9 @@ public class PrintExtension implements JShellExtension {
         return Optional.of("""
             public void println(String text, Object... args) {
                 printManager.println(text, args);
+            }
+            public void println(Object toOutput, Object... args) {
+                printManager.println(String.valueOf(toOutput), args);
             }""");
     }
 
