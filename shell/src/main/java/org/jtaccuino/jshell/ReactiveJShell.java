@@ -43,7 +43,7 @@ public class ReactiveJShell {
             .newSingleThreadExecutor(Thread.ofVirtual().name("ReactiveJShellWorker").factory());
 
     private final JShell jshell = JShell.builder()
-            .compilerOptions("--enable-preview", "-source", System.getProperty("java.specification.version"))
+            .compilerOptions("--enable-preview", "-source", System.getProperty("java.specification.version"), "--add-modules" , "jdk.incubator.vector")
             .executionEngine("local")
             .build();
 
