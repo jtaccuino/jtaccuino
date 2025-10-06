@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 JTaccuino Contributors
+ * Copyright 2024-2025 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,13 @@ import javafx.scene.chart.XYChart;
 
 public final class ChartsFx {
 
-    public static ScatterChart<?,?> scatterFx(IntStream x, DoubleStream y, String xLabel, String yLabel, String title) {
+    public static record DataPoint(int x, double y) {}
+
+    public static ScatterChart<?, ?> scatterFx(IntStream x, DoubleStream y, String xLabel, String yLabel, String title) {
         return scatterFx(x.toArray(), y.toArray(), xLabel, yLabel, title);
     }
 
-    public static ScatterChart<?,?> scatterFx(int[] x, double[] y, String xLabel, String yLabel, String title) {
+    public static ScatterChart<?, ?> scatterFx(int[] x, double[] y, String xLabel, String yLabel, String title) {
         var xAxis = new NumberAxis();
         xAxis.setLabel(xLabel);
 
@@ -39,7 +41,7 @@ public final class ChartsFx {
 
         var scatterChart = new ScatterChart<Number, Number>(xAxis, yAxis);
 
-        var series = new XYChart.Series<Number,Number>();
+        var series = new XYChart.Series<Number, Number>();
         series.setName(title);
 
         var intStream = IntStream.range(0, x.length);
@@ -51,7 +53,29 @@ public final class ChartsFx {
         return scatterChart;
     }
 
-    public static LineChart<?,?> lineFx(int[] x, double[] y, String xLabel, String yLabel, String title) {
+    public static ScatterChart<?, ?> scatterPlot(List<double[]> xData, List<double[]> yData, String xLabel, String yLabel, String[] title) {
+        var xAxis = new NumberAxis();
+        xAxis.setLabel(xLabel);
+
+        var yAxis = new NumberAxis();
+        yAxis.setLabel(yLabel);
+
+        var scatterChart = new ScatterChart<Number, Number>(xAxis, yAxis);
+
+        for (int i = 0; i < xData.size(); i++) {
+            var x = xData.get(i);
+            var y = yData.get(i);
+            var intStream = IntStream.range(0, x.length);
+            var data = intStream.mapToObj(j -> new XYChart.Data<Number, Number>(x[j], y[j])).toList();
+            var series = new XYChart.Series<Number, Number>();
+            series.setName(title[i]);
+            series.getData().addAll(data);
+            scatterChart.getData().add(series);
+        }
+        return scatterChart;
+    }
+
+    public static LineChart<?, ?> lineFx(int[] x, double[] y, String xLabel, String yLabel, String title) {
         var xAxis = new NumberAxis();
         xAxis.setLabel(xLabel);
 
@@ -60,7 +84,7 @@ public final class ChartsFx {
 
         var lineChart = new LineChart<Number, Number>(xAxis, yAxis);
 
-        var series = new XYChart.Series<Number,Number>();
+        var series = new XYChart.Series<Number, Number>();
         series.setName(title);
 
         var intStream = IntStream.range(0, x.length);
@@ -72,7 +96,7 @@ public final class ChartsFx {
         return lineChart;
     }
 
-    public static LineChart<?,?> plotFx(Function<Double,Double> function, double from, double to, double step, String xLabel, String yLabel, String title) {
+    public static LineChart<?, ?> plotFx(Function<Double, Double> function, double from, double to, double step, String xLabel, String yLabel, String title) {
         var xAxis = new NumberAxis();
         xAxis.setLabel(xLabel);
 
@@ -82,16 +106,25 @@ public final class ChartsFx {
         var lineChart = new LineChart<Number, Number>(xAxis, yAxis);
         lineChart.setCreateSymbols(false);
 
-        var series = new XYChart.Series<Number,Number>();
+        var series = new XYChart.Series<Number, Number>();
         series.setName(title);
 
         var xStream = DoubleStream.iterate(from, n -> n + step)
-                .limit((long)((to -from) / step));
+                .limit((long) ((to - from) / step));
         var data = xStream.mapToObj(x -> new XYChart.Data<Number, Number>(x, function.apply(x))).toList();
 
         series.getData().addAll(data);
 
         lineChart.getData().setAll(List.of(series));
         return lineChart;
+    }
+
+    public static double[][] convertToDoubles(List<DataPoint> dataPoints) {
+        var values = new double[2][dataPoints.size()];
+        for (int i = 0; i < dataPoints.size(); i++) {
+            values[0][i] = dataPoints.get(i).x();
+            values[1][i] = dataPoints.get(i).y();
+        }
+        return values;
     }
 }
