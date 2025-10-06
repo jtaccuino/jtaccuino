@@ -260,28 +260,28 @@ public class MdUtils {
                         var text = c.getText();
                         var length = text.length();
                         theText.append(text);
-                        decorationList.add(new DecorationModel(start, length, monospaceDecoration, presetParagraphDecoration));
+                        decorationList.add(new DecorationModel(start, length, monospaceDecoration, paragraphDecorations.peek()));
                     }
                     case Emphasis e -> {
                         var start = theText.length();
                         var text = e.getText();
                         var length = text.length();
                         theText.append(text);
-                        decorationList.add(new DecorationModel(start, length, emphasisDecoration, presetParagraphDecoration));
+                        decorationList.add(new DecorationModel(start, length, emphasisDecoration, paragraphDecorations.peek()));
                     }
                     case StrongEmphasis e -> {
                         var start = theText.length();
                         var text = e.getText();
                         var length = text.length();
                         theText.append(text);
-                        decorationList.add(new DecorationModel(start, length, strongEmphasisDecoration, presetParagraphDecoration));
+                        decorationList.add(new DecorationModel(start, length, strongEmphasisDecoration, paragraphDecorations.peek()));
                     }
                     case Strikethrough e -> {
                         var start = theText.length();
                         var text = e.getText();
                         var length = text.length();
                         theText.append(text);
-                        decorationList.add(new DecorationModel(start, length, strikethroughDecoration, presetParagraphDecoration));
+                        decorationList.add(new DecorationModel(start, length, strikethroughDecoration, paragraphDecorations.peek()));
                     }
                     case Emoji e -> {
                         var start = theText.length();
