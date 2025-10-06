@@ -24,6 +24,7 @@ import org.jtaccuino.jshell.extensions.JShellExtension;
 public class DeepNettsExtension implements JShellExtension {
 
     private static final List<String> EXTENSIONS = List.of(
+            "FILE_EXTENSION",
             "DF_LIB_EXTENSION",
             "FX_CHARTS_EXTENSION"
     );

@@ -33,6 +33,7 @@ dependencies {
     implementation project(':ui')
     implementation project(':extensions:deepnetts')
     implementation project(':extensions:dflib')
+    implementation project(':extensions:file')
     implementation project(':extensions:langchain4j')
 }
 

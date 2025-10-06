@@ -29,8 +29,10 @@ public class DfLibExtension implements JShellExtension {
     );
 
     private static final List<String> IMPORTS = List.of(
+            "org.dflib.DataFrame",
             "org.dflib.csv.Csv",
-            "org.dflib.csv.CsvLoader"
+            "org.dflib.csv.CsvLoader",
+            "org.dflib.print.TabularPrinter"
     );
 
     private DfLibExtension() {
@@ -41,7 +43,13 @@ public class DfLibExtension implements JShellExtension {
     public Optional<String> initCodeSnippet() {
         var dependencies = DEPS.stream().map(dep -> "addDependency(\"" + dep + "\");").collect(Collectors.joining("\n"));
         var imports = IMPORTS.stream().map(imp -> "import " + imp + ";").collect(Collectors.joining("\n"));
-        return Optional.of(dependencies + "\n" + imports);
+        var init = """
+                   var _dfLibPrinter = new TabularPrinter();
+                   void println(DataFrame df) {
+                       println(_dfLibPrinter.print(df));
+                   }
+                   """;
+        return Optional.of(dependencies + "\n" + imports + "\n" + init);
     }
 
     @Descriptor(mode = Mode.ON_DEMAND, type = DfLibExtension.class)
