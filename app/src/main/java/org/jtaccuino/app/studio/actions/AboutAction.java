@@ -24,6 +24,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
+import org.jtaccuino.app.Studio;
 import org.jtaccuino.core.ui.api.AbstractAction;
 
 public final class AboutAction extends AbstractAction {
@@ -63,7 +64,7 @@ public final class AboutAction extends AbstractAction {
         infoBox.setPadding(new Insets(10, 0, 0, 0));
         infoBox.getChildren().addAll(
                 titleLabel,
-                createVersionLabel("Version", "\t1.0.0"),
+                createVersionLabel("Version", "\t" + Studio.getVersion()),
                 createVersionLabel("Java Version", "\t" +System.getProperty("java.specification.version")),
                 createVersionLabel("JavaFX Version", "\t" + System.getProperty("javafx.runtime.version")),
                 createVersionLabel("Java Runtime Version", System.getProperty("java.runtime.version"))

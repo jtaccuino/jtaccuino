@@ -56,6 +56,21 @@ application {
     mainClass = 'org.jtaccuino.app.Studio'
 }
 
+task generateAppProperties(type: WriteProperties) {
+    destinationFile = file("$buildDir/resources/main/app-info.properties")
+
+    properties(
+        'application.version': project.version,
+    )
+
+    comment = "Generated build properties - DO NOT EDIT"
+    encoding = "UTF-8"
+}
+
+processResources {
+    dependsOn generateAppProperties
+}
+
 compileJava {
     options.compilerArgs.addAll([
             '--module-path',
