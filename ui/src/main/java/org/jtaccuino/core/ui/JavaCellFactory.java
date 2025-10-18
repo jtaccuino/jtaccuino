@@ -15,6 +15,7 @@
  */
 package org.jtaccuino.core.ui;
 
+import javafx.scene.text.FontPosture;
 import org.jtaccuino.core.ui.completion.CompletionItem;
 import org.jtaccuino.core.ui.completion.CompletionPopup;
 import org.jtaccuino.core.ui.api.CellData;
@@ -25,12 +26,7 @@ import com.gluonhq.richtextarea.model.Document;
 import com.gluonhq.richtextarea.model.ParagraphDecoration;
 import com.gluonhq.richtextarea.model.TextDecoration;
 import java.io.ByteArrayInputStream;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
@@ -71,6 +67,8 @@ import org.jtaccuino.core.ui.documentation.DocumentationItem;
 import org.jtaccuino.core.ui.documentation.DocumentationPopup;
 import org.jtaccuino.core.ui.extensions.DisplayExtension;
 import org.jtaccuino.core.ui.extensions.PrintExtension;
+import org.jtaccuino.jshell.JavaParserSnippetAnalyzer;
+import org.jtaccuino.jshell.SyntaxHighlight;
 
 public class JavaCellFactory implements CellFactory {
 
@@ -158,14 +156,56 @@ public class JavaCellFactory implements CellFactory {
 
     public static class JavaCellSkin extends AbstractCellSkin<JavaCell> {
 
-        static TextDecoration presetDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
-                .fontWeight(FontWeight.NORMAL).fontSize(13).build();
+        static String colorKeyword = "#034BD3";
+        static String colorMethod = "#27647C";
+        static String colorDeclaration = "#8716B0";
+        static String colorComment = "#8C8C8C";
+        static String colorString = "#4B9245";
 
-        static TextDecoration declarationDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
-                .underline(Boolean.TRUE).fontWeight(FontWeight.NORMAL).fontSize(13).build();
+        static String defaultFont = "Monaspace Argon";
 
-        static TextDecoration keywordDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
-                .fontWeight(FontWeight.BOLD).fontSize(13).build();
+        static TextDecoration presetDecoration = TextDecoration.builder().presets()
+                .fontFamily(defaultFont)
+                .fontWeight(FontWeight.NORMAL)
+                .fontSize(13).build();
+
+        static TextDecoration declarationDecoration = TextDecoration.builder().presets()
+                .fontFamily(defaultFont)
+                .fontWeight(FontWeight.NORMAL)
+                .fontSize(13)
+                .foreground(colorDeclaration)
+                .build();
+
+        static TextDecoration keywordDecoration = TextDecoration.builder().presets()
+                .fontFamily(defaultFont)
+                .fontWeight(FontWeight.NORMAL)
+                .fontSize(13)
+                .foreground(colorKeyword)
+                .build();
+
+        static TextDecoration commentDecoration = TextDecoration.builder().presets()
+                .fontFamily(defaultFont)
+                .fontSize(13)
+                .foreground(colorComment)
+                .build();
+
+        static TextDecoration methodDeclarationDecoration = TextDecoration.builder().presets()
+                .fontFamily(defaultFont)
+                .fontSize(13)
+                .foreground(colorMethod)
+                .build();
+
+        static TextDecoration methodInvocationDeclarationDecoration = TextDecoration.builder().presets()
+                .fontFamily(defaultFont)
+                .fontPosture(FontPosture.ITALIC)
+                .fontSize(13)
+                .build();
+
+        static TextDecoration stringDecoration = TextDecoration.builder().presets()
+                .fontFamily(defaultFont)
+                .fontSize(13)
+                .foreground(colorString)
+                .build();
 
         private static final ParagraphDecoration parPreset
                 = ParagraphDecoration.builder().presets()
@@ -197,9 +237,26 @@ public class JavaCellFactory implements CellFactory {
                     presetDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
                             .fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize()).build();
                     declarationDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
-                            .underline(Boolean.TRUE).fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize()).build();
+                            .underline(Boolean.FALSE).fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize()).build();
                     keywordDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
-                            .fontWeight(FontWeight.BOLD).fontSize(newValue.getSize()).build();
+                            .fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize()).build();
+                    commentDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
+                            .fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize())
+                            .foreground(colorComment)
+                            .build();
+                    methodDeclarationDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
+                            .fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize())
+                            .foreground(colorMethod)
+                            .build();
+                    methodInvocationDeclarationDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
+                            .fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize())
+                            .fontPosture(FontPosture.ITALIC)
+                            .build();
+                    stringDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
+                            .fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize())
+                            .foreground(colorString)
+                            .build();
+
                     handleSyntaxHighlighting(input.getDocument().getText());
                 }
             });
@@ -574,26 +631,63 @@ public class JavaCellFactory implements CellFactory {
         }
 
         private void handleSyntaxHighlighting(String text) {
-            this.control.getSheet().getReactiveJShell().highlightingAsync(text, highlights -> {
+            // commented out code below use JShell to provide code highlight hots. JShell can detect only keywords and declrations
+             this.control.getSheet().getReactiveJShell().highlightingAsync(text, highlights -> {
+//            JavaParserSnippetAnalyzer.highlightingAsync(text, highlights -> {
 //                highlights.forEach(System.out::println);
                 Platform.runLater(()
                         -> input.getActionFactory().selectAndDecorate(
                                 new Selection(0, input.getTextLength()),
                                 presetDecoration).execute(new ActionEvent()));
-                highlights.stream().forEach(h -> {
+
+                List<Runnable> individualHighlightActions = new ArrayList<>();
+
+                for (SyntaxHighlight h : highlights) {
                     var attrs = h.attributes();
-                    if (attrs.contains(SourceCodeAnalysis.Attribute.KEYWORD)) {
-                        Platform.runLater(()
+
+                    if (attrs.contains(SyntaxHighlight.SyntaxHighlightAttribute.KEYWORD)) {
+                        individualHighlightActions.add(()
                                 -> input.getActionFactory().selectAndDecorate(
-                                        new Selection(h.start(), h.end()),
-                                        keywordDecoration).execute(new ActionEvent()));
-                    } else if (attrs.contains(SourceCodeAnalysis.Attribute.DECLARATION)) {
-                        Platform.runLater(()
+                                new Selection(h.start(), h.end()),
+                                keywordDecoration).execute(new ActionEvent()));
+                    } else if (attrs.contains(SyntaxHighlight.SyntaxHighlightAttribute.DECLARATION)) {
+                        individualHighlightActions.add(()
                                 -> input.getActionFactory().selectAndDecorate(
-                                        new Selection(h.start(), h.end()),
-                                        declarationDecoration).execute(new ActionEvent()));
+                                new Selection(h.start(), h.end()),
+                                declarationDecoration).execute(new ActionEvent()));
+                    } else if (attrs.contains(SyntaxHighlight.SyntaxHighlightAttribute.STRING)) {
+                        individualHighlightActions.add(()
+                                -> input.getActionFactory().selectAndDecorate(
+                                new Selection(h.start(), h.end()),
+                                stringDecoration).execute(new ActionEvent()));
+                    } else if (attrs.contains(SyntaxHighlight.SyntaxHighlightAttribute.COMMENT)) {
+                        individualHighlightActions.add(()
+                                -> input.getActionFactory().selectAndDecorate(
+                                new Selection(h.start(), h.end()),
+                                commentDecoration).execute(new ActionEvent()));
+                    } else if (attrs.contains(SyntaxHighlight.SyntaxHighlightAttribute.METHOD_DECLARATION)) {
+                        individualHighlightActions.add(()
+                                -> input.getActionFactory().selectAndDecorate(
+                                new Selection(h.start(), h.end()),
+                                methodDeclarationDecoration).execute(new ActionEvent()));
+                    } else if (attrs.contains(SyntaxHighlight.SyntaxHighlightAttribute.METHOD_INVOCATION)) {
+                        individualHighlightActions.add(()
+                                -> input.getActionFactory().selectAndDecorate(
+                                new Selection(h.start(), h.end()),
+                                methodInvocationDeclarationDecoration).execute(new ActionEvent()));
+                    } else if (attrs.contains(SyntaxHighlight.SyntaxHighlightAttribute.VARIABLE_REFERENCE)) {
+                        individualHighlightActions.add(()
+                                -> input.getActionFactory().selectAndDecorate(
+                                new Selection(h.start(), h.end()),
+                                declarationDecoration).execute(new ActionEvent()));
                     }
 //                    Platform.runLater(() -> System.out.println(input.getDocument().getDecorations()));
+                }
+
+                Platform.runLater(() -> {
+                    for (var action : individualHighlightActions) {
+                        action.run();
+                    }
                 });
             });
         }
