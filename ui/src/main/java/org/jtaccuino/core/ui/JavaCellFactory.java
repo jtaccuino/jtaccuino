@@ -632,8 +632,8 @@ public class JavaCellFactory implements CellFactory {
 
         private void handleSyntaxHighlighting(String text) {
             // commented out code below use JShell to provide code highlight hots. JShell can detect only keywords and declrations
-             this.control.getSheet().getReactiveJShell().highlightingAsync(text, highlights -> {
-//            JavaParserSnippetAnalyzer.highlightingAsync(text, highlights -> {
+            // this.control.getSheet().getReactiveJShell().highlightingAsync(text, highlights -> {
+            JavaParserSnippetAnalyzer.highlightingAsync(text, highlights -> {
 //                highlights.forEach(System.out::println);
                 Platform.runLater(()
                         -> input.getActionFactory().selectAndDecorate(
