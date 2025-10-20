@@ -7,12 +7,11 @@ rem See https://github.com/dlemmermann/JPackageScriptFX
 rem The script depends on various environment variables to exist in order to
 rem run properly:
 rem
-rem PROJECT_VERSION=1.1.0-SNAPSHOT
-rem APP_VERSION=1.0.0
+rem APP_VERSION=
+rem VERSION=
 
-set JAVA_VERSION=23
-set MAIN_JAR="app.jar"
-set APP_VERSION=1.0.0
+set JAVA_VERSION=25
+set MAIN_JAR="app-%VERSION%.jar"
 
 rem Set desired installer type: "app-image" "msi" "exe".
 set INSTALLER_TYPE=msi
@@ -26,8 +25,8 @@ IF EXIST target\installer rmdir /S /Q target\installer
 
 mkdir target\installer\input\libs
 
-tar -xf app\build\distributions\app.zip -C target\installer\input
-xcopy /S /Q target\installer\input\app\lib\* target\installer\input\libs\
+tar -xf app\build\distributions\app-%VERSION%.zip -C target\installer\input
+xcopy /S /Q target\installer\input\app-%VERSION%\lib\* target\installer\input\libs\
 
 rem ------ REQUIRED MODULES ---------------------------------------------------
 rem Use jlink to detect all modules that are required to run the application.
@@ -60,7 +59,10 @@ rem
 rem Do not forget the leading ','!
 
 set manual_modules=,java.desktop,java.naming,jdk.unsupported,jdk.jshell,java.logging,java.net.http,java.sql,java.sql.rowset,java.transaction.xa,java.xml,jdk.localedata
+manual_modules=,java.desktop,java.naming,jdk.unsupported,jdk.jshell,java.logging,java.net.http,java.sql,java.sql.rowset,java.transaction.xa,java.xml,jdk.localedata
+incubating_modules=,jdk.incubator.vector
 echo manual modules: %manual_modules%
+echo incubating modules: %incubating_modules%
 
 rem ------ RUNTIME IMAGE ------------------------------------------------------
 rem Use the jlink tool to create a runtime image for our application. We are
@@ -76,7 +78,7 @@ call "%JAVA_HOME%\bin\jlink" ^
   --no-man-pages ^
   --compress=2 ^
   --strip-debug ^
-  --add-modules %detected_modules%%manual_modules% ^
+  --add-modules %detected_modules%%manual_modules%%incubating_modules% ^
   --include-locales=en ^
   --output target/java-runtime
 
@@ -92,12 +94,12 @@ call "%JAVA_HOME%\bin\jpackage" ^
   --name JTaccuinoStudio ^
   --main-class org.jtaccuino.app.StudioLauncher ^
   --main-jar %MAIN_JAR% ^
-  --java-options "-Xmx2048m --enable-preview" ^
+  --java-options "-Xmx2048m --enable-preview -add-modules %ADDITIONAL_JDK_MODULES% --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --enable-native-access=ALL-UNNAMED" ^
   --runtime-image target/java-runtime ^
   --icon app/src/main/logo/windows/notebook.ico ^
   --app-version %APP_VERSION% ^
   --vendor "JTaccuino" ^
-  --copyright "Copyright © 2024 JTaccuino Project" ^
+  --copyright "Copyright © 2025 JTaccuino Project" ^
   --win-dir-chooser ^
   --win-shortcut ^
   --win-per-user-install ^

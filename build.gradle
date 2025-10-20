@@ -85,6 +85,8 @@ allprojects {
                 )
                 targetExclude(
                     '.*/**',
+                    'build/**',
+                    'target/**',
                 )
 
                 trimTrailingWhitespace()
