@@ -75,17 +75,17 @@ jobs:
         run: |
           export DISPLAY=:90
           Xvfb -ac :90 -screen 0 1280x1024x24 > /dev/null 2>&1 &
-          ./gradlew -Pversion=${{ github.ref }} -i test
+          ./gradlew -Pversion=${{ github.ref_name }} -i test
           
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
         run: |
-          ./gradlew -Pversion=${{ github.ref }} -i test
+          ./gradlew -Pversion=${{ github.ref_name }} -i test
           
       - name: Run Tests (Windows)
         if: runner.os == 'Windows'
         run: |
-          ./gradlew -Pversion=${{ github.ref }} -i test
+          ./gradlew -Pversion=${{ github.ref_name }} -i test
 
       - name: Create Bundle using jpackage for macos
         if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
@@ -101,7 +101,7 @@ jobs:
           MACSIGN_PREFIX: ${{ secrets.GLUON_MACSIGN_PREFIX }}
           MACSIGN_USER: ${{ secrets.GLUON_MACSIGN_USER }}
           JPACKAGE_HOME: ${{ steps.jpackage.outputs.JPACKAGE_HOME }}
-          VERSION: ${{ github.ref }}
+          VERSION: ${{ github.ref_name }}
           APP_VERSION: ${{ steps.app-gradle-props.outputs.app_version }}
           ADDITIONAL_JDK_MODULES: ${{ steps.app-gradle-props.outputs.additional_jdk_modules }}
           
@@ -116,7 +116,7 @@ jobs:
             --type rpm
           echo path_rpm=target/installer/jtaccuinostudio-${{ steps.app-gradle-props.outputs.app_version }}-${{github.run_number}}.x86_64.rpm >> $GITHUB_OUTPUT    
         env:
-          VERSION: ${{ github.ref }}
+          VERSION: ${{ github.ref_name }}
           APP_VERSION: ${{ steps.app-gradle-props.outputs.app_version }}
           ADDITIONAL_JDK_MODULES: ${{ steps.app-gradle-props.outputs.additional_jdk_modules }}          
 
@@ -128,7 +128,7 @@ jobs:
           call .github\scripts\build_app_windows.bat
           echo path=target\installer\JTaccuinoStudio-${{ steps.app-gradle-props.outputs.app_version }}.msi >> %GITHUB_OUTPUT%
         env:
-          VERSION: ${{ github.ref }}
+          VERSION: ${{ github.ref_name }}
           APP_VERSION: ${{ steps.app-gradle-props.outputs.app_version }}
           ADDITIONAL_JDK_MODULES: ${{ steps.app-gradle-props.outputs.additional_jdk_modules }}
 
