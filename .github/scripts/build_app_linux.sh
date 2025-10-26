@@ -94,6 +94,7 @@ $JAVA_HOME/bin/jpackage \
 --java-options "--enable-preview --add-modules jdk.incubator.vector --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --enable-native-access=ALL-UNNAMED" \
 --runtime-image target/java-runtime \
 --icon app/src/main/logo/linux/notebook.png \
+--linux-app-release ${LINUX_APP_RELEASE_VERSION:-0} \
 --app-version ${APP_VERSION} \
 --copyright "Copyright © 2025 JTaccuino Project" \
 --vendor JTaccuino \

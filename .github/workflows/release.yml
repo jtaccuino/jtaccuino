@@ -118,6 +118,7 @@ jobs:
         env:
           VERSION: ${{ github.ref_name }}
           APP_VERSION: ${{ steps.app-gradle-props.outputs.app_version }}
+          LINUX_APP_RELEASE_VERSION: ${{github.run_number}}
           ADDITIONAL_JDK_MODULES: ${{ steps.app-gradle-props.outputs.additional_jdk_modules }}          
 
       - name: Create Bundle using jpackage for windows
