@@ -68,7 +68,7 @@ jobs:
           p12-password: ${{ secrets.CERTIFICATES_PASSWORD }}
 
       - name: Build project
-        run: ./gradlew -i build -x test
+        run: ./gradlew -Pversion=${{ github.ref_name }} -i build -x test
         
       - name: Run Tests (Linux)
         if: runner.os == 'Linux'
