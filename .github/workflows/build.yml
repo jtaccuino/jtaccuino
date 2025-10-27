@@ -119,7 +119,7 @@ jobs:
         run: |
           .github/scripts/build_app_linux.sh \
             --type deb
-          echo path_deb=target/installer/jtaccuinostudio_${{ steps.app-gradle-props.outputs.app_version }}_amd64.deb >> $GITHUB_OUTPUT
+          echo path_deb=target/installer/jtaccuinostudio_${{ steps.app-gradle-props.outputs.app_version }}-0_amd64.deb >> $GITHUB_OUTPUT
           .github/scripts/build_app_linux.sh \
             --type rpm
           echo path_rpm=target/installer/jtaccuinostudio-${{ steps.app-gradle-props.outputs.app_version }}-0.x86_64.rpm >> $GITHUB_OUTPUT
