@@ -174,8 +174,8 @@ public class ReactiveJShell {
         return jshell.unresolvedDependencies(snippet);
     }
 
-    public void highlightingAsync(String text, Consumer<List<SourceCodeAnalysis.Highlight>> consumer) {
-        CompletableFuture.supplyAsync(() -> sourceCodeAnalysis().highlights(text), worker)
+    public void highlightingAsync(String text, Consumer<List<SyntaxHighlight>> consumer) {
+        CompletableFuture.supplyAsync(() -> sourceCodeAnalysis().highlights(text).stream().map(SyntaxHighlight::fromJShellHighlight).toList(), worker)
                 .thenAccept(consumer)
                 .exceptionally(this::logThrowable);
     }
