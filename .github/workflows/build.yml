@@ -12,12 +12,15 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ macos-13, macos-14, ubuntu-latest, windows-latest ]
+        os: [ macos-14, macos-15, macos-26, ubuntu-latest, windows-latest ]
         include:
-          - os: macos-13
-            ARCH: "-amd64"
-            PLAT: "macos"
           - os: macos-14
+            ARCH: "-aarch64"
+            PLAT: "macos"
+          - os: macos-15
+            ARCH: "-aarch64"
+            PLAT: "macos"
+          - os: macos-26
             ARCH: "-aarch64"
             PLAT: "macos"
           - os: ubuntu-latest
