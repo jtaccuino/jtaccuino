@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,16 +57,30 @@ public class PrintExtension implements JShellExtension {
             }
             public void println(Object toOutput, Object... args) {
                 printManager.println(String.valueOf(toOutput), args);
-            }""");
+            }
+            public void print(String text, Object... args) {
+                printManager.print(text, args);
+            }
+            public void print(Object toOutput, Object... args) {
+                printManager.print(String.valueOf(toOutput), args);
+            }
+            """);
     }
 
     @SuppressWarnings("AnnotateFormatMethod")
     public void println(String text, Object... args) {
         var formatted = text.formatted(args);
         Platform.runLater(() -> {
-            var nextText = streamResult.getText()
-                + (streamResult.getText().isEmpty() ? "" : "\n")
-                + formatted;
+            var nextText = streamResult.getText() + formatted + "\n";
+            streamResult.setText(nextText);
+        });
+    }
+
+    @SuppressWarnings("AnnotateFormatMethod")
+    public void print(String text, Object... args) {
+        var formatted = text.formatted(args);
+        Platform.runLater(() -> {
+            var nextText = streamResult.getText() + formatted;
             streamResult.setText(nextText);
         });
     }
