@@ -42,7 +42,7 @@ jobs:
 
       - name: Read properties from app gradle.properties
         id: app-gradle-props
-        uses: kurt-code/gha-properties@v0.0.1
+        uses: kurt-code/gha-properties@v0.0.2
         with:
           operation: 'read'
           file-path: 'app/gradle.properties'
