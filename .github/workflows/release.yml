@@ -144,28 +144,28 @@ jobs:
 
       - name: Archive jpackage for macos
         if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}
           path: ${{ steps.outputfile_mac.outputs.path }}
 
       - name: Archive jpackage for linux deb
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}-deb
           path: ${{ steps.outputfile_linux.outputs.path_deb }}
 
       - name: Archive jpackage for linux rpm
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}-rpm
           path: ${{ steps.outputfile_linux.outputs.path_rpm }}
 
       - name: Archive jpackage for windows
         if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: JTaccuinoStudio-${{ matrix.PLAT }}${{ matrix.ARCH }}
           path: ${{ steps.outputfile_win.outputs.path }}
