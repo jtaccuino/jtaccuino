@@ -18,7 +18,7 @@ plugins {
     id 'java-platform'
     id 'com.diffplug.spotless' version '7.0.3'
     id 'com.google.osdetector' version '1.7.3'
-    id 'net.ltgt.errorprone' version '4.2.0' apply false
+    id 'net.ltgt.errorprone' version '5.0.0' apply false
 }
 
 ext {
