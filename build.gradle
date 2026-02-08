@@ -16,9 +16,9 @@
 
 plugins {
     id 'java-platform'
-    id 'com.diffplug.spotless' version '7.0.3'
+    id 'com.diffplug.spotless' version '8.2.1'
     id 'com.google.osdetector' version '1.7.3'
-    id 'net.ltgt.errorprone' version '4.2.0' apply false
+    id 'net.ltgt.errorprone' version '5.0.0' apply false
 }
 
 ext {
@@ -33,7 +33,7 @@ javaPlatform {
 
 // ... and its dependencies
 dependencies {
-    api platform('org.junit:junit-bom:5.12.2')
+    api platform('org.junit:junit-bom:6.0.2')
 }
 
 allprojects {
@@ -165,7 +165,7 @@ allprojects {
         apply plugin: 'net.ltgt.errorprone'
 
         dependencies {
-            errorprone 'com.google.errorprone:error_prone_core:2.38.0'
+            errorprone 'com.google.errorprone:error_prone_core:2.47.0'
         }
     }
 }
