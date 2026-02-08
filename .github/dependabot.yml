@@ -10,7 +10,7 @@ updates:
     # default location of `.github/workflows`
     directory: "/"
     # Raise pull requests for version updates on `master` branch
-    target-branch: "master"
+    target-branch: "main"
     schedule:
       interval: "daily"
       # Check for npm updates at 0815hrs UTC
@@ -30,7 +30,7 @@ updates:
       - "/shell"
       - "/ui"
     # Raise pull requests for version updates on `master` branch
-    target-branch: "master"
+    target-branch: "main"
     schedule:
       interval: "daily"
       # Check for npm updates at 0815hrs UTC
