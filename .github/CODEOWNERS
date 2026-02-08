@@ -1,0 +1,8 @@
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# @jtaccuino/jtaccuino-reviewers will be requested for
+# review when someone opens a pull request.
+*    @jtaccuino/jtaccuino-reviewers
+
+# Request for changes to this this file
+/.github/CODEOWNERS    @svenreimers
