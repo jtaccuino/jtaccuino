@@ -61,7 +61,7 @@ jobs:
           distribution: 'zulu'
           java-version: 25
 
-      - uses: Apple-Actions/import-codesign-certs@v3
+      - uses: Apple-Actions/import-codesign-certs@v6
         if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
         with:
           p12-file-base64: ${{ secrets.CERTIFICATES_FILE_BASE64 }}
