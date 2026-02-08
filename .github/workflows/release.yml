@@ -180,23 +180,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: JTaccuinoStudio-win
           path: ./dist/
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: JTaccuinoStudio-macos-amd64
           path: ./dist/
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: JTaccuinoStudio-macos-aarch64
           path: ./dist/
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: JTaccuinoStudio-linux-rpm
           path: ./dist/
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: JTaccuinoStudio-linux-deb
           path: ./dist/
