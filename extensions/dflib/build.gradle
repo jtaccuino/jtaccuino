@@ -1,6 +1,6 @@
 dependencies {
     implementation project(':shell')
 
-    compileOnly "org.dflib:dflib:2.0.0-M4"
-    compileOnly "org.dflib:dflib-csv:2.0.0-M4"
+    compileOnly "org.dflib:dflib:2.0.0-M6"
+    compileOnly "org.dflib:dflib-csv:2.0.0-M6"
 }
