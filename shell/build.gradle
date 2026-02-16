@@ -12,4 +12,5 @@ dependencies {
     implementation 'org.apache.maven.resolver:maven-resolver-transport-file:' + versionMavenResolver
     implementation 'org.apache.maven.resolver:maven-resolver-transport-jetty:' + versionMavenResolver
     implementation 'org.apache.maven.resolver:maven-resolver-transport-jdk-11:' + versionMavenResolver
+    implementation 'com.github.javaparser:javaparser-symbol-solver-core:' + versionJavaParser
 }
