@@ -40,5 +40,8 @@ updates:
       javafx:
         patterns:
           - "org.openjfx:javafx-*"
+      langchain4j:
+        patterns:
+          - "dev.langchain4j:langchain4j*"
     # Allow up to N open pull requests (independant of source)
     open-pull-requests-limit: 50
