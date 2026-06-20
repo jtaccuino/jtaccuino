@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public final class ToggleAction implements Action {
     @Override
     public final void handle(ActionEvent event) {
         this.activeAction.handle(event);
-        this.activeAction = (activeAction == actionA) ? actionB : actionA;
+        this.activeAction = activeAction.equals(actionA) ? actionB : actionA;
     }
 
     @Override

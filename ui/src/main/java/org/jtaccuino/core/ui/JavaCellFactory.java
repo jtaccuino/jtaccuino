@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 JTaccuino Contributors
+ * Copyright 2024-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
@@ -310,7 +311,7 @@ public class JavaCellFactory implements CellFactory {
             // works around not customizable input map from RTA (e.g. shift-enter for cell execution)
             input.onKeyPressedProperty()
                     .addListener((ov, t, t1) -> {
-                        if (t1 != getKeyHandler()) {
+                        if (!Objects.equals(t1, getKeyHandler())) {
                             input.setOnKeyPressed(getKeyHandler());
                             delegateKeyEvents(t1);
                         }
