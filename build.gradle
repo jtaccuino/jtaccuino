@@ -138,7 +138,7 @@ allprojects {
 
         dependencies {
             // get recommended versions from the platform project
-            api platform(rootProject)
+            api platform(project(':'))
 
             // Use JUnit Jupiter for testing.
             testImplementation 'org.junit.jupiter:junit-jupiter-api'

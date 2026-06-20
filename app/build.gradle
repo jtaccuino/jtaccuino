@@ -16,13 +16,13 @@ configurations {
 }
 
 dependencies {
-    javafx 'org.openjfx:javafx-base:' + versionJavafx + ':' + javaFxPlatform
-    javafx 'org.openjfx:javafx-graphics:' + versionJavafx + ':' + javaFxPlatform
-    javafx 'org.openjfx:javafx-fxml:' + versionJavafx + ':' + javaFxPlatform
-    javafx 'org.openjfx:javafx-controls:' + versionJavafx+':' + javaFxPlatform
-    javafx 'org.openjfx:javafx-media:' + versionJavafx+':' + javaFxPlatform
-    javafx 'org.openjfx:javafx-web:' + versionJavafx + ':' + javaFxPlatform
-    javafx 'org.openjfx:javafx-swing:' + versionJavafx + ':' + javaFxPlatform
+    javafx 'org.openjfx:javafx-base:' + versionJavafx + ':' + rootProject.javaFxPlatform
+    javafx 'org.openjfx:javafx-graphics:' + versionJavafx + ':' + rootProject.javaFxPlatform
+    javafx 'org.openjfx:javafx-fxml:' + versionJavafx + ':' + rootProject.javaFxPlatform
+    javafx 'org.openjfx:javafx-controls:' + versionJavafx+':' + rootProject.javaFxPlatform
+    javafx 'org.openjfx:javafx-media:' + versionJavafx+':' + rootProject.javaFxPlatform
+    javafx 'org.openjfx:javafx-web:' + versionJavafx + ':' + rootProject.javaFxPlatform
+    javafx 'org.openjfx:javafx-swing:' + versionJavafx + ':' + rootProject.javaFxPlatform
 
     implementation 'kr.motd.maven:os-maven-plugin:' + versionOsMavenPlugin
 
