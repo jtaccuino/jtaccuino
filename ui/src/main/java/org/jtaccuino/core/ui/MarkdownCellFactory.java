@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 JTaccuino Contributors
+ * Copyright 2024-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.gluonhq.richtextarea.model.Document;
 import com.gluonhq.richtextarea.model.ParagraphDecoration;
 import com.gluonhq.richtextarea.model.TextDecoration;
 import java.util.List;
+import java.util.Objects;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
@@ -392,7 +393,7 @@ public class MarkdownCellFactory implements CellFactory {
 
             // works around not customizable input map from RTA (e.g. shift-enter for cell execution)
             inputControl.getInput().onKeyPressedProperty().addListener((ov, t, t1) -> {
-                if (t1 != getKeyHandler()) {
+                if (!Objects.equals(t1, getKeyHandler())) {
                     inputControl.getInput().setOnKeyPressed(getKeyHandler());
                     delegateKeyEvents(t1);
                 }
