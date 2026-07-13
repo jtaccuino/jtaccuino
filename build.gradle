@@ -33,7 +33,7 @@ javaPlatform {
 
 // ... and its dependencies
 dependencies {
-    api platform('org.junit:junit-bom:6.1.1')
+    api platform('org.junit:junit-bom:6.1.2')
 }
 
 allprojects {
