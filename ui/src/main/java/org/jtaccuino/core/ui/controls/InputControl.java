@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 JTaccuino Contributors
+ * Copyright 2024-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,18 @@
  */
 package org.jtaccuino.core.ui.controls;
 
-import com.gluonhq.richtextarea.RichTextArea;
-import com.gluonhq.richtextarea.model.Document;
 import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
+import javafx.geometry.Point2D;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.util.Subscription;
+import jfx.incubator.scene.control.richtext.CodeArea;
+import jfx.incubator.scene.control.richtext.LineEnding;
+import jfx.incubator.scene.control.richtext.TextPos;
+import jfx.incubator.scene.control.richtext.model.StyledTextModel;
 
 sealed class InputControl extends AnchorPane permits JavaControl, MarkdownControl {
 
@@ -42,38 +44,33 @@ sealed class InputControl extends AnchorPane permits JavaControl, MarkdownContro
     }
 
     private final double padding = 0;
-    private final double inputPadding;
 
     private final Type type;
 
-    private final RichTextArea input;
+    private final CodeArea input;
     private final int cellNumber;
-    private final SimpleBooleanProperty rtaFocussedProperty = new SimpleBooleanProperty();
-
-    private Subscription inputHeightSubscription = null;
-    private Subscription widthSubscription = null;
+    private final SimpleBooleanProperty editorFocussedProperty = new SimpleBooleanProperty();
+    private final ReadOnlyObjectWrapper<Point2D> caretRowColumn = new ReadOnlyObjectWrapper<>(this, "caretRowColumn", Point2D.ZERO);
+    private final Label placeholder;
 
     @SuppressWarnings("this-escape")
     public InputControl(int cellNumber, Type type) {
         this.cellNumber = cellNumber;
         this.type = type;
-        input = new RichTextArea();
+        input = new CodeArea();
+        placeholder = createPlaceholder(type.promptText);
         setup();
-        getChildren().add(input);
+        getChildren().addAll(placeholder, input);
 
-        // external padding + 2 pixels from border width
-        inputPadding = input.getPadding().getTop() + input.getPadding().getBottom() + 2;
-        input.setTranslateX(padding);
-        input.setTranslateY(padding);
-        rtaFocussedProperty.bind(input.focusedProperty());
+        editorFocussedProperty.bind(input.focusedProperty());
         getStyleClass().add(type.styleClassPrefix + "-cell-input");
 
-        input.addEventFilter(MouseEvent.MOUSE_CLICKED, (EventHandler<MouseEvent>) event -> {
-            if (event.getSource() instanceof RichTextArea r && !r.isFocused()) {
+        input.addEventFilter(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
+            if (event.getSource() instanceof CodeArea c && !c.isFocused()) {
                 requestFocus();
             }
         });
-        subscribeToInput();
+        input.caretPositionProperty().addListener((observable, oldValue, newValue) -> updateCaretRowColumn(newValue));
     }
 
     protected int getCellNumber() {
@@ -86,59 +83,67 @@ sealed class InputControl extends AnchorPane permits JavaControl, MarkdownContro
     }
 
     public ReadOnlyBooleanProperty codeEditorFocussed() {
-        return rtaFocussedProperty;
+        return editorFocussedProperty;
     }
 
-    public RichTextArea getInput() {
+    public ReadOnlyObjectProperty<Point2D> caretRowColumnProperty() {
+        return caretRowColumn.getReadOnlyProperty();
+    }
+
+    public CodeArea getInput() {
         return input;
     }
 
-    public void openDocument(Document document) {
-        input.getActionFactory().open(document).execute(new ActionEvent());
+    public void openDocument(String text) {
+        input.setText(text);
+        input.select(input.getDocumentEnd());
+        updatePlaceholder();
+    }
+
+    private Label createPlaceholder(String promptText) {
+        var label = new Label(promptText);
+        label.setMouseTransparent(true);
+        label.setTranslateX(padding);
+        label.setTranslateY(padding);
+        label.getStyleClass().add("editor-placeholder");
+        return label;
     }
 
     private void setup() {
-        input.setParagraphGraphicFactory((i, t) -> {
-            if (i < 1) {
-                return null;
-            }
-            Label label = new Label("#");
-            label.setMouseTransparent(true);
-            label.getStyleClass().add("numbered-label");
-            return label;
-        });
-
-        //input.setPrefRowCount(1);
-        input.setPromptText(type.promptText);
-        input.setTableAllowed(false);
+        input.setLineNumbersEnabled(true);
+        input.setUseContentHeight(true);
+        input.setTabSize(4);
+        input.setLineEnding(LineEnding.LF);
         input.setId("input_" + cellNumber);
         input.getStyleClass().add(type.styleClassPrefix + "-editor");
-        input.setAutoSave(true);
+        input.setTranslateX(padding);
+        input.setTranslateY(padding);
+        input.setLineSpacing(5);
 
-        widthProperty().subscribe(w -> recalculateRTA(w.doubleValue()));
+        AnchorPane.setLeftAnchor(input, padding);
+        AnchorPane.setRightAnchor(input, padding);
+        placeholder.setTranslateX(padding);
+        placeholder.setTranslateY(padding);
+
+        input.modelProperty().addListener((observable, oldValue, newValue) -> subscribeToModel(newValue));
+        subscribeToModel(input.getModel());
+        input.focusedProperty().addListener((observable, oldValue, newValue) -> updatePlaceholder());
+        input.widthProperty().addListener((observable, oldValue, newValue) -> updatePlaceholder());
     }
 
-    final protected void subscribeToInput() {
-        inputHeightSubscription = input.fullHeightProperty().subscribe((h) -> recalculateRTA(getWidth()));
-        widthSubscription = widthProperty().subscribe((w) -> recalculateRTA(w.doubleValue()));
+    private void subscribeToModel(StyledTextModel model) {
+        if (null != model) {
+            model.addListener((StyledTextModel.Listener) change -> updatePlaceholder());
+        }
     }
 
-    final protected void unsubscribeFromInput() {
-        inputHeightSubscription.unsubscribe();
-        widthSubscription.unsubscribe();
+    private void updatePlaceholder() {
+        placeholder.setVisible(input.getText().isEmpty() && !input.isFocused());
     }
 
-    private void recalculateRTA(double width) {
-        input.setPrefWidth(width - 2);
-        double textAreaHeight = input.getFullHeight() + inputPadding;
-        input.setMinHeight(textAreaHeight);
-        input.setPrefHeight(textAreaHeight);
-        input.setMaxHeight(textAreaHeight);
-        input.requestLayout();
-
-        double newHeight = textAreaHeight + 2;
-        setMinHeight(newHeight);
-        setPrefHeight(newHeight);
-        setMaxHeight(newHeight);
+    private void updateCaretRowColumn(TextPos pos) {
+        if (null != pos) {
+            caretRowColumn.set(new Point2D(pos.offset(), pos.index()));
+        }
     }
 }
