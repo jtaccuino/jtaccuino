@@ -19,15 +19,18 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
@@ -64,8 +67,18 @@ public class ReactiveJShell {
 
     private final UUID uuid;
 
+    private final AtomicBoolean userCodeExecuted = new AtomicBoolean(false);
+
     private ReactiveJShell(UUID uuid) {
         this.uuid = uuid;
+    }
+
+    public void markUserCodeExecuted() {
+        userCodeExecuted.set(true);
+    }
+
+    public boolean hasExecutedUserCode() {
+        return userCodeExecuted.get();
     }
 
     public static ReactiveJShell create(UUID uuid) {
@@ -202,6 +215,93 @@ public class ReactiveJShell {
         CompletableFuture.supplyAsync(() -> sourceCodeAnalysis().highlights(text), worker)
                 .thenAccept(consumer)
                 .exceptionally(this::logThrowable);
+    }
+
+    public void parseErrorsAsync(String text, Consumer<List<ErrorRange>> consumer) {
+        CompletableFuture.supplyAsync(() -> parseErrors(text), worker)
+                .thenAccept(consumer)
+                .exceptionally(this::logThrowable);
+    }
+
+    private List<ErrorRange> parseErrors(String text) {
+        var errors = new ArrayList<ErrorRange>();
+        if (text.isBlank()) {
+            return errors;
+        }
+        var analysis = jshell.sourceCodeAnalysis();
+        var declaredIdentifiers = analysis.highlights(text).stream()
+                .filter(highlight -> highlight.attributes().contains(SourceCodeAnalysis.Attribute.DECLARATION))
+                .map(highlight -> text.substring(highlight.start(), highlight.end()))
+                .collect(Collectors.toSet());
+        var remaining = text;
+        var base = 0;
+        while (!remaining.isBlank()) {
+            var completionInfo = analysis.analyzeCompletion(remaining);
+            if (SourceCodeAnalysis.Completeness.EMPTY == completionInfo.completeness()
+                    || SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE == completionInfo.completeness()) {
+                break;
+            }
+            var source = completionInfo.source();
+            if (null == source || source.isBlank()) {
+                break;
+            }
+            var snippetOffset = text.indexOf(source, base);
+            if (snippetOffset < 0) {
+                snippetOffset = base;
+            }
+            for (var snippet : analysis.sourceToSnippets(source)) {
+                for (var diag : jshell.diagnostics(snippet).toList()) {
+                    if (diag.isError() && !isSuppressed(diag, source, declaredIdentifiers)) {
+                        var start = diag.getStartPosition();
+                        var end = diag.getEndPosition();
+                        if (Diag.NOPOS != start && Diag.NOPOS != end) {
+                            errors.add(new ErrorRange(snippetOffset + (int) start, snippetOffset + (int) end,
+                                    diag.getMessage(null)));
+                        }
+                    }
+                }
+            }
+            var rest = completionInfo.remaining();
+            if (rest.equals(remaining)) {
+                break;
+            }
+            base = text.length() - rest.length();
+            remaining = rest;
+        }
+        return errors;
+    }
+
+    private static boolean isSuppressed(Diag diag, String snippetSource, Set<String> declaredIdentifiers) {
+        var code = diag.getCode();
+        if (!"compiler.err.cant.resolve.location".equals(code)
+                && !"compiler.err.cant.resolve.location.args".equals(code)) {
+            return false;
+        }
+        var identifier = leadingIdentifier(snippetSource, diag.getStartPosition());
+        return null != identifier && declaredIdentifiers.contains(identifier);
+    }
+
+    private static String leadingIdentifier(String source, long position) {
+        if (position < 0 || position >= source.length()) {
+            return null;
+        }
+        var index = (int) position;
+        if (!Character.isJavaIdentifierStart(source.codePointAt(index))) {
+            return null;
+        }
+        var builder = new StringBuilder();
+        while (index < source.length()) {
+            var codePoint = source.codePointAt(index);
+            if (!Character.isJavaIdentifierPart(codePoint)) {
+                break;
+            }
+            builder.appendCodePoint(codePoint);
+            index += Character.charCount(codePoint);
+        }
+        return builder.toString();
+    }
+
+    public static record ErrorRange(int start, int end, String message) {
     }
 
     private SourceCodeAnalysis sourceCodeAnalysis() {

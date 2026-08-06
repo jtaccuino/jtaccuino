@@ -15,12 +15,20 @@
  */
 package org.jtaccuino.core.ui;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.util.Duration;
 import jdk.jshell.SourceCodeAnalysis;
+import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.SyntaxDecorator;
 import jfx.incubator.scene.control.richtext.TextPos;
 import jfx.incubator.scene.control.richtext.model.CodeTextModel;
@@ -32,16 +40,24 @@ class JavaSyntaxDecorator implements SyntaxDecorator {
 
     private static final int STYLE_KEYWORD = 1;
     private static final int STYLE_DECLARATION = 2;
+    private static final int STYLE_ERROR = 3;
 
     private record JShellHighlight(int start, int end, SourceCodeAnalysis.Attribute attribute) {
     }
 
     private final ReactiveJShell shell;
     private final PauseTransition debounce;
+    private final Tooltip errorTooltip = new Tooltip();
+    private ReactiveJShell.ErrorRange tooltipError;
     private StyleAttributeMap baseStyle;
     private StyleAttributeMap keywordStyle;
     private StyleAttributeMap declarationStyle;
+    private StyleAttributeMap errorStyle;
     private volatile List<JShellHighlight> highlights = List.of();
+    private volatile List<ReactiveJShell.ErrorRange> staticErrors = List.of();
+    private final List<ReactiveJShell.ErrorRange> executionErrors = new ArrayList<>();
+    private volatile List<ReactiveJShell.ErrorRange> errors = List.of();
+    private GutterDecorator gutter;
     private volatile CodeTextModel model;
     private long generation = 0;
     private boolean refreshing = false;
@@ -57,6 +73,11 @@ class JavaSyntaxDecorator implements SyntaxDecorator {
         baseStyle = style(font, false, false);
         keywordStyle = style(font, true, false);
         declarationStyle = style(font, false, true);
+        errorStyle = StyleAttributeMap.builder()
+                .setFontFamily(font.getFamily())
+                .setFontSize(font.getSize())
+                .setTextColor(Color.RED)
+                .build();
     }
 
     void refresh() {
@@ -69,6 +90,101 @@ class JavaSyntaxDecorator implements SyntaxDecorator {
                 refreshing = false;
             }
         }
+    }
+
+    void installErrorTooltip(CodeArea area) {
+        errorTooltip.setAutoHide(true);
+        area.addEventHandler(MouseEvent.MOUSE_MOVED, event -> {
+            var textPos = area.getTextPosition(event.getScreenX(), event.getScreenY());
+            Optional<ReactiveJShell.ErrorRange> error = Optional.empty();
+            if (null != textPos) {
+                error = errorAt(globalCharIndex(area, textPos));
+            }
+            if (error.isPresent()) {
+                if (errorTooltip.isShowing()) {
+                    errorTooltip.setX(event.getScreenX() + 12);
+                    errorTooltip.setY(event.getScreenY() + 12);
+                    if (!error.get().equals(tooltipError)) {
+                        errorTooltip.setText(error.get().message());
+                        tooltipError = error.get();
+                    }
+                } else {
+                    tooltipError = error.get();
+                    errorTooltip.setText(error.get().message());
+                    errorTooltip.show(area, event.getScreenX() + 12, event.getScreenY() + 12);
+                }
+            } else {
+                tooltipError = null;
+                errorTooltip.hide();
+            }
+        });
+        area.addEventHandler(MouseEvent.MOUSE_EXITED, event -> {
+            tooltipError = null;
+            errorTooltip.hide();
+        });
+    }
+
+    private static int globalCharIndex(CodeArea area, TextPos pos) {
+        var charIndex = pos.charIndex();
+        for (var i = 0; i < pos.index(); i++) {
+            charIndex += area.getPlainText(i).length() + 1;
+        }
+        return charIndex;
+    }
+
+    boolean isErrorTooltipShowing() {
+        return errorTooltip.isShowing();
+    }
+
+    Optional<ReactiveJShell.ErrorRange> errorAt(int offset) {
+        return errors.stream()
+                .filter(error -> error.start() <= offset && offset < Math.max(error.start() + 1, error.end()))
+                .findFirst();
+    }
+
+    void setExecutionErrors(List<ReactiveJShell.ErrorRange> ranges) {
+        executionErrors.clear();
+        executionErrors.addAll(ranges);
+        updateErrors();
+    }
+
+    void attachGutter(GutterDecorator gutter) {
+        this.gutter = gutter;
+        updateGutter();
+    }
+
+    private void updateErrors() {
+        var merged = new ArrayList<ReactiveJShell.ErrorRange>(staticErrors.size() + executionErrors.size());
+        merged.addAll(staticErrors);
+        merged.addAll(executionErrors);
+        errors = List.copyOf(merged);
+        updateGutter();
+        refresh();
+    }
+
+    private void updateGutter() {
+        if (null == gutter) {
+            return;
+        }
+        var currentModel = model;
+        if (null == currentModel) {
+            gutter.setMarkers(Map.of());
+            return;
+        }
+        var byLine = new HashMap<Integer, List<GutterDecorator.GutterMarker>>();
+        for (var error : errors) {
+            for (var i = 0; i < currentModel.size(); i++) {
+                var start = paragraphStart(currentModel, i);
+                var end = start + currentModel.getPlainText(i).length();
+                if (error.start() <= start && error.end() >= end) {
+                    byLine.computeIfAbsent(i, key -> new ArrayList<>())
+                            .add(new GutterDecorator.GutterMarker(
+                                    GutterDecorator.MarkerKind.ERROR, error.message(), null));
+                    break;
+                }
+            }
+        }
+        gutter.setMarkers(byLine);
     }
 
     private static StyleAttributeMap style(Font font, boolean bold, boolean underline) {
@@ -97,6 +213,23 @@ class JavaSyntaxDecorator implements SyntaxDecorator {
                 }
             }
         }
+        for (var error : errors) {
+            var start = Math.max(error.start(), paragraphStart);
+            var end = Math.min(error.end(), paragraphEnd);
+            if (end < start) {
+                continue;
+            }
+            if (end == start) {
+                var position = error.end();
+                if (position < paragraphStart || position >= paragraphEnd) {
+                    continue;
+                }
+                end = start + 1;
+            }
+            for (var i = start; i < end; i++) {
+                paragraphStyles[i - paragraphStart] = STYLE_ERROR;
+            }
+        }
         var builder = RichParagraph.builder();
         var runStart = 0;
         var runStyle = runStyle(paragraphStyles, 0);
@@ -107,6 +240,24 @@ class JavaSyntaxDecorator implements SyntaxDecorator {
                 runStart = i;
                 runStyle = style;
             }
+        }
+        for (var error : errors) {
+            var start = Math.max(error.start(), paragraphStart);
+            var end = Math.min(error.end(), paragraphEnd);
+            if (end < start) {
+                continue;
+            }
+            if (end == start) {
+                var position = error.end();
+                if (position < paragraphStart || position >= paragraphEnd) {
+                    continue;
+                }
+                end = start + 1;
+            }
+            if (error.start() <= paragraphStart && error.end() >= paragraphEnd) {
+                continue;
+            }
+            builder.addWavyUnderline(start - paragraphStart, end - paragraphStart, Color.RED);
         }
         return builder.build();
     }
@@ -119,6 +270,7 @@ class JavaSyntaxDecorator implements SyntaxDecorator {
         return switch (style) {
             case STYLE_KEYWORD -> keywordStyle;
             case STYLE_DECLARATION -> declarationStyle;
+            case STYLE_ERROR -> errorStyle;
             default -> baseStyle;
         };
     }
@@ -127,6 +279,7 @@ class JavaSyntaxDecorator implements SyntaxDecorator {
     public void handleChange(CodeTextModel model, TextPos start, TextPos end, int charsTop, int linesAdded, int charsBottom) {
         this.model = model;
         if (!refreshing) {
+            executionErrors.clear();
             debounce.playFromStart();
         }
     }
@@ -160,6 +313,27 @@ class JavaSyntaxDecorator implements SyntaxDecorator {
                 }
             });
         });
+        if (shell.hasExecutedUserCode()) {
+            shell.parseErrorsAsync(fullText.toString(), result -> {
+                Platform.runLater(() -> {
+                    if (currentGeneration == generation) {
+                        staticErrors = result;
+                        updateErrors();
+                    }
+                });
+            });
+        } else {
+            Platform.runLater(() -> {
+                if (currentGeneration == generation && !staticErrors.isEmpty()) {
+                    staticErrors = List.of();
+                    updateErrors();
+                }
+            });
+        }
+    }
+
+    void analyzeNow() {
+        Platform.runLater(this::highlight);
     }
 
     private static int paragraphStart(CodeTextModel model, int index) {
