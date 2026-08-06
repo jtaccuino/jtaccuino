@@ -482,6 +482,44 @@ AUTHOR: ShopWare
     -fx-border-color: transparent #AEB3C2 transparent transparent;
 }
 
+.java-editor .line-number-decorator {
+    -fx-text-fill: #AEB3C2;
+    -fx-font-family: "Monaspace Argon";
+    -fx-font-size: 11;
+}
+
+.java-editor .gutter-marker {
+    -fx-background-color: #E00000;
+    -fx-background-radius: 50%;
+    -fx-pref-width: 10;
+    -fx-pref-height: 10;
+    -fx-min-width: 10;
+    -fx-min-height: 10;
+    -fx-max-width: 10;
+    -fx-max-height: 10;
+}
+
+.java-editor .gutter-marker-warning {
+    -fx-background-color: #E6A700;
+}
+
+.java-editor .gutter-marker-info {
+    -fx-background-color: #1E90FF;
+}
+
+.java-editor .gutter-marker-hint {
+    -fx-background-color: #9E9E9E;
+}
+
+.java-editor .gutter-marker-quickfix {
+    -fx-background-color: #2E8B57;
+}
+
+.java-editor .gutter-marker-more {
+    -fx-text-fill: #AEB3C2;
+    -fx-font-size: 9;
+}
+
 .java-editor .line-numbers .text-glyph {
     -fx-text-fill: #AEB3C2;
     -fx-font-family: "Monaspace Argon";

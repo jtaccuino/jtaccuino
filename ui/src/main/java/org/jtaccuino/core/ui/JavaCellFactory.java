@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
@@ -57,6 +58,7 @@ import jdk.jshell.EvalException;
 import jdk.jshell.ExpressionSnippet;
 import jdk.jshell.ImportSnippet;
 import jdk.jshell.Snippet;
+import jdk.jshell.SnippetEvent;
 import jdk.jshell.SourceCodeAnalysis;
 import jdk.jshell.StatementSnippet;
 import jdk.jshell.VarSnippet;
@@ -69,6 +71,7 @@ import org.jtaccuino.core.ui.documentation.DocumentationItem;
 import org.jtaccuino.core.ui.documentation.DocumentationPopup;
 import org.jtaccuino.core.ui.extensions.DisplayExtension;
 import org.jtaccuino.core.ui.extensions.PrintExtension;
+import org.jtaccuino.jshell.ReactiveJShell;
 
 public class JavaCellFactory implements CellFactory {
 
@@ -178,6 +181,10 @@ public class JavaCellFactory implements CellFactory {
             input = inputControl.getInput();
             syntaxDecorator = new JavaSyntaxDecorator(this.control.getSheet().getReactiveJShell(), javaCell.getBaseEditorFont());
             input.setSyntaxDecorator(syntaxDecorator);
+            syntaxDecorator.installErrorTooltip(input);
+            var gutter = new GutterDecorator(input);
+            input.setLeftDecorator(gutter);
+            syntaxDecorator.attachGutter(gutter);
             input.fontProperty().bind(javaCell.baseEditorFontProperty());
             this.control.baseEditorFontProperty().addListener(new ChangeListener<Font>() {
                 @Override
@@ -364,7 +371,13 @@ public class JavaCellFactory implements CellFactory {
                         this.control.snippetIds = evalResult.snippetEventsCurrent().stream().map(sne -> sne.snippet().id()).toList();
                         var probablyOutdatedIds = evalResult.snippetEventsOutdated().stream().map(sne -> sne.snippet().id())
                                 .filter(id -> !this.control.snippetIds.contains(id)).toList();
+                        var executionErrors = evalResult.snippetEventsCurrent().stream()
+                                .filter(event -> null != event.exception())
+                                .map(event -> executionErrorRange(event))
+                                .flatMap(Optional::stream)
+                                .toList();
                         Platform.runLater(() -> {
+                            syntaxDecorator.setExecutionErrors(executionErrors);
                             this.control.markAsOutdated(false);
                             this.control.getSheet().markCellsAsOutdated(c -> {
                                 if (c instanceof JavaCell jc) {
@@ -374,6 +387,7 @@ public class JavaCellFactory implements CellFactory {
                                 }
                             });
                             if (evalResult.status().isSuccess()) {
+                                shell.markUserCodeExecuted();
                                 Platform.runLater(() -> {
                                     execResult.setGraphic(success);
                                     execResult.setVisible(true);
@@ -459,9 +473,26 @@ public class JavaCellFactory implements CellFactory {
                                     execResult.setVisible(true);
                                 });
                             }
+                            syntaxDecorator.analyzeNow();
                         }
                         );
                     });
+        }
+
+        private Optional<ReactiveJShell.ErrorRange> executionErrorRange(SnippetEvent event) {
+            var source = event.snippet().source();
+            var start = input.getText().indexOf(source);
+            if (start < 0) {
+                return Optional.empty();
+            }
+            var realEx = (null != event.exception().getCause()) ? event.exception().getCause() : event.exception();
+            var message = switch (realEx) {
+                case EvalException e ->
+                    e.getExceptionClassName();
+                default ->
+                    realEx.getClass().getName();
+            } + ": " + realEx.getMessage();
+            return Optional.of(new ReactiveJShell.ErrorRange(start, start + source.length(), message));
         }
 
         @SuppressWarnings("UnusedMethod") // TODO: Remove if really unused

@@ -64,8 +64,6 @@ public final class MarkdownControl extends InputControl {
         }
     }
 
-    private final static double RTA_LINE_HEIGHT = 25;
-
     private void recalculatePreviewRTA(double width) {
         if (mdRenderArea == null) {
             return;
