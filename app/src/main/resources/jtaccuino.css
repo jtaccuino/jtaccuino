@@ -551,8 +551,17 @@ AUTHOR: ShopWare
     -fx-font-size: 11;
 }
 
-.list-cell.type-matches {
+.list-cell.type-matches .completion-name {
     -fx-font-weight: bold;
+}
+
+.completion-name {
+    -fx-text-fill: -fx-text-background-color;
+}
+
+.completion-type {
+    -fx-text-fill: #808080;
+    -fx-font-size: 10;
 }
 
 .list-cell.separator-cell {

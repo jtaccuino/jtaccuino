@@ -363,11 +363,6 @@ public class JavaCellFactory implements CellFactory {
                     Platform.runLater(() -> filterCompletion(input.getDocument().getText(), input.getDocument().getCaretPosition()));
                 }
             });
-            input.caretOriginProperty().addListener((observable, oldValue, newValue) -> {
-                if (completionPopup.isShowing()) {
-                    Platform.runLater(() -> completionPopup.updateLocation(input.getCaretOrigin().add(0, 13)));
-                }
-            });
         }
 
         void requestFocus() {
@@ -523,8 +518,11 @@ public class JavaCellFactory implements CellFactory {
 
         private void filterCompletion(String text, int caretPos) {
             this.control.getSheet().getReactiveJShell().completionAsync(text, caretPos, result -> {
-                var distinctCompletionSuggestions = result.suggestions().stream().map(s -> CompletionItem.from(s, result.anchor())).distinct().toList();
-                Platform.runLater(() -> completionPopup.setSuggestions(distinctCompletionSuggestions));
+                var distinctCompletionSuggestions = result.suggestions().stream().map(CompletionItem::from).distinct().toList();
+                Platform.runLater(() -> {
+                    completionPopup.updateLocation(input.getCaretOrigin().add(0, 13));
+                    completionPopup.setSuggestions(distinctCompletionSuggestions);
+                });
             });
         }
 
@@ -549,7 +547,7 @@ public class JavaCellFactory implements CellFactory {
 
         private void handleTabCompletion(String text, int caretPos, Point2D caretOrigin, Consumer<CompletionUpdate> consumer) {
             this.control.getSheet().getReactiveJShell().completionAsync(text, caretPos, result -> {
-                var distinctCompletionSuggestions = result.suggestions().stream().map(s -> CompletionItem.from(s, result.anchor())).distinct().toList();
+                var distinctCompletionSuggestions = result.suggestions().stream().map(CompletionItem::from).distinct().toList();
                 // no completions
                 if (distinctCompletionSuggestions.isEmpty()) {
                     Platform.runLater(() -> completionPopup.hide());
@@ -562,7 +560,16 @@ public class JavaCellFactory implements CellFactory {
                     String completableCommonPrefix = CompletionItem.longestCommonPrefix(distinctCompletionSuggestions);
                     if (!completableCommonPrefix.isEmpty()
                             && !text.substring(result.anchor(), caretPos).equals(completableCommonPrefix)) {
-                        Platform.runLater(() -> consumer.accept(convert(result.anchor(), caretPos, completableCommonPrefix)));
+                        Platform.runLater(() -> {
+                            consumer.accept(convert(result.anchor(), caretPos, completableCommonPrefix));
+                            completionPopup.setOnCompletion(event -> Platform.runLater(() -> consumer.accept(convert(event.getAnchor(), input.getCaretPosition(), event.getSuggestion()))));
+                            completionPopup.setSuggestions(distinctCompletionSuggestions);
+                            if (!completionPopup.isShowing()) {
+                                completionPopup.show(this.control.getScene().focusOwnerProperty().get(), input.getCaretOrigin().add(0, 13));
+                            } else {
+                                completionPopup.updateLocation(input.getCaretOrigin().add(0, 13));
+                            }
+                        });
                     } else {
                         completionPopup.setOnCompletion(event -> Platform.runLater(() -> consumer.accept(convert(event.getAnchor(), input.getCaretPosition(), event.getSuggestion()))));
                         Platform.runLater(() -> {

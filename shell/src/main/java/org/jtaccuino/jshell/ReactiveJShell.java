@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 JTaccuino Contributors
+ * Copyright 2024-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,27 @@
 package org.jtaccuino.jshell;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.WildcardType;
 import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.Diag;
 import jdk.jshell.ExpressionSnippet;
@@ -39,8 +50,11 @@ import org.jtaccuino.jshell.extensions.JShellExtension;
 
 public class ReactiveJShell {
 
-    private final ExecutorService worker = Executors
-            .newSingleThreadExecutor(Thread.ofVirtual().name("ReactiveJShellWorker").factory());
+    private final ExecutorService worker = new ThreadPoolExecutor(
+            1, 1, 0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(),
+            Thread.ofVirtual().name("ReactiveJShellWorker").factory(),
+            new ThreadPoolExecutor.DiscardPolicy());
 
     private final JShell jshell = JShell.builder()
             .compilerOptions("--enable-preview", "-source", System.getProperty("java.specification.version"),
@@ -146,9 +160,19 @@ public class ReactiveJShell {
             Consumer<CompletionSuggestion> consumer) {
         CompletableFuture.supplyAsync(
                 () -> {
-                    int[] anchor = new int[1];
-                    var completionSuggestions = jshell.sourceCodeAnalysis().completionSuggestions(text, caretPosition, anchor);
-                    return new CompletionSuggestion(completionSuggestions, anchor[0]);
+                    int[] anchorHolder = new int[1];
+                    var completionItems = jshell.sourceCodeAnalysis().completionSuggestions(text, caretPosition,
+                            (state, elementSuggestions) -> {
+                                if (!elementSuggestions.isEmpty()) {
+                                    anchorHolder[0] = elementSuggestions.getFirst().anchor();
+                                }
+                                return elementSuggestions.stream()
+                                        .filter(suggestion -> !"module ".equals(suggestion.keyword()))
+                                        .map(CompletionItem::from)
+                                        .sorted(Comparator.comparingInt(item -> item.matchesType() ? 0 : 1))
+                                        .toList();
+                            });
+                    return new CompletionSuggestion(completionItems, anchorHolder[0]);
                 },
                 worker)
                 .thenAccept(consumer)
@@ -218,7 +242,86 @@ public class ReactiveJShell {
         System.out.println("JShell Shutdown complete");
     }
 
-    public static record CompletionSuggestion(List<SourceCodeAnalysis.Suggestion> suggestions, int anchor) {
+    public static record CompletionSuggestion(List<ReactiveJShell.CompletionItem> suggestions, int anchor) {
+    }
+
+    public static record CompletionItem(String completion, boolean matchesType, int anchor,
+            ElementKind elementKind, boolean keyword, boolean staticMember, String displayName, String typeInfo) {
+
+        static CompletionItem from(SourceCodeAnalysis.ElementSuggestion elementSuggestion) {
+            var keyword = elementSuggestion.keyword();
+            if (keyword != null) {
+                return new CompletionItem(keyword, elementSuggestion.matchesType(), elementSuggestion.anchor(), null, true, false, "", "");
+            }
+            var element = elementSuggestion.element();
+            if (element != null) {
+                var kind = element.getKind();
+                var name = element.getSimpleName().toString();
+                var staticMember = element.getModifiers().contains(Modifier.STATIC);
+                var completion = switch (kind) {
+                    case METHOD, CONSTRUCTOR -> name + "(";
+                    default -> name;
+                };
+                return switch (kind) {
+                    case METHOD -> {
+                        var executable = (ExecutableType) element.asType();
+                        yield new CompletionItem(completion, elementSuggestion.matchesType(), elementSuggestion.anchor(), kind, false,
+                                staticMember, name + "(" + simpleTypeNames(executable.getParameterTypes()) + ")",
+                                simpleTypeName(executable.getReturnType()));
+                    }
+                    case CONSTRUCTOR -> {
+                        var executable = (ExecutableType) element.asType();
+                        yield new CompletionItem(completion, elementSuggestion.matchesType(), elementSuggestion.anchor(), kind, false,
+                                staticMember, name + "(" + simpleTypeNames(executable.getParameterTypes()) + ")", "");
+                    }
+                    case FIELD, ENUM_CONSTANT, PARAMETER, LOCAL_VARIABLE, RESOURCE_VARIABLE,
+                            EXCEPTION_PARAMETER, TYPE_PARAMETER, BINDING_VARIABLE ->
+                        new CompletionItem(completion, elementSuggestion.matchesType(), elementSuggestion.anchor(), kind, false,
+                                staticMember, name, simpleTypeName(element.asType()));
+                    default ->
+                        new CompletionItem(completion, elementSuggestion.matchesType(), elementSuggestion.anchor(), kind, false,
+                                staticMember, name, "");
+                };
+            }
+            return new CompletionItem("", elementSuggestion.matchesType(), elementSuggestion.anchor(), null, true, false, "", "");
+        }
+
+        private static String simpleTypeNames(List<? extends TypeMirror> types) {
+            return String.join(", ", types.stream().map(CompletionItem::simpleTypeName).toList());
+        }
+
+        private static String simpleTypeName(TypeMirror type) {
+            return switch (type.getKind()) {
+                case DECLARED -> {
+                    var declared = (DeclaredType) type;
+                    var base = declared.asElement().getSimpleName().toString();
+                    var typeArguments = declared.getTypeArguments();
+                    if (typeArguments.isEmpty()) {
+                        yield base;
+                    }
+                    yield base + "<" + String.join(", ",
+                            typeArguments.stream().map(CompletionItem::simpleTypeName).toList()) + ">";
+                }
+                case ARRAY ->
+                    simpleTypeName(((ArrayType) type).getComponentType()) + "[]";
+                case WILDCARD -> {
+                    var wildcard = (WildcardType) type;
+                    if (wildcard.getExtendsBound() != null) {
+                        yield "? extends " + simpleTypeName(wildcard.getExtendsBound());
+                    }
+                    if (wildcard.getSuperBound() != null) {
+                        yield "? super " + simpleTypeName(wildcard.getSuperBound());
+                    }
+                    yield "?";
+                }
+                case TYPEVAR ->
+                    ((TypeVariable) type).asElement().getSimpleName().toString();
+                case VOID ->
+                    "void";
+                default ->
+                    type.toString();
+            };
+        }
     }
 
     public static record EvaluationResult(List<SnippetEvent> snippetEventsCurrent, List<SnippetEvent> snippetEventsOutdated,

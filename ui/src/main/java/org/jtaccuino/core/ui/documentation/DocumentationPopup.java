@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,13 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.PopupControl;
 import javafx.scene.control.Skin;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.Window;
 
 public class DocumentationPopup extends PopupControl {
@@ -64,7 +67,20 @@ public class DocumentationPopup extends PopupControl {
                 parent.getX() + localToScene.getX() + node.getScene().getX(),
                 parent.getY() + localToScene.getY() + node.getScene().getY());
         this.getOwnerNode();
+        installOutsideClickHider(node.getScene());
     }
+
+    private void installOutsideClickHider(Scene scene) {
+        var ownerWindow = scene.getWindow();
+        ownerWindow.removeEventFilter(MouseEvent.MOUSE_PRESSED, outsideClickHider);
+        ownerWindow.addEventFilter(MouseEvent.MOUSE_PRESSED, outsideClickHider);
+    }
+
+    private final EventHandler<MouseEvent> outsideClickHider = event -> {
+        if (isShowing()) {
+            hide();
+        }
+    };
 
     public final void setVisibleDocumentations(int value) {
         visibleDocumentations.set(value);

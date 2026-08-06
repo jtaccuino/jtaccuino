@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 package org.jtaccuino.core.ui.completion;
 
 import java.util.List;
-import jdk.jshell.SourceCodeAnalysis;
+import javax.lang.model.element.ElementKind;
+import org.jtaccuino.jshell.ReactiveJShell;
 
-public record CompletionItem(String completion, boolean matchesType, int anchor) {
+public record CompletionItem(String completion, boolean matchesType, int anchor,
+        ElementKind elementKind, boolean keyword, boolean staticMember, String displayName, String typeInfo) {
 
-    public static CompletionItem NIL = new CompletionItem("N/A", false, 0);
+    public static CompletionItem NIL = new CompletionItem("N/A", false, 0, null, false, false, "", "");
 
     public static String longestCommonPrefix(List<CompletionItem> completionItems) {
         return switch (completionItems) {
@@ -48,7 +50,8 @@ public record CompletionItem(String completion, boolean matchesType, int anchor)
         return !matchesType();
     }
 
-    public static CompletionItem from(SourceCodeAnalysis.Suggestion suggestion, int anchor) {
-        return new CompletionItem(suggestion.continuation(), suggestion.matchesType(), anchor);
+    public static CompletionItem from(ReactiveJShell.CompletionItem item) {
+        return new CompletionItem(item.completion(), item.matchesType(), item.anchor(), item.elementKind(), item.keyword(),
+                item.staticMember(), item.displayName(), item.typeInfo());
     }
 }
