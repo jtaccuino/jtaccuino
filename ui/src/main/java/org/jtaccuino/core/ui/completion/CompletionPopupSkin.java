@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 JTaccuino Contributors
+ * Copyright 2024-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.event.Event;
-import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.ListView;
@@ -38,8 +37,6 @@ class CompletionPopupSkin implements Skin<CompletionPopup> {
     final int LIST_CELL_HEIGHT = 24;
 
     private final CompletionSelectionModel selectionModel;
-    private final double completionItemCharWidth;
-    private final double completionItemCharHeight;
 
     public CompletionPopupSkin(CompletionPopup control) {
         this.control = control;
@@ -47,18 +44,12 @@ class CompletionPopupSkin implements Skin<CompletionPopup> {
         selectionModel = new CompletionSelectionModel(control.getSuggestions());
         completionList.setSelectionModel(selectionModel);
 
-        Text tempText = new Text("Q");
-        tempText.setFont(Font.font("Monaspace Argon", 11));
-        Bounds charBounds = tempText.getLayoutBounds();
-        completionItemCharWidth = charBounds.getWidth();
-        completionItemCharHeight = charBounds.getHeight();
-
         completionList.prefHeightProperty().bind(
                 Bindings.min(control.visibleCompletionsProperty(), Bindings.size(completionList.getItems()))
-                        .multiply(Math.ceil(completionItemCharHeight*(1+0.25+0.25)+3)).add(2));
+                        .multiply(LIST_CELL_HEIGHT).add(2));
         completionList.maxHeightProperty().bind(
                 Bindings.min(control.visibleCompletionsProperty(), Bindings.size(completionList.getItems()))
-                        .multiply(Math.ceil(completionItemCharHeight*(1+0.25+0.25)+3)).add(2));
+                        .multiply(LIST_CELL_HEIGHT).add(2));
         completionList.setCellFactory(new CompletionItemRenderer(control.getSuggestions()));
 
         completionList.prefWidthProperty().bind(control.prefWidthProperty());
@@ -113,7 +104,7 @@ class CompletionPopupSkin implements Skin<CompletionPopup> {
             } else {
                 completionList.getSelectionModel().selectFirst();
                 var needsScrollBar = completionList.getItems().size() > getSkinnable().getVisibleCompletions();
-                double width = Math.min(calculateListViewPreferredWidth(needsScrollBar), 400);
+                double width = calculateListViewPreferredWidth(needsScrollBar);
                 getSkinnable().setMinWidth(width);
                 getSkinnable().setPrefWidth(width);
                 getSkinnable().setMaxWidth(width);
@@ -169,17 +160,39 @@ class CompletionPopupSkin implements Skin<CompletionPopup> {
             return Region.USE_PREF_SIZE;
         }
 
-        double maxWidth = control.getSuggestions()
-                .stream().mapToInt(c -> c.completion().length()).max().orElse(0) * completionItemCharWidth;
+        Font nameFont = Font.font("Monaspace Argon", 11);
+        Font typeFont = Font.font("Monaspace Argon", 10);
+        double maxNameWidth = 0;
+        double maxTypeWidth = 0;
+        for (CompletionItem item : control.getSuggestions()) {
+            if (CompletionItem.NIL.equals(item)) {
+                continue;
+            }
+            maxNameWidth = Math.max(maxNameWidth, measureText(item.displayName(), nameFont));
+            if (!item.typeInfo().isEmpty()) {
+                maxTypeWidth = Math.max(maxTypeWidth, measureText(item.typeInfo(), typeFont));
+            }
+        }
 
+        double completionIconAllowance = 24;
+        double nameTypeGap = 16;
         double cellHorizontalPadding = 10;
 
         Insets listViewPadding = completionList.getPadding();
         double totalListViewPadding = listViewPadding.getLeft() + listViewPadding.getRight();
 
-        double verticalScrollbarAllowance = 15;
+        double verticalScrollbarAllowance = needsScrollBar ? 15 : 0;
 
-        return maxWidth + cellHorizontalPadding + totalListViewPadding + (needsScrollBar ? verticalScrollbarAllowance : 0);
+        double contentWidth = maxNameWidth + (maxTypeWidth > 0 ? nameTypeGap + maxTypeWidth : 0);
+
+        return contentWidth + completionIconAllowance + cellHorizontalPadding
+                + totalListViewPadding + verticalScrollbarAllowance;
+    }
+
+    private static double measureText(String text, Font font) {
+        Text tempText = new Text(text);
+        tempText.setFont(font);
+        return tempText.getLayoutBounds().getWidth();
     }
 
     private void onSuggestionChoosen(String suggestion, int anchor) {

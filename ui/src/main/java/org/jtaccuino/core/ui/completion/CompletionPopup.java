@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 JTaccuino Contributors
+ * Copyright 2024-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,10 @@ import javafx.event.EventHandler;
 import javafx.event.EventType;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.PopupControl;
 import javafx.scene.control.Skin;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.Window;
 
 public class CompletionPopup extends PopupControl {
@@ -112,7 +114,34 @@ public class CompletionPopup extends PopupControl {
                 node,
                 parent.getX() + localToScene.getX() + node.getScene().getX(),
                 parent.getY() + localToScene.getY() + node.getScene().getY());
+        syncStylesheets(node.getScene().getStylesheets());
         this.getOwnerNode();
+        installOutsideClickHider(node.getScene());
+    }
+
+    private void installOutsideClickHider(Scene scene) {
+        var ownerWindow = scene.getWindow();
+        ownerWindow.removeEventFilter(MouseEvent.MOUSE_PRESSED, outsideClickHider);
+        ownerWindow.addEventFilter(MouseEvent.MOUSE_PRESSED, outsideClickHider);
+    }
+
+    private final EventHandler<MouseEvent> outsideClickHider = event -> {
+        if (isShowing()) {
+            hide();
+        }
+    };
+
+    private void syncStylesheets(javafx.collections.ObservableList<String> ownerStylesheets) {
+        var popupScene = getScene();
+        if (popupScene == null || ownerStylesheets.isEmpty()) {
+            return;
+        }
+        var popupStylesheets = popupScene.getStylesheets();
+        for (var stylesheet : ownerStylesheets) {
+            if (!popupStylesheets.contains(stylesheet)) {
+                popupStylesheets.add(stylesheet);
+            }
+        }
     }
 
     public final void setVisibleCompletions(int value) {

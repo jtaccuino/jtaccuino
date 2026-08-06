@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,15 @@ package org.jtaccuino.core.ui.completion;
 
 import javafx.collections.ObservableList;
 import javafx.css.PseudoClass;
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Separator;
+import javafx.scene.layout.BorderPane;
 import javafx.util.Callback;
 
 class CompletionItemRenderer implements Callback<ListView<CompletionItem>, ListCell<CompletionItem>> {
@@ -38,18 +43,17 @@ class CompletionItemRenderer implements Callback<ListView<CompletionItem>, ListC
             @Override
             protected void updateItem(CompletionItem item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(null != item ? item.completion() : "");
+                setText(null);
                 getStyleClass().removeAll("type-matches", "separator-cell");
                 if (empty) {
                     setGraphic(null);
                     setFocusTraversable(false);
                 } else if (CompletionItem.NIL.equals(item)) {
-                    setText(null);
                     setGraphic(separator);
                     getStyleClass().add("separator-cell");
                     setFocusTraversable(false);
                 } else {
-                    setGraphic(null);
+                    setGraphic(createContent(item));
                     setFocusTraversable(true);
                     if (item.matchesType()) {
                         getStyleClass().add("type-matches");
@@ -61,6 +65,46 @@ class CompletionItemRenderer implements Callback<ListView<CompletionItem>, ListC
                     pseudoClassStateChanged(PseudoClass.getPseudoClass("odd"), !isEven);
                 }
             }
+        };
+    }
+
+    private static Node createContent(CompletionItem item) {
+        var name = new Label(item.displayName());
+        name.getStyleClass().add("completion-name");
+        var type = new Label(item.typeInfo());
+        type.getStyleClass().add("completion-type");
+        var content = new BorderPane();
+        var icon = createIcon(item);
+        content.setLeft(icon);
+        BorderPane.setMargin(icon, new Insets(0, 6, 0, 0));
+        BorderPane.setAlignment(name, Pos.CENTER_LEFT);
+        content.setCenter(name);
+        content.setRight(type);
+        return content;
+    }
+
+    private static ElementKindIcon createIcon(CompletionItem item) {
+        var icon = new ElementKindIcon(item.elementKind(), item.keyword(), item.staticMember());
+        icon.getStyleClass().add(styleClass(item));
+        return icon;
+    }
+
+    private static String styleClass(CompletionItem item) {
+        if (item.keyword()) {
+            return "completion-icon-keyword";
+        }
+        return switch (item.elementKind()) {
+            case CLASS -> "completion-icon-class";
+            case INTERFACE -> "completion-icon-interface";
+            case ENUM, ENUM_CONSTANT -> "completion-icon-enum";
+            case RECORD -> "completion-icon-record";
+            case ANNOTATION_TYPE -> "completion-icon-annotation";
+            case METHOD, CONSTRUCTOR -> "completion-icon-method";
+            case FIELD -> "completion-icon-field";
+            case PACKAGE, MODULE -> "completion-icon-package";
+            case PARAMETER, LOCAL_VARIABLE, RESOURCE_VARIABLE, EXCEPTION_PARAMETER, TYPE_PARAMETER -> "completion-icon-variable";
+            case null -> "completion-icon-keyword";
+            default -> "completion-icon-keyword";
         };
     }
 }

@@ -54,12 +54,12 @@ jobs:
         run: |
           echo JPACKAGE_HOME=$JAVA_HOME >> $GITHUB_OUTPUT
 
-      - name: Setup Java 25
-        id: java25
+      - name: Setup Java 26
+        id: java26
         uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
-          java-version: 25
+          java-version: 26
 
       - uses: Apple-Actions/import-codesign-certs@v7
         if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
