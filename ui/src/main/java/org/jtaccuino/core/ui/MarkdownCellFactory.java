@@ -27,13 +27,11 @@ import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;
 import javafx.css.StyleableProperty;
 import javafx.css.StyleablePropertyFactory;
-import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.scene.control.Skin;
 import javafx.scene.input.KeyCode;
@@ -42,7 +40,9 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
+import java.util.List;
+import jfx.incubator.scene.control.input.KeyBinding;
+import jfx.incubator.scene.control.richtext.model.StyledTextModel;
 import org.jtaccuino.core.ui.api.CellData;
 import org.jtaccuino.core.ui.controls.MarkdownControl;
 import org.jtaccuino.rta.MdUtils;
@@ -329,16 +329,6 @@ public class MarkdownCellFactory implements CellFactory {
 
     public static class MarkdownCellSkin extends AbstractCellSkin<MarkdownCell> {
 
-        static TextDecoration presetDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Radon")
-                .fontWeight(FontWeight.NORMAL).fontSize(13).build();
-
-        private static final ParagraphDecoration parPreset
-                = ParagraphDecoration.builder().presets()
-                        .graphicType(ParagraphDecoration.GraphicType.NUMBERED_LIST)
-                        .indentationLevel(1)
-                        .topInset(3)
-                        .build();
-
         private final MarkdownCell control;
         private final BorderPane pane;
         private final MarkdownControl inputControl;
@@ -346,50 +336,21 @@ public class MarkdownCellFactory implements CellFactory {
         private MarkdownCellSkin(MarkdownCell markdownCell) {
             super(markdownCell);
             this.control = markdownCell;
-            this.control.baseEditorFontProperty().addListener(new ChangeListener<Font>() {
-                @Override
-                public void changed(ObservableValue<? extends Font> observable, Font oldValue, Font newValue) {
-                    presetDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
-                            .fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize()).build();
-                    String source = markdownCell.getCellData().getSource();
-                    if (null != source) {
-                        inputControl.openDocument(
-                                new Document(
-                                        source,
-                                        List.of(new DecorationModel(0, source.length(), presetDecoration, parPreset)),
-                                        source.length() - 1
-                                ));
-                    } else {
-                        inputControl.openDocument(
-                                new Document("",
-                                        List.of(new DecorationModel(0, 0, presetDecoration, parPreset)),
-                                        0
-                                ));
-                    }
-                }
-            });
             pane = new BorderPane();
             pane.getStyleClass().add("md-cell-meta");
 
             inputControl = new MarkdownControl(control.cellNumber);
-            caretRowColumnProperty.bind(inputControl.getInput().caretRowColumnProperty());
+            inputControl.getInput().fontProperty().bind(markdownCell.baseEditorFontProperty());
+            caretRowColumnProperty.bind(inputControl.caretRowColumnProperty());
             String source = markdownCell.getCellData().getSource();
             if (null != source) {
-                inputControl.openDocument(
-                        new Document(
-                                source,
-                                List.of(new DecorationModel(0, source.length(), presetDecoration, parPreset)),
-                                source.length() - 1
-                        ));
+                inputControl.openDocument(source);
             } else {
-                inputControl.openDocument(
-                        new Document("",
-                                List.of(new DecorationModel(0, 0, presetDecoration, parPreset)),
-                                0
-                        ));
+                inputControl.openDocument("");
             }
 
-            inputControl.getInput().documentProperty().subscribe(doc -> markdownCell.getCellData().sourceProperty().set(doc.getText()));
+            subscribeToModel(inputControl.getInput().getModel());
+            inputControl.getInput().modelProperty().addListener((ov, oldM, newM) -> subscribeToModel(newM));
 
             // works around not customizable input map from RTA (e.g. shift-enter for cell execution)
             inputControl.getInput().onKeyPressedProperty().addListener((ov, t, t1) -> {
@@ -399,29 +360,11 @@ public class MarkdownCellFactory implements CellFactory {
                 }
             });
 
+            inputControl.getInput().getInputMap().register(KeyBinding.shift(KeyCode.ENTER), () -> execute());
+
             inputControl.getInput().addEventFilter(KeyEvent.KEY_PRESSED, t
                     -> {
-                if (KeyCode.BACK_SPACE == t.getCode()) {
-                    var column = (int) inputControl.getInput().getCaretRowColumn().getX();
-                    var row = (int) inputControl.getInput().getCaretRowColumn().getY();
-                    if (0 == column && 0 == row) {
-                        // just consume the event to inhibt deletion of paragraph decoration
-                        t.consume();
-                    } else if (0 == column) {
-                        // automatically remove paragraph decoration in case at beginning of line
-                        inputControl.getInput().getActionFactory().removeExtremesAndDecorate(
-                                new Selection(inputControl.getInput().getCaretPosition() - 1, inputControl.getInput().getCaretPosition()),
-                                ParagraphDecoration.builder().build()).execute(new ActionEvent());
-                    }
-                } else if (KeyCode.ENTER == t.getCode() && !t.isShiftDown()) {
-                    var column = (int) inputControl.getInput().getCaretRowColumn().getX();
-                    if (0 == column) {
-                        inputControl.getInput().getActionFactory().insertText("\n").execute(new ActionEvent());
-                        t.consume();
-                    }
-                } else {
-                    Platform.runLater(() -> this.control.getSheet().ensureCellVisible(control));
-                }
+                Platform.runLater(() -> this.control.getSheet().ensureCellVisible(control));
             });
 
             var toolbar = createToolbar();
@@ -448,6 +391,14 @@ public class MarkdownCellFactory implements CellFactory {
             AnchorPane.setTopAnchor(toolbar, 0d);
 
             pane.setCenter(inputControl);
+        }
+
+        private void subscribeToModel(StyledTextModel model) {
+            if (null != model) {
+                model.addListener((StyledTextModel.Listener) change -> {
+                    this.control.getCellData().sourceProperty().set(inputControl.getInput().getText());
+                });
+            }
         }
 
         @Override

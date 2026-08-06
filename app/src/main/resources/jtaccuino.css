@@ -473,76 +473,69 @@ AUTHOR: ShopWare
 }
 
 .java-editor {
-    -fx-background-color: whitesmoke;
-    /*    -fx-padding: 10; */
-}
-
-.java-editor > .paragraph-list-view {
-    -fx-padding: 0;
-    -fx-background-color: white, #EBECF0, white;
-    -fx-background-insets: 0, 0 0 0 39.5, 0 0 0 40;
+    -fx-background-color: white;
     -fx-border-color: lightgray;
 }
 
-.java-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell > .paragraph-tile > .graphic-box {
-    -fx-padding: 0;
-    -fx-alignment: top-left;
-    -fx-min-width: 50;
-    -fx-pref-width: 50;
-    -fx-max-width: 50;
+.java-editor .line-numbers {
+    -fx-background-color: #EBECF0;
+    -fx-border-color: transparent #AEB3C2 transparent transparent;
 }
 
-.java-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell > .paragraph-tile > .graphic-box > .numbered-label {
-    -fx-alignment: center-right;
-    -fx-pref-width: 20;
+.java-editor .line-numbers .text-glyph {
     -fx-text-fill: #AEB3C2;
     -fx-font-family: "Monaspace Argon";
-    -fx-font-size: 100%;
-    ;
-}
-
-.java-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell,
-.java-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd,
-.java-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd,
-.java-editor > .paragraph-list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected {
-    -fx-background: transparent;
-    -fx-background-color: transparent;
+    -fx-font-size: 11;
 }
 
 .md-editor {
-    -fx-background-color: whitesmoke;
-    /*    -fx-padding: 10; */
-}
-
-.md-editor > .paragraph-list-view {
-    -fx-padding: 0;
-    -fx-background-color: white, #EBECF0, white;
-    -fx-background-insets: 0, 0 0 0 39.5, 0 0 0 40;
+    -fx-background-color: white;
     -fx-border-color: lightgray;
 }
 
-.md-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell > .paragraph-tile > .graphic-box {
-    -fx-padding: 0;
-    -fx-alignment: top-left;
-    -fx-min-width: 50;
-    -fx-pref-width: 50;
-    -fx-max-width: 50;
+.md-editor .line-numbers {
+    -fx-background-color: #EBECF0;
+    -fx-border-color: transparent #AEB3C2 transparent transparent;
 }
 
-.md-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell > .paragraph-tile > .graphic-box > .numbered-label {
-    -fx-alignment: center-right;
-    -fx-pref-width: 20;
+.md-editor .line-numbers .text-glyph {
+    -fx-text-fill: #AEB3C2;
+    -fx-font-family: "Monaspace Argon";
+    -fx-font-size: 11;
+}
+
+.java-editor {
+    -fx-highlight-current-paragraph: false;
+    -fx-line-spacing: 5;
+}
+
+.java-editor:focused {
+    -fx-highlight-current-paragraph: true;
+}
+
+.md-editor {
+    -fx-highlight-current-paragraph: false;
+    -fx-line-spacing: 5;
+}
+
+.md-editor:focused {
+    -fx-highlight-current-paragraph: true;
+}
+
+.java-editor:focused .paragraph-highlight,
+.java-editor:focused .current-paragraph-highlight,
+.md-editor:focused .paragraph-highlight,
+.md-editor:focused .current-paragraph-highlight {
+    -fx-fill: #F0F4F8;
+    -fx-background-color: #F0F4F8;
+}
+
+.editor-placeholder {
     -fx-text-fill: #AEB3C2;
     -fx-font-family: "Monaspace Argon";
     -fx-font-size: 13;
-}
-
-.md-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell,
-.md-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd,
-.md-editor > .paragraph-list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd,
-.md-editor > .paragraph-list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected {
-    -fx-background: transparent;
-    -fx-background-color: transparent;
+    -fx-translate-x: 5;
+    -fx-translate-y: 2;
 }
 
 .list-cell {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,13 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.ActionEvent;
 import javafx.scene.Group;
+import javafx.scene.control.ListCell;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Subscription;
 
 public final class MarkdownControl extends InputControl {
+
+    private final static double RTA_LINE_HEIGHT = 25;
 
     private Group group;
 
@@ -62,8 +65,15 @@ public final class MarkdownControl extends InputControl {
     }
 
     private void recalculatePreviewRTA(double width) {
-        mdRenderArea.setPrefWidth(width - 2);
-        double textAreaHeight = mdRenderArea.getFullHeight() + inputPadding;
+        if (mdRenderArea == null) {
+            return;
+        }
+        double actualWidth = Math.max(MIN_WIDTH, width);
+        mdRenderArea.setPrefWidth(actualWidth - 2);
+        double textAreaHeight = computePreviewRTAPrefHeight(actualWidth) + inputPadding;
+        if (textAreaHeight < 30) {
+            textAreaHeight = 30;
+        }
         mdRenderArea.setMinHeight(textAreaHeight);
         mdRenderArea.setPrefHeight(textAreaHeight);
         mdRenderArea.setMaxHeight(textAreaHeight);
@@ -74,6 +84,22 @@ public final class MarkdownControl extends InputControl {
         setPrefHeight(newHeight);
         setMaxHeight(newHeight);
         requestLayout();
+    }
+
+    private double computePreviewRTAPrefHeight(double width) {
+        if (group == null) {
+            group = (Group) mdRenderArea.lookup(".sheet");
+        }
+        if (null != group) {
+            double sumCellHeight = group.getChildren().stream()
+                    .filter(ListCell.class::isInstance)
+                    .map(ListCell.class::cast)
+                    .filter(cell -> cell.getGraphic() != null)
+                    .mapToDouble(n -> n.prefHeight(width))
+                    .sum();
+            return sumCellHeight;
+        }
+        return RTA_LINE_HEIGHT;
     }
 
     public void updateRenderedView(Document doc) {
@@ -102,10 +128,8 @@ public final class MarkdownControl extends InputControl {
         mdRenderArea.addEventFilter(MouseEvent.MOUSE_CLICKED, t -> {
             if (1 == t.getClickCount() && t.isShiftDown()) {
                 getChildren().remove(mdRenderArea);
-                // getChildren().add(0, getInput());
                 heightSubscription.unsubscribe();
                 widthSubscription.unsubscribe();
-                subscribeToInput();
                 getInput().setManaged(true);
                 getChildren().add(getInput());
                 mdRenderArea = null;
@@ -113,7 +137,6 @@ public final class MarkdownControl extends InputControl {
                 t.consume();
             }
         });
-        unsubscribeFromInput();
         heightSubscription = mdRenderArea.fullHeightProperty().subscribe((h) -> recalculatePreviewRTA(getWidth()));
         widthSubscription = widthProperty().subscribe((w) -> recalculatePreviewRTA(w.doubleValue()));
 

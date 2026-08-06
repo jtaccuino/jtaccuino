@@ -18,12 +18,6 @@ package org.jtaccuino.core.ui;
 import org.jtaccuino.core.ui.completion.CompletionItem;
 import org.jtaccuino.core.ui.completion.CompletionPopup;
 import org.jtaccuino.core.ui.api.CellData;
-import com.gluonhq.richtextarea.RichTextArea;
-import com.gluonhq.richtextarea.Selection;
-import com.gluonhq.richtextarea.model.DecorationModel;
-import com.gluonhq.richtextarea.model.Document;
-import com.gluonhq.richtextarea.model.ParagraphDecoration;
-import com.gluonhq.richtextarea.model.TextDecoration;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.Base64;
@@ -43,7 +37,6 @@ import javafx.css.CssMetaData;
 import javafx.css.Styleable;
 import javafx.css.StyleableProperty;
 import javafx.css.StyleablePropertyFactory;
-import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -58,7 +51,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.EvalException;
 import jdk.jshell.ExpressionSnippet;
@@ -67,6 +60,10 @@ import jdk.jshell.Snippet;
 import jdk.jshell.SourceCodeAnalysis;
 import jdk.jshell.StatementSnippet;
 import jdk.jshell.VarSnippet;
+import jfx.incubator.scene.control.input.KeyBinding;
+import jfx.incubator.scene.control.richtext.CodeArea;
+import jfx.incubator.scene.control.richtext.TextPos;
+import jfx.incubator.scene.control.richtext.model.StyledTextModel;
 import org.jtaccuino.core.ui.controls.JavaControl;
 import org.jtaccuino.core.ui.documentation.DocumentationItem;
 import org.jtaccuino.core.ui.documentation.DocumentationPopup;
@@ -159,28 +156,13 @@ public class JavaCellFactory implements CellFactory {
 
     public static class JavaCellSkin extends AbstractCellSkin<JavaCell> {
 
-        static TextDecoration presetDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
-                .fontWeight(FontWeight.NORMAL).fontSize(13).build();
-
-        static TextDecoration declarationDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
-                .underline(Boolean.TRUE).fontWeight(FontWeight.NORMAL).fontSize(13).build();
-
-        static TextDecoration keywordDecoration = TextDecoration.builder().presets().fontFamily("Monaspace Argon")
-                .fontWeight(FontWeight.BOLD).fontSize(13).build();
-
-        private static final ParagraphDecoration parPreset
-                = ParagraphDecoration.builder().presets()
-                        .graphicType(ParagraphDecoration.GraphicType.NUMBERED_LIST)
-                        .indentationLevel(1)
-                        .topInset(3)
-                        .build();
-
         private final JavaCell control;
 
         private final CompletionPopup completionPopup = new CompletionPopup();
         private final DocumentationPopup documentationPopup = new DocumentationPopup();
         private final VBox inputBox;
-        private final RichTextArea input;
+        private final CodeArea input;
+        private final JavaSyntaxDecorator syntaxDecorator;
         private final VBox outputBox;
         private final Label streamResult;
 //        private final BorderPane output;
@@ -192,49 +174,29 @@ public class JavaCellFactory implements CellFactory {
         private JavaCellSkin(JavaCell javaCell) {
             super(javaCell);
             this.control = javaCell;
+            var inputControl = new JavaControl(control.cellNumber);
+            input = inputControl.getInput();
+            syntaxDecorator = new JavaSyntaxDecorator(this.control.getSheet().getReactiveJShell(), javaCell.getBaseEditorFont());
+            input.setSyntaxDecorator(syntaxDecorator);
+            input.fontProperty().bind(javaCell.baseEditorFontProperty());
             this.control.baseEditorFontProperty().addListener(new ChangeListener<Font>() {
                 @Override
                 public void changed(ObservableValue<? extends Font> observable, Font oldValue, Font newValue) {
-                    presetDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
-                            .fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize()).build();
-                    declarationDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
-                            .underline(Boolean.TRUE).fontWeight(FontWeight.NORMAL).fontSize(newValue.getSize()).build();
-                    keywordDecoration = TextDecoration.builder().presets().fontFamily(newValue.getFamily())
-                            .fontWeight(FontWeight.BOLD).fontSize(newValue.getSize()).build();
-                    handleSyntaxHighlighting(input.getDocument().getText());
+                    syntaxDecorator.applyFont(newValue);
+                    syntaxDecorator.refresh();
                 }
             });
-            var inputControl = new JavaControl(control.cellNumber);
-            input = inputControl.getInput();
-            caretRowColumnProperty.bind(input.caretRowColumnProperty());
-            input.documentProperty().subscribe((t, u) -> {
-                if (!t.getText().equals(u.getText())) {
-                    handleSyntaxHighlighting(input.getDocument().getText());
-                }
-            });
+            caretRowColumnProperty.bind(inputControl.caretRowColumnProperty());
+            subscribeToModel(input.getModel());
+            input.modelProperty().addListener((observable, oldValue, newValue) -> subscribeToModel(newValue));
 
             inputControl.codeEditorFocussed().addListener((observable, oldValue, newValue) -> getSkinnable().markAsSelected(newValue));
-            input.textLengthProperty().subscribe(nv -> {
-                if (nv.doubleValue() == 0) {
-                    input.getActionFactory().decorate(presetDecoration).execute(new ActionEvent());
-                }
-            });
             String source = javaCell.getCellData().getSource();
             if (null != source) {
-                inputControl.openDocument(
-                        new Document(
-                                source,
-                                List.of(new DecorationModel(0, source.length(), presetDecoration, parPreset)),
-                                source.length() - 1
-                        ));
+                inputControl.openDocument(source);
             } else {
-                inputControl.openDocument(
-                        new Document("",
-                                List.of(new DecorationModel(0, 0, presetDecoration, parPreset)),
-                                0
-                        ));
+                inputControl.openDocument("");
             }
-            input.documentProperty().subscribe(doc -> javaCell.getCellData().sourceProperty().set(doc.getText()));
 
 //            output = new BorderPane();
 //            output.setVisible(false);
@@ -317,52 +279,56 @@ public class JavaCellFactory implements CellFactory {
                         }
                     });
 
+            input.getInputMap().register(KeyBinding.of(KeyCode.TAB), () -> {
+                var oldCaretPosition = caretOffset(input.getCaretPosition());
+                handleTabCompletion(input.getText(), oldCaretPosition,
+                        computeCaretOrigin(),
+                        (completionUpdate) -> {
+                            if (null != completionUpdate) {
+                                var currentCaret = input.getCaretPosition();
+                                var anchorPosition = textPositionAt(completionUpdate.anchor());
+                                if (currentCaret.compareTo(anchorPosition) >= 0) {
+                                    var caret = input.replaceText(anchorPosition, currentCaret, completionUpdate.completion());
+                                    input.select(caret);
+                                }
+                            }
+                        });
+            });
+
+            input.getInputMap().register(KeyBinding.shift(KeyCode.TAB), () -> {
+                var oldCaretPosition = caretOffset(input.getCaretPosition());
+                handleTabDocumentation(input.getText(), oldCaretPosition, computeCaretOrigin());
+            });
+
+            input.getInputMap().register(KeyBinding.shift(KeyCode.ENTER), () -> {
+                execute();
+            });
+
             input.addEventFilter(KeyEvent.KEY_PRESSED, t
                     -> {
-                if (KeyCode.TAB == t.getCode()) {
-                    var oldCaretPosition = input.caretPositionProperty().get();
-                    if (t.isShiftDown()) {
-                        handleTabDocumentation(input.getDocument().getText(), oldCaretPosition, input.getCaretOrigin().add(0, 13));
-                    } else {
-                        handleTabCompletion(input.getDocument().getText(), oldCaretPosition,
-                                input.getCaretOrigin().add(0, 13),
-                                (completionUpdate) -> {
-                                    if (null != completionUpdate) {
-                                        input.getActionFactory().
-                                                insertText(completionUpdate.completionToInsert).
-                                                execute(new ActionEvent());
-                                    }
-                                });
-                    }
-                    t.consume();
-                } else if (KeyCode.BACK_SPACE == t.getCode()) {
-                    var column = (int) input.getCaretRowColumn().getX();
-                    var row = (int) input.getCaretRowColumn().getY();
-                    if (0 == column && 0 == row) {
-                        // just consume the event to inhibt deletion of paragraph decoration
-                        t.consume();
-                    } else if (0 == column) {
-                        // automatically remove paragraph decoration in case at beginning of line
-                        input.getActionFactory().removeExtremesAndDecorate(
-                                new Selection(input.getCaretPosition() - 1, input.getCaretPosition()),
-                                ParagraphDecoration.builder().build()).execute(new ActionEvent());
-                    }
-                } else if (KeyCode.ENTER == t.getCode() && !t.isShiftDown()) {
-                    var column = (int) input.getCaretRowColumn().getX();
-                    if (0 == column) {
-                        input.getActionFactory().insertText("\n").execute(new ActionEvent());
-                        t.consume();
-                    }
-                } else {
+                if (KeyCode.TAB != t.getCode()) {
                     Platform.runLater(() -> this.control.getSheet().ensureCellVisible(control));
                 }
             });
+        }
 
-            input.documentProperty().addListener((observable, oldValue, newValue) -> {
-                if (completionPopup.isShowing()) {
-                    Platform.runLater(() -> filterCompletion(input.getDocument().getText(), input.getDocument().getCaretPosition()));
-                }
-            });
+        private void subscribeToModel(StyledTextModel model) {
+            if (null != model) {
+                model.addListener((StyledTextModel.Listener) change -> {
+                    javaCellSourceUpdated();
+                });
+            }
+        }
+
+        private void javaCellSourceUpdated() {
+            javaCellSourceUpdated(input.getText());
+        }
+
+        private void javaCellSourceUpdated(String text) {
+            this.control.getCellData().sourceProperty().set(text);
+            if (completionPopup.isShowing()) {
+                Platform.runLater(() -> filterCompletion(text, caretOffset(input.getCaretPosition())));
+            }
         }
 
         void requestFocus() {
@@ -393,7 +359,7 @@ public class JavaCellFactory implements CellFactory {
                     execResult.setVisible(true);
                 });
             },
-                    input.getDocument().getText(),
+                    input.getText(),
                     evalResult -> {
                         this.control.snippetIds = evalResult.snippetEventsCurrent().stream().map(sne -> sne.snippet().id()).toList();
                         var probablyOutdatedIds = evalResult.snippetEventsOutdated().stream().map(sne -> sne.snippet().id())
@@ -520,16 +486,10 @@ public class JavaCellFactory implements CellFactory {
             this.control.getSheet().getReactiveJShell().completionAsync(text, caretPos, result -> {
                 var distinctCompletionSuggestions = result.suggestions().stream().map(CompletionItem::from).distinct().toList();
                 Platform.runLater(() -> {
-                    completionPopup.updateLocation(input.getCaretOrigin().add(0, 13));
+                    completionPopup.updateLocation(computeCaretOrigin());
                     completionPopup.setSuggestions(distinctCompletionSuggestions);
                 });
             });
-        }
-
-        private CompletionUpdate convert(int startOfcompletionText, int caretPosition, String fullCompletionText) {
-            int offset = caretPosition - startOfcompletionText; // length to strip from full completion text
-            String remainingCompletion = fullCompletionText.substring(offset);
-            return new CompletionUpdate(fullCompletionText, remainingCompletion);
         }
 
         private void handleTabDocumentation(String text, int caretPos, Point2D caretOrigin) {
@@ -555,23 +515,25 @@ public class JavaCellFactory implements CellFactory {
                 }
                 // only one completion - just do it
                 if (distinctCompletionSuggestions.size() == 1) {
-                    Platform.runLater(() -> consumer.accept(convert(result.anchor(), caretPos, distinctCompletionSuggestions.getFirst().completion())));
+                    var singleCompletion = distinctCompletionSuggestions.getFirst();
+                    Platform.runLater(() -> consumer.accept(new CompletionUpdate(singleCompletion.completion(), singleCompletion.anchor())));
                 } else {
                     String completableCommonPrefix = CompletionItem.longestCommonPrefix(distinctCompletionSuggestions);
                     if (!completableCommonPrefix.isEmpty()
                             && !text.substring(result.anchor(), caretPos).equals(completableCommonPrefix)) {
+                        var firstCompletion = distinctCompletionSuggestions.getFirst();
                         Platform.runLater(() -> {
-                            consumer.accept(convert(result.anchor(), caretPos, completableCommonPrefix));
-                            completionPopup.setOnCompletion(event -> Platform.runLater(() -> consumer.accept(convert(event.getAnchor(), input.getCaretPosition(), event.getSuggestion()))));
+                            consumer.accept(new CompletionUpdate(completableCommonPrefix, firstCompletion.anchor()));
+                            completionPopup.setOnCompletion(event -> Platform.runLater(() -> consumer.accept(new CompletionUpdate(event.getSuggestion(), event.getAnchor()))));
                             completionPopup.setSuggestions(distinctCompletionSuggestions);
                             if (!completionPopup.isShowing()) {
-                                completionPopup.show(this.control.getScene().focusOwnerProperty().get(), input.getCaretOrigin().add(0, 13));
+                                completionPopup.show(this.control.getScene().focusOwnerProperty().get(), computeCaretOrigin());
                             } else {
-                                completionPopup.updateLocation(input.getCaretOrigin().add(0, 13));
+                                completionPopup.updateLocation(computeCaretOrigin());
                             }
                         });
                     } else {
-                        completionPopup.setOnCompletion(event -> Platform.runLater(() -> consumer.accept(convert(event.getAnchor(), input.getCaretPosition(), event.getSuggestion()))));
+                        completionPopup.setOnCompletion(event -> Platform.runLater(() -> consumer.accept(new CompletionUpdate(event.getSuggestion(), event.getAnchor()))));
                         Platform.runLater(() -> {
                             completionPopup.setSuggestions(distinctCompletionSuggestions);
                             completionPopup.show(this.control.getScene().focusOwnerProperty().get(), caretOrigin);
@@ -581,33 +543,47 @@ public class JavaCellFactory implements CellFactory {
             });
         }
 
-        private void handleSyntaxHighlighting(String text) {
-            this.control.getSheet().getReactiveJShell().highlightingAsync(text, highlights -> {
-//                highlights.forEach(System.out::println);
-                Platform.runLater(()
-                        -> input.getActionFactory().selectAndDecorate(
-                                new Selection(0, input.getTextLength()),
-                                presetDecoration).execute(new ActionEvent()));
-                highlights.stream().forEach(h -> {
-                    var attrs = h.attributes();
-                    if (attrs.contains(SourceCodeAnalysis.Attribute.KEYWORD)) {
-                        Platform.runLater(()
-                                -> input.getActionFactory().selectAndDecorate(
-                                        new Selection(h.start(), h.end()),
-                                        keywordDecoration).execute(new ActionEvent()));
-                    } else if (attrs.contains(SourceCodeAnalysis.Attribute.DECLARATION)) {
-                        Platform.runLater(()
-                                -> input.getActionFactory().selectAndDecorate(
-                                        new Selection(h.start(), h.end()),
-                                        declarationDecoration).execute(new ActionEvent()));
-                    }
-//                    Platform.runLater(() -> System.out.println(input.getDocument().getDecorations()));
-                });
-            });
+        private int caretOffset(TextPos pos) {
+            var offset = pos.offset();
+            for (var i = 0; i < pos.index(); i++) {
+                offset += input.getPlainText(i).length() + 1;
+            }
+            return offset;
+        }
+
+        private TextPos textPositionAt(int offset) {
+            var remaining = offset;
+            for (var i = 0; i < input.getParagraphCount(); i++) {
+                var length = input.getPlainText(i).length();
+                if (remaining <= length) {
+                    return TextPos.ofLeading(i, remaining);
+                }
+                remaining -= length + 1;
+            }
+            return input.getDocumentEnd();
+        }
+
+        private Point2D computeCaretOrigin() {
+            var caret = input.getCaretPosition();
+            if (null == caret) {
+                return Point2D.ZERO;
+            }
+            var contentPadding = input.getContentPadding();
+            var x = contentPadding.getLeft();
+            if (null != input.getLeftDecorator()) {
+                x += input.getLeftDecorator().getPrefWidth(1);
+            }
+            var lineText = input.getPlainText(caret.index());
+            var prefix = lineText.substring(0, Math.min(caret.offset(), lineText.length()));
+            var measure = new Text(prefix);
+            measure.setFont(input.getFont());
+            x += measure.getLayoutBounds().getWidth();
+            var lineHeight = input.getFont().getSize() * 1.2 + input.getLineSpacing();
+            var y = contentPadding.getTop() + (caret.index() + 1) * lineHeight;
+            return new Point2D(x, y);
         }
 
         @Override
-
         public JavaCell getSkinnable() {
             return this.control;
         }
@@ -629,7 +605,7 @@ public class JavaCellFactory implements CellFactory {
             this.getNode().pseudoClassStateChanged(SELECTED, isSelected);
         }
 
-        static record CompletionUpdate(String completion, String completionToInsert) {
+        static record CompletionUpdate(String completion, int anchor) {
         }
     }
 }

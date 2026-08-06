@@ -18,6 +18,8 @@ dependencies {
     javafx 'org.openjfx:javafx-media:' + versionJavafx+':' + rootProject.javaFxPlatform
     javafx 'org.openjfx:javafx-web:' + versionJavafx + ':' + rootProject.javaFxPlatform
     javafx 'org.openjfx:javafx-swing:' + versionJavafx + ':' + rootProject.javaFxPlatform
+    javafx 'org.openjfx:jfx-incubator-richtext:' + versionJfxIncubatorRichtext + ':' + rootProject.javaFxPlatform
+    javafx 'org.openjfx:jfx-incubator-input:' + versionJfxIncubatorInput + ':' + rootProject.javaFxPlatform
 
     implementation 'com.gluonhq:rich-text-area:' + versionGluonhqRichTextArea
     implementation 'com.vladsch.flexmark:flexmark-all:' + versionFlexmarkAll
