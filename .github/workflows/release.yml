@@ -42,17 +42,12 @@ jobs:
           file-path: 'app/gradle.properties'
           keys: 'version, app_version, additional_jdk_modules'      
 
-      - name: Setup Java 27
-        id: java27
+      - name: Setup Java 26
+        id: java26
         uses: actions/setup-java@v6
         with:
           distribution: 'zulu'
-          java-version: 27
-
-      - name: Setup JPackage Home
-        id: jpackage
-        run: |
-          echo JPACKAGE_HOME=$JAVA_HOME >> $GITHUB_OUTPUT
+          java-version: 26
 
       - uses: Apple-Actions/import-codesign-certs@v7
         if: startsWith(matrix.os, 'macos')
@@ -79,6 +74,18 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           ./gradlew "-Pversion=${{ github.ref_name }}" -i test
+
+      - name: Setup Java 27 for jpackage
+        id: java27
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: 27
+
+      - name: Setup JPackage Home
+        id: jpackage
+        run: |
+          echo JPACKAGE_HOME=$JAVA_HOME >> $GITHUB_OUTPUT
 
       - name: Create Bundle using jpackage for macos
         if: startsWith(matrix.os, 'macos')
