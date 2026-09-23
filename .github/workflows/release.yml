@@ -49,6 +49,14 @@ jobs:
           distribution: 'zulu'
           java-version: 26
 
+      - name: Setup Java 27 (toolchain)
+        id: java27
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: 27
+          set-default: false
+
       - uses: Apple-Actions/import-codesign-certs@v7
         if: startsWith(matrix.os, 'macos')
         with:
@@ -56,27 +64,27 @@ jobs:
           p12-password: ${{ secrets.CERTIFICATES_PASSWORD }}
 
       - name: Build project
-        run: ./gradlew "-Pversion=${{ github.ref_name }}" -i build -x test
+        run: ./gradlew "-Pversion=${{ github.ref_name }}" -i build -x test -Porg.gradle.java.installations.paths=${{ steps.java27.outputs.path }}
         
       - name: Run Tests (Linux)
         if: runner.os == 'Linux'
         run: |
           export DISPLAY=:90
           Xvfb -ac :90 -screen 0 1280x1024x24 > /dev/null 2>&1 &
-          ./gradlew "-Pversion=${{ github.ref_name }}" -i test
+          ./gradlew "-Pversion=${{ github.ref_name }}" -i test -Porg.gradle.java.installations.paths=${{ steps.java27.outputs.path }}
           
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
         run: |
-          ./gradlew "-Pversion=${{ github.ref_name }}" -i test
+          ./gradlew "-Pversion=${{ github.ref_name }}" -i test -Porg.gradle.java.installations.paths=${{ steps.java27.outputs.path }}
           
       - name: Run Tests (Windows)
         if: runner.os == 'Windows'
         run: |
-          ./gradlew "-Pversion=${{ github.ref_name }}" -i test
+          ./gradlew "-Pversion=${{ github.ref_name }}" -i test -Porg.gradle.java.installations.paths=${{ steps.java27.outputs.path }}
 
       - name: Setup Java 27 for jpackage
-        id: java27
+        id: java27-jpackage
         uses: actions/setup-java@v6
         with:
           distribution: 'zulu'
