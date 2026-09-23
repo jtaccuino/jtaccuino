@@ -127,12 +127,16 @@ allprojects {
         apply plugin: 'java-library'
         apply plugin: 'jacoco'
 
+        jacoco {
+            toolVersion = '0.8.15'
+        }
+
         java {
             withJavadocJar()
             withSourcesJar()
             // Apply a specific Java toolchain to ease working on different environments.
             toolchain {
-                languageVersion.set(JavaLanguageVersion.of(26))
+                languageVersion.set(JavaLanguageVersion.of(27))
             }
         }
 

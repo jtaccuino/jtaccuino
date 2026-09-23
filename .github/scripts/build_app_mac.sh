@@ -9,7 +9,7 @@
 # VERSION: version used in pom.xml, e.g. 1.0-SNAPSHOT , shown in "about" dialog
 # APP_VERSION: the application version, e.g. 1.0.0 
 
-JAVA_VERSION=25
+JAVA_VERSION=27
 MAIN_JAR="app-${VERSION}.jar"
 
 # Set desired installer type: "dmg", "pkg".
