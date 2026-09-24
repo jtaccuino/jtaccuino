@@ -163,6 +163,13 @@ allprojects {
         tasks.named('test') {
             finalizedBy jacocoTestReport
             useJUnitPlatform()
+            // JavaFX tests (e.g. CollectionRendererTest) call Platform.startup(),
+            // which hangs on headless CI runners (e.g. macos-15-intel) that have no
+            // usable GUI session. Run the glass toolkit headless on macOS so tests
+            // complete; other platforms use their native display (Xvfb on Linux).
+            if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('mac')) {
+                systemProperty 'glass.platform', 'headless'
+            }
         }
 
         // configuring Errorprone
