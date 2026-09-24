@@ -17,10 +17,13 @@ package org.jtaccuino.core.ui.completion;
 
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.ListChangeListener;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Skin;
 import javafx.scene.input.KeyCode;
@@ -34,7 +37,7 @@ class CompletionPopupSkin implements Skin<CompletionPopup> {
 
     private final CompletionPopup control;
     private final ListView<CompletionItem> completionList;
-    final int LIST_CELL_HEIGHT = 24;
+    private final DoubleProperty listCellHeight = new SimpleDoubleProperty(this, "listCellHeight", 24);
 
     private final CompletionSelectionModel selectionModel;
 
@@ -44,12 +47,13 @@ class CompletionPopupSkin implements Skin<CompletionPopup> {
         selectionModel = new CompletionSelectionModel(control.getSuggestions());
         completionList.setSelectionModel(selectionModel);
 
-        completionList.prefHeightProperty().bind(
-                Bindings.min(control.visibleCompletionsProperty(), Bindings.size(completionList.getItems()))
-                        .multiply(LIST_CELL_HEIGHT).add(2));
-        completionList.maxHeightProperty().bind(
-                Bindings.min(control.visibleCompletionsProperty(), Bindings.size(completionList.getItems()))
-                        .multiply(LIST_CELL_HEIGHT).add(2));
+        estimateCellHeight();
+
+        var listHeight = Bindings.min(control.visibleCompletionsProperty(), Bindings.size(completionList.getItems()))
+                .multiply(listCellHeight).add(2);
+        completionList.minHeightProperty().bind(listHeight);
+        completionList.prefHeightProperty().bind(listHeight);
+        completionList.maxHeightProperty().bind(listHeight);
         completionList.setCellFactory(new CompletionItemRenderer(control.getSuggestions()));
 
         completionList.prefWidthProperty().bind(control.prefWidthProperty());
@@ -108,6 +112,7 @@ class CompletionPopupSkin implements Skin<CompletionPopup> {
                 getSkinnable().setMinWidth(width);
                 getSkinnable().setPrefWidth(width);
                 getSkinnable().setMaxWidth(width);
+                Platform.runLater(this::measureCellHeight);
             }
         });
 
@@ -151,8 +156,33 @@ class CompletionPopupSkin implements Skin<CompletionPopup> {
         });
 
         control.setOnShown((t) -> {
-            Platform.runLater(() -> completionList.requestFocus());
+            Platform.runLater(() -> {
+                measureCellHeight();
+                completionList.requestFocus();
+            });
         });
+    }
+
+    private void estimateCellHeight() {
+        Text tempText = new Text("Q");
+        tempText.setFont(Font.font("Monaspace Argon", 11));
+        double charHeight = tempText.getLayoutBounds().getHeight();
+        double estimated = Math.ceil(charHeight * (1 + 0.25 + 0.25)) + 3;
+        listCellHeight.set(Math.max(estimated, listCellHeight.get()));
+    }
+
+    private void measureCellHeight() {
+        completionList.applyCss();
+        completionList.layout();
+        for (Node node : completionList.lookupAll(".list-cell")) {
+            if (node instanceof ListCell<?> cell && cell.getItem() != null) {
+                double naturalHeight = Math.ceil(cell.prefHeight(-1));
+                if (naturalHeight > 0) {
+                    listCellHeight.set(naturalHeight);
+                }
+                return;
+            }
+        }
     }
 
     private double calculateListViewPreferredWidth(boolean needsScrollBar) {
@@ -165,9 +195,6 @@ class CompletionPopupSkin implements Skin<CompletionPopup> {
         double maxNameWidth = 0;
         double maxTypeWidth = 0;
         for (CompletionItem item : control.getSuggestions()) {
-            if (CompletionItem.NIL.equals(item)) {
-                continue;
-            }
             maxNameWidth = Math.max(maxNameWidth, measureText(item.displayName(), nameFont));
             if (!item.typeInfo().isEmpty()) {
                 maxTypeWidth = Math.max(maxTypeWidth, measureText(item.typeInfo(), typeFont));

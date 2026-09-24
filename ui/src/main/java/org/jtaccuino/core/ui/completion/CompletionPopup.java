@@ -80,10 +80,8 @@ public class CompletionPopup extends PopupControl {
     public void setSuggestions(List<CompletionItem> items) {
         var matchList = items.stream().filter(CompletionItem::matchesType).toList();
         var noMatchlist = items.stream().filter(CompletionItem::notMatchesType).toList();
-        boolean requiresSep = !matchList.isEmpty() && !noMatchlist.isEmpty();
         var newList = combine(
                 FXCollections.<CompletionItem>observableArrayList(matchList),
-                requiresSep ? FXCollections.<CompletionItem>observableArrayList(CompletionItem.NIL) : FXCollections.<CompletionItem>emptyObservableList(),
                 FXCollections.<CompletionItem>observableArrayList(noMatchlist));
         Platform.runLater(() -> completionSuggestions.setAll(newList));
     }
