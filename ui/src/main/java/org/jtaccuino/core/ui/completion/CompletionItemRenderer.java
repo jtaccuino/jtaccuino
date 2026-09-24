@@ -18,19 +18,16 @@ package org.jtaccuino.core.ui.completion;
 import javafx.collections.ObservableList;
 import javafx.css.PseudoClass;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.Separator;
 import javafx.scene.layout.BorderPane;
 import javafx.util.Callback;
 
 class CompletionItemRenderer implements Callback<ListView<CompletionItem>, ListCell<CompletionItem>> {
 
-    private final Separator separator = new Separator(Orientation.HORIZONTAL);
     private final ObservableList<CompletionItem> items;
 
     public CompletionItemRenderer(ObservableList<CompletionItem> items) {
@@ -48,19 +45,20 @@ class CompletionItemRenderer implements Callback<ListView<CompletionItem>, ListC
                 if (empty) {
                     setGraphic(null);
                     setFocusTraversable(false);
-                } else if (CompletionItem.NIL.equals(item)) {
-                    setGraphic(separator);
-                    getStyleClass().add("separator-cell");
-                    setFocusTraversable(false);
                 } else {
                     setGraphic(createContent(item));
                     setFocusTraversable(true);
                     if (item.matchesType()) {
                         getStyleClass().add("type-matches");
                     }
-                    int nilIndex = items.indexOf(CompletionItem.NIL);
                     int itemIndex = items.indexOf(item);
-                    boolean isEven = (itemIndex > nilIndex ? itemIndex - 1 : itemIndex) % 2 == 0;
+                    boolean hasSeparatorAbove = !item.matchesType()
+                            && itemIndex > 0
+                            && items.get(itemIndex - 1).matchesType();
+                    if (hasSeparatorAbove) {
+                        getStyleClass().add("separator-cell");
+                    }
+                    boolean isEven = itemIndex % 2 == 0;
                     pseudoClassStateChanged(PseudoClass.getPseudoClass("even"), isEven);
                     pseudoClassStateChanged(PseudoClass.getPseudoClass("odd"), !isEven);
                 }
