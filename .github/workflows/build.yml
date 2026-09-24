@@ -89,7 +89,15 @@ jobs:
         run: |
           ./gradlew -i test
 
-      - name: Setup Java 27 for jpackage
+      - name: Setup Java 24 for jpackage
+        id: java24-jpackage
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: 24
+          set-default: false
+
+      - name: Setup Java 27 for jdeps/jlink
         id: java27-jpackage
         uses: actions/setup-java@v6
         with:
@@ -99,7 +107,7 @@ jobs:
       - name: Setup JPackage Home
         id: jpackage
         run: |
-          echo JPACKAGE_HOME=$JAVA_HOME >> $GITHUB_OUTPUT
+          echo JPACKAGE_HOME=${{ steps.java24-jpackage.outputs.path }} >> $GITHUB_OUTPUT
 
       - name: Create Bundle using jpackage for macos
         if: matrix.os == 'macos-14'
