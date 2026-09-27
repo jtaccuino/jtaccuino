@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
@@ -39,6 +40,9 @@ import javafx.css.Styleable;
 import javafx.css.StyleableProperty;
 import javafx.css.StyleablePropertyFactory;
 import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
+import javafx.stage.PopupWindow;
+import javafx.stage.Screen;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
@@ -53,6 +57,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.util.Duration;
 import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.EvalException;
 import jdk.jshell.ExpressionSnippet;
@@ -68,6 +73,7 @@ import jfx.incubator.scene.control.richtext.TextPos;
 import jfx.incubator.scene.control.richtext.model.StyledTextModel;
 import org.jtaccuino.core.ui.controls.JavaControl;
 import org.jtaccuino.core.ui.documentation.DocumentationItem;
+import org.jtaccuino.core.ui.documentation.JavadocPopup;
 import org.jtaccuino.core.ui.documentation.DocumentationPopup;
 import org.jtaccuino.core.ui.extensions.DisplayExtension;
 import org.jtaccuino.core.ui.extensions.PrintExtension;
@@ -163,6 +169,8 @@ public class JavaCellFactory implements CellFactory {
 
         private final CompletionPopup completionPopup = new CompletionPopup();
         private final DocumentationPopup documentationPopup = new DocumentationPopup();
+        private final JavadocPopup javadocPopup = new JavadocPopup();
+        private final PauseTransition javadocDwell = new PauseTransition(Duration.millis(500));
         private final VBox inputBox;
         private final CodeArea input;
         private final JavaSyntaxDecorator syntaxDecorator;
@@ -317,6 +325,93 @@ public class JavaCellFactory implements CellFactory {
                     Platform.runLater(() -> this.control.getSheet().ensureCellVisible(control));
                 }
             });
+
+            setupJavadocPreview();
+        }
+
+        private void setupJavadocPreview() {
+            javadocDwell.setOnFinished(e -> showJavadocForFocusedCompletion());
+            completionPopup.focusedCompletionProperty().addListener((ov, oldItem, newItem) -> {
+                if (newItem == null) {
+                    javadocDwell.stop();
+                    javadocPopup.hide();
+                } else if (!Objects.equals(newItem, oldItem)) {
+                    javadocDwell.playFromStart();
+                    javadocPopup.hide();
+                }
+            });
+            completionPopup.showingProperty().addListener((ov, wasShowing, isShowing) -> {
+                if (isShowing) {
+                    // First item may be selected while the popup is still hidden;
+                    // restart the dwell so the javadoc for it appears too.
+                    if (completionPopup.getFocusedCompletion() != null) {
+                        javadocDwell.playFromStart();
+                    }
+                } else {
+                    javadocDwell.stop();
+                    javadocPopup.hide();
+                }
+            });
+        }
+
+        private void showJavadocForFocusedCompletion() {
+            var item = completionPopup.getFocusedCompletion();
+            if (item == null || item.documentation() == null) {
+                javadocPopup.hide();
+                return;
+            }
+            if (!completionPopup.isShowing()) {
+                return;
+            }
+            var shell = this.control.getSheet().getReactiveJShell();
+            shell.documentationAsyncFor(() -> item.documentation().get(), doc -> Platform.runLater(() -> {
+                if (!completionPopup.isShowing()) {
+                    return;
+                }
+                var javadoc = doc == null || doc.isBlank() ? "" : doc;
+                if (javadoc.isEmpty()) {
+                    javadocPopup.hide();
+                    return;
+                }
+                javadocPopup.setTypeName(item.enclosingType());
+                javadocPopup.setSignature(item.signature());
+                javadocPopup.setJavadoc(javadoc);
+                var anchor = this.control.getScene().focusOwnerProperty().get();
+                javadocPopup.show(anchor,
+                        completionPopup.getX() + completionPopup.getWidth() + 8,
+                        completionPopup.getY(),
+                        this.control.getScene().getWindow());
+                Platform.runLater(() -> {
+                    if (!javadocPopup.isShowing()) {
+                        return;
+                    }
+                    var x = javadocPopup.getX();
+                    var y = javadocPopup.getY();
+                    var screen = screenFor(x, y);
+                    x = clamp(x, screen.getMinX() + 8,
+                            screen.getMaxX() - 8 - javadocPopup.getWidth());
+                    y = clamp(y, screen.getMinY() + 8,
+                            screen.getMaxY() - 8 - javadocPopup.getHeight());
+                    javadocPopup.setAnchorLocation(PopupWindow.AnchorLocation.WINDOW_TOP_LEFT);
+                    javadocPopup.setAnchorX(x);
+                    javadocPopup.setAnchorY(y);
+                });
+            }));
+        }
+
+        private static Rectangle2D screenFor(double x, double y) {
+            return Screen.getScreens().stream()
+                    .map(Screen::getVisualBounds)
+                    .filter(bounds -> bounds.contains(x, y))
+                    .findFirst()
+                    .orElseGet(() -> Screen.getPrimary().getVisualBounds());
+        }
+
+        private static double clamp(double value, double min, double max) {
+            if (max < min) {
+                return min;
+            }
+            return Math.max(min, Math.min(max, value));
         }
 
         private void subscribeToModel(StyledTextModel model) {

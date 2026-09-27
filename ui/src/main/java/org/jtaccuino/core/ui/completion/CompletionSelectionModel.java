@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,13 +130,14 @@ class CompletionSelectionModel extends MultipleSelectionModel<CompletionItem> {
         int size = items.size();
         if (size == 0) return -1;
 
-        for (int i = startIndex; i < size; i++) {
+        int start = Math.max(startIndex, 0);
+        for (int i = start; i < size; i++) {
             if (!CompletionItem.NIL.equals(items.get(i))) {
                 return i;
             }
         }
         if (wrapAround) {
-            for (int i = 0; i < startIndex; i++) {
+            for (int i = 0; i < start; i++) {
                 if (!CompletionItem.NIL.equals(items.get(i))) {
                     return i;
                 }
@@ -149,13 +150,14 @@ class CompletionSelectionModel extends MultipleSelectionModel<CompletionItem> {
         int size = items.size();
         if (size == 0) return -1;
 
-        for (int i = startIndex; i >= 0; i--) {
+        int start = Math.min(startIndex, size - 1);
+        for (int i = start; i >= 0; i--) {
             if (!CompletionItem.NIL.equals(items.get(i))) {
                 return i;
             }
         }
         if (wrapAround) {
-            for (int i = size - 1; i > startIndex; i--) {
+            for (int i = size - 1; i > start; i--) {
                 if (!CompletionItem.NIL.equals(items.get(i))) {
                     return i;
                 }
