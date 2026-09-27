@@ -59,7 +59,7 @@ rem
 rem Do not forget the leading ','!
 
 set manual_modules=,java.desktop,java.naming,jdk.unsupported,jdk.jshell,java.logging,java.net.http,java.sql,java.sql.rowset,java.transaction.xa,java.xml,jdk.localedata
-incubating_modules=,jdk.incubator.vector
+set incubating_modules=,jdk.incubator.vector
 echo manual modules: %manual_modules%
 echo incubating modules: %incubating_modules%
 
@@ -103,4 +103,5 @@ call "%JAVA_HOME%\bin\jpackage" ^
   --win-shortcut ^
   --win-per-user-install ^
   --win-menu ^
+  --win-console ^
   --verbose
