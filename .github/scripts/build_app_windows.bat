@@ -93,7 +93,7 @@ call "%JAVA_HOME%\bin\jpackage" ^
   --name JTaccuinoStudio ^
   --main-class org.jtaccuino.app.StudioLauncher ^
   --main-jar %MAIN_JAR% ^
-  --java-options "-Xmx2048m --enable-preview -add-modules %ADDITIONAL_JDK_MODULES% --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --enable-native-access=ALL-UNNAMED" ^
+  --java-options "-Xmx2048m --enable-preview --add-modules %ADDITIONAL_JDK_MODULES% --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --enable-native-access=ALL-UNNAMED" ^
   --runtime-image target/java-runtime ^
   --icon app/src/main/logo/windows/notebook.ico ^
   --app-version %APP_VERSION% ^
