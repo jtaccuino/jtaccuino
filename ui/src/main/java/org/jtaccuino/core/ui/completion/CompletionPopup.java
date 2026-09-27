@@ -21,6 +21,8 @@ import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -39,6 +41,8 @@ public class CompletionPopup extends PopupControl {
 
     private final ObservableList<CompletionItem> completionSuggestions = FXCollections.observableArrayList();
     private IntegerProperty visibleCompletions = new SimpleIntegerProperty(this, "visibleCompletions", 10);
+    private final ReadOnlyObjectWrapper<CompletionItem> focusedCompletion
+            = new ReadOnlyObjectWrapper<>(this, "focusedCompletion");
 
     public static class CompletionEvent extends Event {
 
@@ -77,20 +81,23 @@ public class CompletionPopup extends PopupControl {
         return completionSuggestions;
     }
 
-    public void setSuggestions(List<CompletionItem> items) {
-        var matchList = items.stream().filter(CompletionItem::matchesType).toList();
-        var noMatchlist = items.stream().filter(CompletionItem::notMatchesType).toList();
-        var newList = combine(
-                FXCollections.<CompletionItem>observableArrayList(matchList),
-                FXCollections.<CompletionItem>observableArrayList(noMatchlist));
-        Platform.runLater(() -> completionSuggestions.setAll(newList));
+    public final ReadOnlyObjectProperty<CompletionItem> focusedCompletionProperty() {
+        return focusedCompletion.getReadOnlyProperty();
     }
 
-    @SafeVarargs
-    private ObservableList<CompletionItem> combine(ObservableList<CompletionItem> ... lists) {
-        @SuppressWarnings("varargs")
-        var combinedList = FXCollections.concat(lists);
-        return combinedList;
+    public final CompletionItem getFocusedCompletion() {
+        return focusedCompletion.get();
+    }
+
+    void setFocusedCompletion(CompletionItem item) {
+        focusedCompletion.set(item);
+    }
+
+    public void setSuggestions(List<CompletionItem> items) {
+        var sorted = items.stream()
+                .sorted(CompletionItemComparator.BY_PRIORITY)
+                .toList();
+        Platform.runLater(() -> completionSuggestions.setAll(sorted));
     }
 
     public void updateLocation(Point2D caretOrigin) {

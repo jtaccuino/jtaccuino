@@ -101,6 +101,10 @@ class CompletionPopupSkin implements Skin<CompletionPopup> {
             }
         });
 
+        completionList.getSelectionModel().selectedItemProperty().addListener((ov, oldItem, newItem) -> {
+            control.setFocusedCompletion(newItem);
+        });
+
         completionList.getItems().addListener((ListChangeListener.Change<? extends CompletionItem> change) -> {
             change.next();
             if (0 == change.getTo()) {

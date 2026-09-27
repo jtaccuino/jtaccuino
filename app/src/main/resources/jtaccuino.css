@@ -595,6 +595,10 @@ AUTHOR: ShopWare
     -fx-font-size: 10;
 }
 
+.list-cell:filled:selected .completion-type {
+    -fx-text-fill: -fx-text-background-color;
+}
+
 .list-cell.separator-cell {
     -fx-border-color: #696969 transparent transparent transparent;
     -fx-border-width: 1px 0 0 0;
@@ -614,4 +618,20 @@ AUTHOR: ShopWare
 
 .about-version {
     -fx-font-family: "Monaspace Argon";
+}
+
+.javadoc-popup-content {
+    -fx-background-color: white;
+    -fx-border-color: lightgray;
+    -fx-padding: 10px 12px 10px 12px;
+    -fx-font-family: "Monaspace Argon";
+    -fx-font-size: 13;
+}
+
+.javadoc-popup-content .content {
+    -fx-background-color: transparent;
+}
+
+.javadoc-popup-content .scroll-bar:vertical .thumb {
+    -fx-background-color: #c0c0c0;
 }

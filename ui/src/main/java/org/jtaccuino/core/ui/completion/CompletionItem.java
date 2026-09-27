@@ -16,13 +16,15 @@
 package org.jtaccuino.core.ui.completion;
 
 import java.util.List;
+import java.util.function.Supplier;
 import javax.lang.model.element.ElementKind;
 import org.jtaccuino.jshell.ReactiveJShell;
 
 public record CompletionItem(String completion, boolean matchesType, int anchor,
-        ElementKind elementKind, boolean keyword, boolean staticMember, String displayName, String typeInfo) {
+        ElementKind elementKind, boolean keyword, boolean staticMember, String displayName, String typeInfo,
+        String enclosingType, String signature, Supplier<String> documentation) {
 
-    public static CompletionItem NIL = new CompletionItem("N/A", false, 0, null, false, false, "", "");
+    public static CompletionItem NIL = new CompletionItem("N/A", false, 0, null, false, false, "", "", "", "", () -> "");
 
     public static String longestCommonPrefix(List<CompletionItem> completionItems) {
         return switch (completionItems) {
@@ -52,6 +54,6 @@ public record CompletionItem(String completion, boolean matchesType, int anchor,
 
     public static CompletionItem from(ReactiveJShell.CompletionItem item) {
         return new CompletionItem(item.completion(), item.matchesType(), item.anchor(), item.elementKind(), item.keyword(),
-                item.staticMember(), item.displayName(), item.typeInfo());
+                item.staticMember(), item.displayName(), item.typeInfo(), item.enclosingType(), item.signature(), item.documentation());
     }
 }
