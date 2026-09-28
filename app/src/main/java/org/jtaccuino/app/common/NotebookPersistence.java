@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,13 +73,13 @@ public class NotebookPersistence {
         toFile(selectedFile, cells, true);
     }
 
+    @SuppressWarnings("try")
     public void toFile(File selectedFile, List<CellData> cells, boolean includeOutput) {
         var config = new JsonbConfig();
         config.setProperty(JsonbConfig.FORMATTING, true);
-        Jsonb jsonb = JsonbBuilder.create(config);
-        try {
-            jsonb.toJson(toIpynbFormat(cells, includeOutput), new FileWriter(selectedFile, StandardCharsets.UTF_8));
-            jsonb.close();
+        try (Jsonb jsonb = JsonbBuilder.create(config);
+                FileWriter writer = new FileWriter(selectedFile, StandardCharsets.UTF_8)) {
+            jsonb.toJson(toIpynbFormat(cells, includeOutput), writer);
         } catch (Exception ex) {
             Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ex);
         }

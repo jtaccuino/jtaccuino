@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import org.jtaccuino.jshell.extensions.JShellExtension;
 public class DfLibExtension implements JShellExtension {
 
     private static final List<String> DEPS = List.of(
-            "org.dflib:dflib:2.0.0-M4",
-            "org.dflib:dflib-csv:2.0.0-M4"
+            "org.dflib:dflib:2.0.0-M7",
+            "org.dflib:dflib-csv:2.0.0-M7"
     );
 
     private static final List<String> IMPORTS = List.of(

@@ -11,5 +11,5 @@ dependencies {
     implementation 'org.apache.maven.resolver:maven-resolver-connector-basic:' + versionMavenResolver
     implementation 'org.apache.maven.resolver:maven-resolver-transport-file:' + versionMavenResolver
     implementation 'org.apache.maven.resolver:maven-resolver-transport-jetty:' + versionMavenResolver
-    implementation 'org.apache.maven.resolver:maven-resolver-transport-jdk-11:' + versionMavenResolver
+    implementation 'org.apache.maven.resolver:maven-resolver-transport-jdk:' + versionMavenResolver
 }

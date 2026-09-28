@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.jtaccuino.jshell.extensions.JShellExtension;
 
 public class LangChain4jExtension implements JShellExtension {
 
-    private static final String VERSION = "1.6.0";
+    private static final String VERSION = "1.20.2";
 
     private static final List<String> DEPS = List.of(
             "dev.langchain4j:langchain4j:" + VERSION,
