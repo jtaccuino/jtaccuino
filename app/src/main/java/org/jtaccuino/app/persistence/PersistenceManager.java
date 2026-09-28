@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,15 +33,16 @@ public class PersistenceManager {
         return Path.of(System.getProperty("user.home"), ".config", "jtaccuino");
     }
 
+    @SuppressWarnings("try")
     public static void writePersistenceFile(String filename, Object object) {
         var config = new JsonbConfig();
         config.setProperty(JsonbConfig.FORMATTING, true);
-        Jsonb jsonb = JsonbBuilder.create(config);
-        try {
+        try (Jsonb jsonb = JsonbBuilder.create(config)) {
             var persistencFile = getConfigBaseDirectory().resolve(filename).toFile();
             persistencFile.getParentFile().mkdirs();
-            jsonb.toJson(object, new FileWriter(persistencFile, StandardCharsets.UTF_8));
-            jsonb.close();
+            try (var writer = new FileWriter(persistencFile, StandardCharsets.UTF_8)) {
+                jsonb.toJson(object, writer);
+            }
         } catch (Exception ex) {
             Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ex);
         }
