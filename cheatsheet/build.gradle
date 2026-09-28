@@ -37,5 +37,5 @@ tasks.register('pdf', JavaExec) {
     outputs.file cheatSheetPdf
     args cheatSheetMarkdown.absolutePath,
         cheatSheetCss.absolutePath,
-        cheatSheetPdf.get().asFile.absolutePath
+        cheatSheetPdf.get()
 }
