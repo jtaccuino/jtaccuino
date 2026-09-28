@@ -71,11 +71,10 @@ task generateAppProperties(type: WriteProperties) {
     encoding = "UTF-8"
 }
 
-processResources {
+tasks.named('processResources') {
     dependsOn generateAppProperties
     // Render the cheat sheet on every build and bundle it into the application.
-    dependsOn ':cheatsheet:pdf'
-    from(project(':cheatsheet').layout.buildDirectory.file('cheat-sheet/JTaccuino-CheatSheet.pdf')) {
+    from(project(':cheatsheet').tasks.named('pdf')) {
         rename { 'cheat-sheet.pdf' }
     }
 }
