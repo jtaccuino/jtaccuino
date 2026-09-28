@@ -26,6 +26,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.Labeled;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -65,7 +66,7 @@ class GutterDecorator implements SideDecorator {
     private static final int ICON_SPACING = 2;
     private static final Comparator<GutterMarker> PRIORITY = Comparator.comparingInt(m -> m.kind().priority());
 
-    private final LineNumberDecorator numbers = new LineNumberDecorator();
+    private final LineNumberDecorator numbers;
     private final ReadOnlyObjectWrapper<Map<Integer, List<GutterMarker>>> markers =
             new ReadOnlyObjectWrapper<>(Map.of());
     private final CodeArea area;
@@ -73,6 +74,19 @@ class GutterDecorator implements SideDecorator {
 
     GutterDecorator(CodeArea area) {
         this.area = area;
+        // The measurement node must use the editor font, otherwise the gutter is
+        // sized for a different font than the numbers it actually renders and it
+        // does not line up with the editor that uses the built-in line numbers.
+        this.numbers = new LineNumberDecorator() {
+            @Override
+            public Node getMeasurementNode(int index) {
+                var node = super.getMeasurementNode(index);
+                if (node instanceof Labeled labeled) {
+                    labeled.fontProperty().bind(area.fontProperty());
+                }
+                return node;
+            }
+        };
     }
 
     void setMarkers(Map<Integer, List<GutterMarker>> markers) {
