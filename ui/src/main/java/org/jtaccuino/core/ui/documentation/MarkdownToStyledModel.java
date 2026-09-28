@@ -26,13 +26,15 @@ import com.vladsch.flexmark.ast.Heading;
 import com.vladsch.flexmark.ast.Paragraph;
 import com.vladsch.flexmark.ast.StrongEmphasis;
 import com.vladsch.flexmark.ast.Text;
-import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
+import org.jtaccuino.core.ui.markdown.MarkdownParser;
 
 /**
  * Renders a markdown string into a {@link SimpleViewOnlyStyledModel} for the
- * incubator RichTextArea, mirroring how {@code MdUtils} renders markdown into
- * the Gluon rich text area. It supports the markdown constructs produced by
+ * incubator RichTextArea. Rendered notebook cells use
+ * {@link org.jtaccuino.core.ui.markdown.MarkdownStyledModel} instead, which
+ * covers the full set of markdown constructs a cell can contain; this one is
+ * tailored to javadoc. It supports the markdown constructs produced by
  * {@link JavadocHtmlToMarkdown}: paragraphs, headings, bold/italic emphasis,
  * inline code, fenced code blocks and bullet lists. Styling comes from the
  * shared {@link JavadocStyles} tokens so the whole popup has one look.
@@ -50,9 +52,7 @@ final class MarkdownToStyledModel {
     }
 
     static void renderInto(String markdown, SimpleViewOnlyStyledModel model) {
-        var parser = Parser.builder().build();
-        var document = parser.parse(markdown == null ? "" : markdown);
-        new Walker(model).walkChildren(document);
+        new Walker(model).walkChildren(MarkdownParser.parse(markdown));
     }
 
     private static final class Walker {

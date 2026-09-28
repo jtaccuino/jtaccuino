@@ -467,6 +467,13 @@ AUTHOR: ShopWare
 
 }
 
+/* The rich text area draws a run highlight as a filled Path, so an inline code
+   span gets its background from -fx-fill rather than -fx-background-color. */
+.markdown-render .text-highlight-1 {
+    -fx-fill: #E8EBEF;
+    -fx-stroke-width: 0;
+}
+
 .java-cell-output {
     /*-fx-padding: 5px 0px 5cpx 0px;*/
     -fx-spacing: 5px;
@@ -576,13 +583,13 @@ AUTHOR: ShopWare
     -fx-translate-y: 2;
 }
 
-.list-cell {
+.completion-list .list-cell {
     -fx-padding: 3px 5px;
     -fx-font-family: "Monaspace Argon";
     -fx-font-size: 11;
 }
 
-.list-cell.type-matches .completion-name {
+.completion-list .list-cell.type-matches .completion-name {
     -fx-font-weight: bold;
 }
 

@@ -15,33 +15,30 @@
  */
 package org.jtaccuino.core.ui.controls;
 
-import com.gluonhq.richtextarea.RichTextArea;
-import com.gluonhq.richtextarea.model.Document;
 import java.util.Optional;
-import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.event.ActionEvent;
-import javafx.scene.Group;
-import javafx.scene.control.ListCell;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Region;
 import javafx.util.Subscription;
+import jfx.incubator.scene.control.richtext.RichTextArea;
+import jfx.incubator.scene.control.richtext.model.SimpleViewOnlyStyledModel;
 
+/**
+ * A markdown cell that can show either its source or its rendered form.
+ *
+ * <p>The rendered form is an incubator {@link RichTextArea} configured with
+ * {@code useContentHeight}, so it reports a preferred height derived from its
+ * own content. Nothing here measures control internals: replacing the model
+ * invalidates the layout and the owning cell sizes itself again.
+ */
 public final class MarkdownControl extends InputControl {
-
-    private final static double RTA_LINE_HEIGHT = 25;
-
-    private Group group;
-
-    private final double padding = 0;
-    private final double MIN_WIDTH = 100;
-    private double inputPadding = 0;
 
     private RichTextArea mdRenderArea;
     private final SimpleBooleanProperty mdRenderAreaFocusedProperty = new SimpleBooleanProperty();
 
-    private Subscription heightSubscription = null;
-    private Subscription widthSubscription = null;
+    private Subscription renderedViewSubscription = null;
 
     public MarkdownControl(int cellNumber) {
         super(cellNumber, Type.MARKDOWN);
@@ -52,105 +49,97 @@ public final class MarkdownControl extends InputControl {
     }
 
     public Optional<RichTextArea> getMdRenderArea() {
-        return Optional.of(mdRenderArea);
+        return Optional.ofNullable(mdRenderArea);
     }
 
     @Override
     public void requestFocus() {
-        if (getInput().isVisible()) {
-            getInput().requestFocus();
+        if (mdRenderArea != null) {
+            mdRenderArea.requestFocus();
         } else {
-            getMdRenderArea().ifPresent(rta -> rta.requestFocus());
+            getInput().requestFocus();
         }
     }
 
-    private void recalculatePreviewRTA(double width) {
-        if (mdRenderArea == null) {
+    /**
+     * The view state is tracked by the presence of the render area: the source
+     * editor is only removed from the children, so its visible flag would still
+     * report true.
+     */
+    public boolean isRendered() {
+        return mdRenderArea != null;
+    }
+
+    public void switchToRenderedView(SimpleViewOnlyStyledModel model) {
+        if (mdRenderArea != null) {
+            updateRenderedView(model);
             return;
         }
-        double actualWidth = Math.max(MIN_WIDTH, width);
-        mdRenderArea.setPrefWidth(actualWidth - 2);
-        double textAreaHeight = computePreviewRTAPrefHeight(actualWidth) + inputPadding;
-        if (textAreaHeight < 30) {
-            textAreaHeight = 30;
-        }
-        mdRenderArea.setMinHeight(textAreaHeight);
-        mdRenderArea.setPrefHeight(textAreaHeight);
-        mdRenderArea.setMaxHeight(textAreaHeight);
-        mdRenderArea.requestLayout();
 
-        double newHeight = textAreaHeight + 2;
-        setMinHeight(newHeight);
-        setPrefHeight(newHeight);
-        setMaxHeight(newHeight);
-        requestLayout();
-    }
+        var renderArea = new RichTextArea(model);
+        renderArea.getStyleClass().add("markdown-render");
+        renderArea.setEditable(false);
+        renderArea.setWrapText(true);
+        // Stretch to the control width, exactly like the source editor does,
+        // so the rendered cell spans the full notebook width instead of
+        // collapsing to the width of its longest line.
+        AnchorPane.setLeftAnchor(renderArea, 0d);
+        AnchorPane.setRightAnchor(renderArea, 0d);
+        // Let the control size itself from its content instead of anyone
+        // measuring it from the outside.
+        renderArea.setUseContentHeight(true);
+        renderArea.setPrefHeight(Region.USE_COMPUTED_SIZE);
 
-    private double computePreviewRTAPrefHeight(double width) {
-        if (group == null) {
-            group = (Group) mdRenderArea.lookup(".sheet");
-        }
-        if (null != group) {
-            double sumCellHeight = group.getChildren().stream()
-                    .filter(ListCell.class::isInstance)
-                    .map(ListCell.class::cast)
-                    .filter(cell -> cell.getGraphic() != null)
-                    .mapToDouble(n -> n.prefHeight(width))
-                    .sum();
-            return sumCellHeight;
-        }
-        return RTA_LINE_HEIGHT;
-    }
+        mdRenderArea = renderArea;
 
-    public void updateRenderedView(Document doc) {
-        if (null != mdRenderArea) {
-            mdRenderArea.getActionFactory().open(doc).execute(new ActionEvent());
-        }
-    }
-
-    public void switchToRenderedView(Document doc) {
-        mdRenderArea = new RichTextArea();
-
-        // external padding + 2 pixels from border width
-        inputPadding = mdRenderArea.getPadding().getTop() + mdRenderArea.getPadding().getBottom() + 2;
-        mdRenderArea.setTranslateX(padding);
-        mdRenderArea.setTranslateY(padding);
-
-//        rta.prefWidthProperty().bind(Bindings.subtract(this.control.parentBox.widthProperty(), 20));
-//        rta.maxWidthProperty().bind(Bindings.subtract(this.control.parentBox.widthProperty(), 20));
-//        rta.contentAreaWidthProperty().bind(Bindings.subtract(this.control.parentBox.widthProperty(), 20));
-
-        mdRenderArea.documentProperty().subscribe(d
-                -> Platform.runLater(()
-                -> recalculatePreviewRTA(Math.max(MIN_WIDTH, getWidth()))));
-
-        mdRenderArea.setEditable(false);
-        mdRenderArea.addEventFilter(MouseEvent.MOUSE_CLICKED, t -> {
-            if (1 == t.getClickCount() && t.isShiftDown()) {
-                getChildren().remove(mdRenderArea);
-                heightSubscription.unsubscribe();
-                widthSubscription.unsubscribe();
-                getInput().setManaged(true);
-                getChildren().add(getInput());
-                mdRenderArea = null;
-                group = null;
-                t.consume();
-            }
-        });
-        heightSubscription = mdRenderArea.fullHeightProperty().subscribe((h) -> recalculatePreviewRTA(getWidth()));
-        widthSubscription = widthProperty().subscribe((w) -> recalculatePreviewRTA(w.doubleValue()));
-
-        //getChildren().remove(getInput());
+        getInput().setVisible(false);
         getInput().setManaged(false);
         getChildren().remove(getInput());
-        getChildren().add(mdRenderArea);
-        mdRenderArea.documentProperty().subscribe((ov, nv) -> {
-            if (nv != null) {
-                recalculatePreviewRTA(Math.max(MIN_WIDTH, getWidth()));
+        getChildren().add(renderArea);
+
+        mdRenderAreaFocusedProperty.bind(renderArea.focusedProperty());
+
+        // Shift-click is the established way back into the source.
+        var shiftClick = new javafx.event.EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+                if (event.getClickCount() == 1 && event.isShiftDown()) {
+                    switchToSourceView();
+                    event.consume();
+                }
             }
-        });
-        mdRenderArea.getActionFactory().open(doc).execute(new ActionEvent());
+        };
+        renderArea.addEventFilter(MouseEvent.MOUSE_CLICKED, shiftClick);
+
+        renderedViewSubscription = () -> renderArea.removeEventFilter(MouseEvent.MOUSE_CLICKED, shiftClick);
+    }
+
+    public void updateRenderedView(SimpleViewOnlyStyledModel model) {
+        if (mdRenderArea != null) {
+            mdRenderArea.setModel(model);
+            // Replacing the model does not invalidate the layout by itself, and
+            // the preferred height is derived from the content during layout.
+            mdRenderArea.requestLayout();
+        }
+    }
+
+    public void switchToSourceView() {
+        var renderArea = mdRenderArea;
+        if (renderArea == null) {
+            return;
+        }
+        if (renderedViewSubscription != null) {
+            renderedViewSubscription.unsubscribe();
+            renderedViewSubscription = null;
+        }
         mdRenderAreaFocusedProperty.unbind();
-        mdRenderAreaFocusedProperty.bind(mdRenderArea.focusedProperty());
+        mdRenderAreaFocusedProperty.set(false);
+
+        getChildren().remove(renderArea);
+        mdRenderArea = null;
+        getInput().setManaged(true);
+        getChildren().add(getInput());
+        // Makes the visible toggle fire the editor focus listener.
+        getInput().setVisible(true);
     }
 }

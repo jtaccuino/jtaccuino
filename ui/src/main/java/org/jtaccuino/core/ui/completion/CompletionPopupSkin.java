@@ -44,6 +44,7 @@ class CompletionPopupSkin implements Skin<CompletionPopup> {
     public CompletionPopupSkin(CompletionPopup control) {
         this.control = control;
         completionList = new ListView<>(control.getSuggestions());
+        completionList.getStyleClass().add("completion-list");
         selectionModel = new CompletionSelectionModel(control.getSuggestions());
         completionList.setSelectionModel(selectionModel);
 

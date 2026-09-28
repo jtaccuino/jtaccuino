@@ -21,10 +21,10 @@ License: BSD-2-Clause license
 
 flexmark-java is a Java implementation of CommonMark (spec 0.28) parser using the blocks first, inlines after Markdown parsing architecture.
 
-#### GluonHQ RichTextArea
+#### Gluon Emoji
 License: GPL-3.0 license
 
-Gluon presents a new JavaFX control, created with Java and JavaFX standard APIs, called the RichTextArea control. RichTextArea is a text input control which provides rich text features along with emoji, and non-text objects like images, tables and hyperlinks.
+Emoji support for JavaFX, used to render emoji shortcodes in markdown.
 
 #### GemsFX
 License: Apache-2.0 license

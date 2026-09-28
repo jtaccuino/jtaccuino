@@ -15,17 +15,10 @@
  */
 package org.jtaccuino.core.ui;
 
-import org.jtaccuino.rta.StyleableMarkdown;
-import com.gluonhq.richtextarea.Selection;
-import com.gluonhq.richtextarea.model.DecorationModel;
-import com.gluonhq.richtextarea.model.Document;
-import com.gluonhq.richtextarea.model.ParagraphDecoration;
-import com.gluonhq.richtextarea.model.TextDecoration;
 import java.util.List;
 import java.util.Objects;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableValue;
 import javafx.css.CssMetaData;
@@ -40,12 +33,12 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import java.util.List;
 import jfx.incubator.scene.control.input.KeyBinding;
 import jfx.incubator.scene.control.richtext.model.StyledTextModel;
+import org.jtaccuino.core.ui.markdown.MarkdownStyle;
+import org.jtaccuino.core.ui.markdown.MarkdownStyledModel;
 import org.jtaccuino.core.ui.api.CellData;
 import org.jtaccuino.core.ui.controls.MarkdownControl;
-import org.jtaccuino.rta.MdUtils;
 
 public class MarkdownCellFactory implements CellFactory {
 
@@ -55,7 +48,7 @@ public class MarkdownCellFactory implements CellFactory {
         return cell;
     }
 
-    public static class MarkdownCell extends Sheet.Cell implements StyleableMarkdown {
+    public static class MarkdownCell extends Sheet.Cell {
 
         private static final StyleablePropertyFactory<MarkdownCell> FACTORY = new StyleablePropertyFactory<>(MarkdownCell.getClassCssMetaData());
 
@@ -89,7 +82,6 @@ public class MarkdownCellFactory implements CellFactory {
             return (ObservableValue<Font>) markdownBaseFont;
         }
 
-        @Override
         public final Font getMarkdownBaseFont() {
             return markdownBaseFont.getValue();
         }
@@ -108,7 +100,6 @@ public class MarkdownCellFactory implements CellFactory {
             return (ObservableValue<Font>) markdownHeadingOneFont;
         }
 
-        @Override
         public final Font getMarkdownHeadingOneFont() {
             return markdownHeadingOneFont.getValue();
         }
@@ -127,7 +118,6 @@ public class MarkdownCellFactory implements CellFactory {
             return (ObservableValue<Font>) markdownHeadingTwoFont;
         }
 
-        @Override
         public final Font getMarkdownHeadingTwoFont() {
             return markdownHeadingTwoFont.getValue();
         }
@@ -146,7 +136,6 @@ public class MarkdownCellFactory implements CellFactory {
             return (ObservableValue<Font>) markdownHeadingThreeFont;
         }
 
-        @Override
         public final Font getMarkdownHeadingrThreeFont() {
             return markdownHeadingThreeFont.getValue();
         }
@@ -165,7 +154,6 @@ public class MarkdownCellFactory implements CellFactory {
             return (ObservableValue<Font>) markdownHeadingFourFont;
         }
 
-        @Override
         public final Font getMarkdownHeadingrFourFont() {
             return markdownHeadingFourFont.getValue();
         }
@@ -184,7 +172,6 @@ public class MarkdownCellFactory implements CellFactory {
             return (ObservableValue<Font>) markdownHeadingFiveFont;
         }
 
-        @Override
         public final Font getMarkdownHeadingFiveFont() {
             return markdownHeadingFiveFont.getValue();
         }
@@ -203,7 +190,6 @@ public class MarkdownCellFactory implements CellFactory {
             return (ObservableValue<Font>) markdownHeadingSixFont;
         }
 
-        @Override
         public final Font getMarkdownHeadingSixFont() {
             return markdownHeadingSixFont.getValue();
         }
@@ -222,7 +208,6 @@ public class MarkdownCellFactory implements CellFactory {
             return (ObservableValue<Font>) markdownMonospaceFont;
         }
 
-        @Override
         public final Font getMarkdownMonospaceFont() {
             return markdownMonospaceFont.getValue();
         }
@@ -241,7 +226,6 @@ public class MarkdownCellFactory implements CellFactory {
             return (ObservableValue<Font>) markdownEmphasisFont;
         }
 
-        @Override
         public final Font getMarkdownEmphasisFont() {
             return markdownEmphasisFont.getValue();
         }
@@ -254,13 +238,12 @@ public class MarkdownCellFactory implements CellFactory {
         private final StyleableProperty<Font> markdownEmphasisFont
                 = FACTORY.createStyleableFontProperty(this, "markdownEmphasisFont", "-markdown-emphasis-font", f -> f.markdownEmphasisFont);
 
-        // Strong Emphasis font styling for markdown rendering
+        // Strong emphasis font styling for markdown rendering
         @SuppressWarnings("unchecked")
         public ObservableValue<Font> markdownStrongEmphasisFontProperty() {
             return (ObservableValue<Font>) markdownStrongEmphasisFont;
         }
 
-        @Override
         public final Font getMarkdownStrongEmphasisFont() {
             return markdownStrongEmphasisFont.getValue();
         }
@@ -273,13 +256,12 @@ public class MarkdownCellFactory implements CellFactory {
         private final StyleableProperty<Font> markdownStrongEmphasisFont
                 = FACTORY.createStyleableFontProperty(this, "markdownStrongEmphasisFont", "-markdown-strong-emphasis-font", f -> f.markdownStrongEmphasisFont);
 
-        // Strong Emphasis font styling for markdown rendering
+        // Strikethrough font styling for markdown rendering
         @SuppressWarnings("unchecked")
         public ObservableValue<Font> markdownStrikethroughFontProperty() {
             return (ObservableValue<Font>) markdownStrikethroughFont;
         }
 
-        @Override
         public final Font getMarkdownStrikethroughFont() {
             return markdownStrikethroughFont.getValue();
         }
@@ -293,7 +275,7 @@ public class MarkdownCellFactory implements CellFactory {
                 = FACTORY.createStyleableFontProperty(this, "markdownStrikethroughFont", "-markdown-strikethrough-font", f -> f.markdownStrikethroughFont);
 
         @Override
-        protected Skin<?> createDefaultSkin() {
+        public Skin<?> createDefaultSkin() {
             return new MarkdownCellSkin(this);
         }
 
@@ -332,6 +314,8 @@ public class MarkdownCellFactory implements CellFactory {
         private final MarkdownCell control;
         private final BorderPane pane;
         private final MarkdownControl inputControl;
+
+        private final InvalidationListener styleListener;
 
         private MarkdownCellSkin(MarkdownCell markdownCell) {
             super(markdownCell);
@@ -391,6 +375,39 @@ public class MarkdownCellFactory implements CellFactory {
             AnchorPane.setTopAnchor(toolbar, 0d);
 
             pane.setCenter(inputControl);
+
+            // Registered once per skin and removed in dispose(), so a cell that
+            // is executed repeatedly does not accumulate listeners.
+            this.styleListener = observable -> {
+                if (!inputControl.isRendered()) {
+                    return;
+                }
+                var style = markdownStyleOf(getSkinnable());
+                control.getSheet().executeAsync(
+                        () -> MarkdownStyledModel.render(control.getCellData().getSource(), style),
+                        model -> Platform.runLater(() -> inputControl.updateRenderedView(model)));
+            };
+            control.markdownBaseFontProperty().addListener(styleListener);
+        }
+
+        /**
+         * Snapshots the CSS derived fonts of a cell into a {@link MarkdownStyle}
+         * that can be used off the FX thread.
+         */
+        private static MarkdownStyle markdownStyleOf(MarkdownCell cell) {
+            return new MarkdownStyle(
+                    cell.getMarkdownBaseFont(),
+                    cell.getMarkdownMonospaceFont(),
+                    cell.getMarkdownEmphasisFont(),
+                    cell.getMarkdownStrongEmphasisFont(),
+                    cell.getMarkdownStrikethroughFont(),
+                    List.of(
+                            cell.getMarkdownHeadingOneFont(),
+                            cell.getMarkdownHeadingTwoFont(),
+                            cell.getMarkdownHeadingrThreeFont(),
+                            cell.getMarkdownHeadingrFourFont(),
+                            cell.getMarkdownHeadingFiveFont(),
+                            cell.getMarkdownHeadingSixFont()));
         }
 
         private void subscribeToModel(StyledTextModel model) {
@@ -403,21 +420,28 @@ public class MarkdownCellFactory implements CellFactory {
 
         @Override
         public void execute() {
-            if (inputControl.getInput().isVisible()) {
-                this.control.markdownBaseFontProperty().addListener(new InvalidationListener() {
-                    @Override
-                    public void invalidated(Observable observable) {
-                        var doc = MdUtils.render(control.getCellData().getSource(), getSkinnable());
-                        inputControl.updateRenderedView(doc);;
-                    }
-                });
-
-                this.control.getSheet().executeAsync(
-                        () -> MdUtils.render(this.control.getCellData().getSource(), this.getSkinnable()),
-                        doc -> Platform.runLater(() -> {
-                            inputControl.switchToRenderedView(doc);
-                        }));
-            }
+            var rendered = inputControl.isRendered();
+            // Move on only for a cell the user is editing; running the whole
+            // notebook also calls execute() on cells that are not focused.
+            var wasEditing = inputControl.getInput().isFocused();
+            // Read the style on the FX thread, then render off it: the
+            // renderer only touches fonts and the AST, but the style comes
+            // from styleable properties that are CSS derived.
+            var style = markdownStyleOf(getSkinnable());
+            this.control.getSheet().executeAsync(
+                    () -> MarkdownStyledModel.render(this.control.getCellData().getSource(), style),
+                    model -> Platform.runLater(() -> {
+                        if (rendered) {
+                            inputControl.updateRenderedView(model);
+                        } else {
+                            inputControl.switchToRenderedView(model);
+                            if (wasEditing) {
+                                // Focusing the rendered area is what advances to
+                                // the next cell.
+                                inputControl.requestFocus();
+                            }
+                        }
+                    }));
         }
 
         public void requestFocus() {
@@ -437,6 +461,7 @@ public class MarkdownCellFactory implements CellFactory {
 
         @Override
         public void dispose() {
+            control.markdownBaseFontProperty().removeListener(styleListener);
         }
 
         void markAsSelected(boolean isSelected) {
