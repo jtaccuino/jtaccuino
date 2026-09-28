@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,8 @@ import java.time.Month;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import javafx.application.Platform;
 import javafx.scene.control.TableView;
-import org.junit.jupiter.api.AfterAll;
+import org.jtaccuino.core.ui.FxTestRuntime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -36,17 +34,8 @@ public class CollectionRendererTest {
     }
 
     @BeforeAll
-    static void initFxRuntime() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        Platform.startup(() -> {
-            latch.countDown();
-        });
-        latch.await();
-    }
-
-    @AfterAll
-    static void shutdownFxRuntime() throws InterruptedException {
-        Platform.exit();
+    static void initFxRuntime() {
+        FxTestRuntime.start();
     }
 
     @Test

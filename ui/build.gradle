@@ -21,7 +21,7 @@ dependencies {
     javafx 'org.openjfx:jfx-incubator-richtext:' + versionJfxIncubatorRichtext + ':' + rootProject.javaFxPlatform
     javafx 'org.openjfx:jfx-incubator-input:' + versionJfxIncubatorInput + ':' + rootProject.javaFxPlatform
 
-    implementation 'com.gluonhq:rich-text-area:' + versionGluonhqRichTextArea
+    implementation 'com.gluonhq.emoji:emoji:' + versionGluonhqEmoji
     implementation 'com.vladsch.flexmark:flexmark-all:' + versionFlexmarkAll
 
     implementation 'jakarta.json:jakarta.json-api:' + versionJakartaJsonApi
