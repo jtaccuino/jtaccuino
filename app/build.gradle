@@ -73,6 +73,11 @@ task generateAppProperties(type: WriteProperties) {
 
 processResources {
     dependsOn generateAppProperties
+    // Render the cheat sheet on every build and bundle it into the application.
+    dependsOn ':cheatsheet:pdf'
+    from(project(':cheatsheet').layout.buildDirectory.file('cheat-sheet/JTaccuino-CheatSheet.pdf')) {
+        rename { 'cheat-sheet.pdf' }
+    }
 }
 
 compileJava {

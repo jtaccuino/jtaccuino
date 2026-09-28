@@ -1,0 +1,187 @@
+/*
+ * Print stylesheet for the JTaccuino cheat sheet.
+ *
+ * Rendered by the build time :cheatsheet:pdf task through openhtmltopdf.
+ * The title is drawn as a banner and the content is laid out in three fixed
+ * columns per A4 landscape page.
+ */
+
+@page {
+    size: A4 landscape;
+    margin: 8mm 8mm 9mm 8mm;
+}
+
+html {
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-size: 8.4pt;
+    line-height: 1.4;
+    color: #1f2328;
+}
+
+body {
+    margin: 0;
+}
+
+.banner {
+    background: #0b3d91;
+    color: #ffffff;
+    padding: 5mm 5mm 4mm 5mm;
+    border-radius: 3mm;
+    margin-bottom: 4mm;
+}
+.banner h1 {
+    font-size: 21pt;
+    margin: 0;
+    color: #ffffff;
+    letter-spacing: 0.3pt;
+}
+
+.banner p {
+    font-size: 9pt;
+    margin: 1.5mm 0 0 0;
+    color: #cbdcf7;
+}
+
+/* Inline code sitting on the dark banner must not inherit the light text. */
+.banner code {
+    background: #ffffff;
+    color: #0b3d91;
+}
+
+.banner strong {
+    color: #ffffff;
+}
+
+h1 {
+    font-size: 17pt;
+    margin: 0 0 2mm 0;
+    color: #0b3d91;
+}
+
+h2 {
+    font-size: 11pt;
+    margin: 4mm 0 2mm 0;
+    padding: 1.2mm 2.2mm;
+    border-radius: 1.5mm;
+    background: #1f6feb;
+    color: #ffffff;
+}
+
+h3 {
+    font-size: 9.6pt;
+    margin: 3mm 0 1.2mm 0;
+    padding-bottom: 0.6mm;
+    border-bottom: 1.5pt solid #cfe0f7;
+    color: #0b3d91;
+}
+
+p {
+    margin: 0 0 1.6mm 0;
+}
+
+ul,
+ol {
+    margin: 0 0 1.6mm 0;
+    padding-left: 4.6mm;
+}
+
+li {
+    margin: 0 0 0.7mm 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+li::marker {
+    color: #1f6feb;
+}
+
+strong {
+    color: #0b3d91;
+}
+
+code {
+    font-family: "DejaVu Sans Mono", "Courier New", monospace;
+    font-size: 8pt;
+    color: #1f2328;
+    background: #eef1f5;
+    border-radius: 0.8mm;
+    padding: 0 0.7mm;
+}
+
+pre {
+    font-family: "DejaVu Sans Mono", "Courier New", monospace;
+    font-size: 7.5pt;
+    line-height: 1.28;
+    background: #f6f8fa;
+    border-left: 3pt solid #1f6feb;
+    border-radius: 1.5mm;
+    padding: 1.6mm 2mm;
+    margin: 0 0 1.8mm 0;
+    white-space: pre-wrap;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+pre code {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    font-size: 7.5pt;
+}
+
+.page {
+    break-before: page;
+}
+
+.page.first {
+    break-before: auto;
+}
+
+table.layout {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+td.col {
+    width: 33.33%;
+    vertical-align: top;
+    padding: 0 4mm 0 0;
+    border: 0;
+}
+
+td.col table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 2.2mm 0;
+    font-size: 7.9pt;
+}
+
+td.col th {
+    background: #0b3d91;
+    color: #ffffff;
+    border: 1px solid #0b3d91;
+    padding: 1mm 1.5mm;
+    text-align: left;
+}
+
+td.col td {
+    border: 1px solid #d0d7de;
+    padding: 0.8mm 1.5mm;
+    vertical-align: top;
+}
+
+td.col tr:nth-child(even) td {
+    background: #f6f8fa;
+}
+
+a {
+    color: #1f6feb;
+    text-decoration: none;
+}
+
+hr {
+    border: 0;
+    border-top: 1px dashed #c9d1d9;
+    margin: 2.5mm 0;
+}
