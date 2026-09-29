@@ -25,6 +25,12 @@ import javafx.application.Platform;
  * is torn down by {@link Platform#exit()}, after which {@code Font.font(...)}
  * fails with a {@link NullPointerException}. Gradle terminates the worker
  * process at the end of the run, so there is nothing to clean up here.
+ *
+ * <p>Implicit exit is disabled because a test that hides the last {@link Stage}
+ * would otherwise make the runtime call {@link Platform#exit()} on its own.
+ * Every later {@link Platform#runLater(Runnable)} would then be dropped
+ * silently and the test would fail with a "FX task did not complete" timeout
+ * instead of a real assertion error.
  */
 public final class FxTestRuntime {
 
@@ -34,10 +40,16 @@ public final class FxTestRuntime {
     public static void start() {
         try {
             var latch = new CountDownLatch(1);
-            Platform.startup(latch::countDown);
+            Platform.startup(() -> {
+                Platform.setImplicitExit(false);
+                latch.countDown();
+            });
             latch.await();
+            Platform.setImplicitExit(false);
         } catch (IllegalStateException alreadyStarted) {
-            // The toolkit is already running for this test JVM.
+            // The toolkit is already running for this test JVM, but implicit
+            // exit still has to be turned off.
+            Platform.setImplicitExit(false);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             throw new AssertionError(interrupted);
