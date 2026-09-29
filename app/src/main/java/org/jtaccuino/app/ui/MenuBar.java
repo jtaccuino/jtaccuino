@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import org.jtaccuino.app.studio.actions.AboutAction;
+import org.jtaccuino.app.studio.actions.CheatSheetAction;
 import org.jtaccuino.app.studio.actions.ExecuteNotebookAction;
 import org.jtaccuino.app.studio.actions.ExportAction;
 import org.jtaccuino.app.studio.actions.NewAction;
@@ -110,8 +111,11 @@ public class MenuBar {
         );
 
         var helpMenu = new Menu("Help");
+        var cheatSheet = createMenuItem(CheatSheetAction.INSTANCE);
         var about = createMenuItem(AboutAction.INSTANCE);
         helpMenu.getItems().addAll(
+                cheatSheet,
+                new SeparatorMenuItem(),
                 about
         );
 

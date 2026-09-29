@@ -22,7 +22,11 @@ dependencies {
     javafx 'org.openjfx:jfx-incubator-input:' + versionJfxIncubatorInput + ':' + rootProject.javaFxPlatform
 
     implementation 'com.gluonhq.emoji:emoji:' + versionGluonhqEmoji
-    implementation 'com.vladsch.flexmark:flexmark-all:' + versionFlexmarkAll
+    implementation('com.vladsch.flexmark:flexmark-all:' + versionFlexmarkAll) {
+        // The PDF rendering stack (openhtmltopdf, PDFBox) is only used at build
+        // time by the cheatsheet module and must not ship with the application.
+        exclude group: 'com.vladsch.flexmark', module: 'flexmark-pdf-converter'
+    }
 
     implementation 'jakarta.json:jakarta.json-api:' + versionJakartaJsonApi
     implementation 'jakarta.json.bind:jakarta.json.bind-api:' + versionJakartaJsonBindApi
