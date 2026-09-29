@@ -1,3 +1,7 @@
+description = 'JTaccuino JShell wrapper and extension SPI'
+
+apply from: rootProject.file('gradle/publishing.gradle')
+
 dependencies {
     implementation 'org.apache.maven:maven-model:' + versionMaven
     implementation 'org.apache.maven:maven-settings:' + versionMaven

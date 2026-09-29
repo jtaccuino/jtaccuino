@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package org.jtaccuino.app.studio.actions;
 
 import javafx.event.ActionEvent;
-import org.jtaccuino.app.common.NotebookPersistence;
+import org.jtaccuino.notebook.NotebookPersistence;
 import org.jtaccuino.core.ui.api.AbstractAction;
 import org.jtaccuino.core.ui.api.SheetManager;
 
@@ -30,7 +30,7 @@ import javafx.scene.control.TextInputDialog;
 import javafx.stage.Modality;
 import javafx.stage.StageStyle;
 import org.jtaccuino.app.studio.WindowManager;
-import org.jtaccuino.app.studio.util.Util;
+import org.jtaccuino.notebook.NotebookUtil;
 
 public final class OpenRemoteAction extends AbstractAction {
 
@@ -55,7 +55,7 @@ public final class OpenRemoteAction extends AbstractAction {
     }
 
     private void openRemoteFile(String url) {
-        if (Util.isValidUrl(url) && url.toLowerCase(Locale.ROOT).endsWith(".ipynb")) {
+        if (NotebookUtil.isValidUrl(url) && url.toLowerCase(Locale.ROOT).endsWith(".ipynb")) {
             try {
                 SheetManager.getDefault().open(NotebookPersistence.INSTANCE.of(new URI(url)));
             } catch (URISyntaxException ex) {

@@ -46,7 +46,15 @@ jobs:
         with:
           operation: 'read'
           file-path: 'app/gradle.properties'
-          keys: 'additional_jdk_modules, version, app_version'
+          keys: 'additional_jdk_modules, app_version'
+
+      - name: Read version from root gradle.properties
+        id: root-gradle-props
+        uses: kurt-code/gha-properties@v0.0.2
+        with:
+          operation: 'read'
+          file-path: 'gradle.properties'
+          keys: 'version'
 
       - name: Setup Java 26
         id: java26
@@ -115,7 +123,7 @@ jobs:
           MACSIGN_PREFIX: ${{ secrets.GLUON_MACSIGN_PREFIX }}
           MACSIGN_USER: ${{ secrets.GLUON_MACSIGN_USER }}
           JPACKAGE_HOME: ${{ steps.jpackage.outputs.JPACKAGE_HOME }}
-          VERSION: ${{ steps.app-gradle-props.outputs.version }}
+          VERSION: ${{ steps.root-gradle-props.outputs.version }}
           APP_VERSION: ${{ steps.app-gradle-props.outputs.app_version }}
           ADDITIONAL_JDK_MODULES: ${{ steps.app-gradle-props.outputs.additional_jdk_modules }}          
 
@@ -130,7 +138,7 @@ jobs:
             --type rpm
           echo path_rpm=target/installer/jtaccuinostudio-${{ steps.app-gradle-props.outputs.app_version }}-0.x86_64.rpm >> $GITHUB_OUTPUT
         env:
-          VERSION: ${{ steps.app-gradle-props.outputs.version }}
+          VERSION: ${{ steps.root-gradle-props.outputs.version }}
           APP_VERSION: ${{ steps.app-gradle-props.outputs.app_version }}
           ADDITIONAL_JDK_MODULES: ${{ steps.app-gradle-props.outputs.additional_jdk_modules }}          
 
@@ -142,7 +150,7 @@ jobs:
           call .github\scripts\build_app_windows.bat
           echo path=target\installer\JTaccuinoStudio-${{ steps.app-gradle-props.outputs.app_version }}.msi >> %GITHUB_OUTPUT%
         env:
-          VERSION: ${{ steps.app-gradle-props.outputs.version }}
+          VERSION: ${{ steps.root-gradle-props.outputs.version }}
           APP_VERSION: ${{ steps.app-gradle-props.outputs.app_version }}
           ADDITIONAL_JDK_MODULES: ${{ steps.app-gradle-props.outputs.additional_jdk_modules }}                    
 

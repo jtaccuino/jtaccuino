@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 JTaccuino Contributors
+ * Copyright 2024-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import org.jtaccuino.core.ui.actions.InsertCellAboveAction;
 import org.jtaccuino.core.ui.actions.InsertCellBelowAction;
 import org.jtaccuino.core.ui.actions.MoveCellDownAction;
 import org.jtaccuino.core.ui.actions.MoveCellUpAction;
-import org.jtaccuino.core.ui.api.CellData;
+import org.jtaccuino.notebook.CellData;
 
 public interface CellFactory {
 

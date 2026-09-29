@@ -17,14 +17,12 @@ package org.jtaccuino.core.ui;
 
 import org.jtaccuino.core.ui.completion.CompletionItem;
 import org.jtaccuino.core.ui.completion.CompletionPopup;
-import org.jtaccuino.core.ui.api.CellData;
+import org.jtaccuino.notebook.CellData;
+import org.jtaccuino.notebook.CellOutputRecorder;
 import java.io.ByteArrayInputStream;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -75,8 +73,9 @@ import org.jtaccuino.core.ui.controls.JavaControl;
 import org.jtaccuino.core.ui.documentation.DocumentationItem;
 import org.jtaccuino.core.ui.documentation.JavadocPopup;
 import org.jtaccuino.core.ui.documentation.DocumentationPopup;
-import org.jtaccuino.core.ui.extensions.DisplayExtension;
-import org.jtaccuino.core.ui.extensions.PrintExtension;
+import org.jtaccuino.core.ui.extensions.GuiSinks;
+import org.jtaccuino.notebook.DisplayExtension;
+import org.jtaccuino.notebook.PrintExtension;
 import org.jtaccuino.jshell.ReactiveJShell;
 
 public class JavaCellFactory implements CellFactory {
@@ -450,9 +449,15 @@ public class JavaCellFactory implements CellFactory {
             var printManager = shell.getExtension(PrintExtension.class);
             shell.evalAsync(() -> {
                 Platform.runLater(() -> {
-                    displayManager.setActiveOutput(outputBox);
+                    // The sheet's recorder wraps the sink for this cell, so the
+                    // IDE shows the output as before while the displayed object
+                    // is remembered for a later export.
+                    var displaySink = control.getSheet().getDisplaySink();
+                    displaySink.setDelegate(GuiSinks.forOutputBox(outputBox));
+                    displaySink.startCell(control.getCellData());
+                    displayManager.setDisplaySink(displaySink);
                     displayManager.setCurrentCellData(control.getCellData());
-                    printManager.setActiveStreamResult(streamResult);
+                    printManager.setPrintSink(GuiSinks.forLabel(streamResult));
                     printManager.setCurrentCellData(control.getCellData());
                     control.getCellData().getOutputData().clear();
                     streamResult.setText("");
@@ -488,14 +493,11 @@ public class JavaCellFactory implements CellFactory {
                                     execResult.setVisible(true);
                                     this.control.getSheet().moveFocusToNextCell(control);
                                     evalResult.lastValueAsString().ifPresent(s -> {
-                                        var resultData = evalResult.typeOfLastValue().get() + ": " +
-                                                s.replace("\\n", "\n").replace("\\\"","\"");
+                                        var resultData = CellOutputRecorder.resultText(evalResult.typeOfLastValue().get(), s);
                                         var result = new Label(resultData);
                                         result.getStyleClass().add("jshell_eval_result");
                                         outputBox.getChildren().add(result);
-                                        control.getCellData().getOutputData().add(
-                                                CellData.OutputData.of(org.jtaccuino.core.ui.api.CellData.OutputData.OutputType.DISPLAY_DATA,
-                                                        Map.of("text/plain", resultData)));
+                                        CellOutputRecorder.record(control.getCellData(), resultData);
                                     });
                                 });
                             } else {
@@ -503,25 +505,14 @@ public class JavaCellFactory implements CellFactory {
                                         .filter(event -> null != event.exception())
                                         .map(event -> event.exception())
                                         .forEach(exception -> {
-                                            var realEx = (null != exception.getCause()) ? exception.getCause() : exception;
-                                            var text = switch (realEx) {
-                                                case EvalException e ->
-                                                    e.getExceptionClassName();
-                                                default ->
-                                                    realEx.getClass().getName();
-                                            } + ": " + realEx.getMessage();
-                                            var t = realEx;
-                                            do {
-                                                text += "\n" + Arrays.stream(realEx.getStackTrace())
-                                                        .limit(realEx.getStackTrace().length > 2 ? realEx.getStackTrace().length - 2 : realEx.getStackTrace().length)
-                                                        .map(ste -> "\t" + ste.toString())
-                                                        .collect(Collectors.joining("\n"));
-                                                t = t.getCause();
-                                            } while (t != null);
-                                            var l = new Label(text);
+                                            var errorText = CellOutputRecorder.exceptionText(exception);
+                                            var l = new Label(errorText);
                                             l.getStyleClass().add("jshell_eval_exception");
                                             l.setWrapText(true);
-                                            Platform.runLater(() -> outputBox.getChildren().add(l));
+                                            Platform.runLater(() -> {
+                                                outputBox.getChildren().add(l);
+                                                CellOutputRecorder.record(control.getCellData(), errorText);
+                                            });
                                         });
                                 evalResult.snippetEventsCurrent().stream()
                                         .filter(event -> Snippet.Kind.ERRONEOUS == event.snippet().kind()
@@ -532,35 +523,28 @@ public class JavaCellFactory implements CellFactory {
                                         .forEach(event -> {
                                             this.control.getSheet().getReactiveJShell().diagnose(event.snippet())
                                                     .forEachOrdered(diag -> {
-                                                        var message = new StringBuilder()
-                                                                .append(diag.getMessage(Locale.getDefault()))
-                                                                .append('\n')
-                                                                .append(event.snippet().source());
-                                                        if (diag.getEndPosition() > 0 && diag.getEndPosition() - diag.getStartPosition() > 1) {
-                                                            message.append('\n')
-                                                                    .repeat(' ', (int) diag.getStartPosition())
-                                                                    .append("^")
-                                                                    .repeat('-', (int) (diag.getEndPosition() - diag.getStartPosition() - 1))
-                                                                    .append('^');
-                                                        }
-                                                        message.append('\n')
-                                                                .repeat(' ', (int) diag.getPosition())
-                                                                .append('^');
-                                                        var l = new Label(message.toString());
+                                                        var diagnosticText = CellOutputRecorder.diagnosticText(event.snippet().source(), diag);
+                                                        var l = new Label(diagnosticText);
                                                         l.getStyleClass().add("jshell_eval_erroneous");
                                                         l.setTooltip(new Tooltip(diag.getCode()));
-                                                        Platform.runLater(() -> outputBox.getChildren().add(l));
+                                                        Platform.runLater(() -> {
+                                                            outputBox.getChildren().add(l);
+                                                            CellOutputRecorder.record(control.getCellData(), diagnosticText);
+                                                        });
                                                     });
                                             if ((event.status() == Snippet.Status.RECOVERABLE_NOT_DEFINED
                                                     || event.status() == Snippet.Status.RECOVERABLE_DEFINED)
                                                     && event.snippet() instanceof DeclarationSnippet d) {
-                                                var message = "Declaration not useable until\n";
                                                 var unresolveds = this.control.getSheet().getReactiveJShell().unresolveds(d)
                                                         .map(s -> "    " + s + "\n")
                                                         .collect(Collectors.joining());
-                                                var l = new Label(message + unresolveds + "are defined");
+                                                var unresolvedText = CellOutputRecorder.unresolvedText(unresolveds);
+                                                var l = new Label(unresolvedText);
                                                 l.getStyleClass().add("jshell_eval_erroneous");
-                                                Platform.runLater(() -> outputBox.getChildren().add(l));
+                                                Platform.runLater(() -> {
+                                                    outputBox.getChildren().add(l);
+                                                    CellOutputRecorder.record(control.getCellData(), unresolvedText);
+                                                });
                                             }
                                         });
                                 Platform.runLater(() -> {

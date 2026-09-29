@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import org.jtaccuino.app.common.NotebookPersistence;
+import org.jtaccuino.notebook.NotebookPersistence;
 import org.jtaccuino.app.persistence.FilePersistence;
-import org.jtaccuino.app.studio.util.Util;
+import org.jtaccuino.notebook.NotebookUtil;
 import org.jtaccuino.core.ui.Sheet;
 import org.jtaccuino.core.ui.api.SheetManager;
 import org.jtaccuino.core.ui.spi.SheetManagerSPI;
@@ -37,7 +37,7 @@ public class SheetManagerSPIImpl extends SheetManagerSPI {
     private ReadOnlyListWrapper<SheetManager.RecentFile> unmodifiableRecentFiles = new ReadOnlyListWrapper<>(recentFiles);
 
     private static SheetManager.RecentFile from(URI uri) {
-        return new SheetManager.RecentFile(Util.getFileNamePartOf(uri.getPath()), uri);
+        return new SheetManager.RecentFile(NotebookUtil.getFileNamePartOf(uri.getPath()), uri);
     }
 
     @Override

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import javafx.scene.control.TableView;
 import org.jtaccuino.core.ui.FxTestRuntime;
+import org.jtaccuino.notebook.DisplayExtension;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

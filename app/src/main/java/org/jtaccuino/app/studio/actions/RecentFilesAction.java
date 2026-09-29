@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import org.jtaccuino.app.common.NotebookPersistence;
+import org.jtaccuino.notebook.NotebookPersistence;
 import org.jtaccuino.core.ui.api.AbstractAction;
 import org.jtaccuino.core.ui.api.Action;
 import org.jtaccuino.core.ui.api.DynamicAction;

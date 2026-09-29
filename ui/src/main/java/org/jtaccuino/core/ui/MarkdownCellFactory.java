@@ -37,7 +37,7 @@ import jfx.incubator.scene.control.input.KeyBinding;
 import jfx.incubator.scene.control.richtext.model.StyledTextModel;
 import org.jtaccuino.core.ui.markdown.MarkdownStyle;
 import org.jtaccuino.core.ui.markdown.MarkdownStyledModel;
-import org.jtaccuino.core.ui.api.CellData;
+import org.jtaccuino.notebook.CellData;
 import org.jtaccuino.core.ui.controls.MarkdownControl;
 
 public class MarkdownCellFactory implements CellFactory {

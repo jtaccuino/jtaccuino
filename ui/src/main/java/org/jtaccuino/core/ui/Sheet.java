@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 JTaccuino Contributors
+ * Copyright 2024-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,9 @@ import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
-import org.jtaccuino.core.ui.api.CellData;
-import org.jtaccuino.core.ui.api.Notebook;
+import org.jtaccuino.notebook.CellData;
+import org.jtaccuino.notebook.Notebook;
+import org.jtaccuino.notebook.RecordingDisplaySink;
 import org.jtaccuino.jshell.ReactiveJShell;
 import org.jtaccuino.jshell.ReactiveJShellProvider;
 
@@ -49,6 +50,7 @@ public class Sheet extends Control {
     private final UUID uuid;
     private int counter = 0;
     private final Notebook notebook;
+    private final RecordingDisplaySink displaySink = new RecordingDisplaySink();
 
     public static Sheet of(Notebook notebook) {
         return new Sheet(notebook);
@@ -63,6 +65,17 @@ public class Sheet extends Control {
                 activeCellNumberProperty.set(c.cellNumber);
             }
         });
+    }
+
+    /**
+     * The sink that both shows displayed output and remembers the objects, so
+     * that an export can offer a better representation than the stored picture.
+     *
+     * <p>It lives here because the sheet is the only thing that sees both the
+     * cell that displays and the notebook that exports.
+     */
+    public RecordingDisplaySink getDisplaySink() {
+        return displaySink;
     }
 
     public Notebook getNotebook() {

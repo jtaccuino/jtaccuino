@@ -8,7 +8,9 @@
 
 @page {
     size: A4 landscape;
-    margin: 8mm 8mm 9mm 8mm;
+    /* kept tight: the first page's columns just fit, and a taller printable
+       area leaves the forced page break with nothing to spill */
+    margin: 6mm 6mm 7mm 6mm;
 }
 
 html {
@@ -129,12 +131,17 @@ pre code {
     font-size: 7.5pt;
 }
 
+/*
+ * openhtmltopdf 1.0.10 does not understand the modern `break-before: page`
+ * and silently skips it, which lets one page's columns run into the previous
+ * page. The legacy `page-break-before` is the one it honours.
+ */
 .page {
-    break-before: page;
+    page-break-before: always;
 }
 
 .page.first {
-    break-before: auto;
+    page-break-before: auto;
 }
 
 table.layout {

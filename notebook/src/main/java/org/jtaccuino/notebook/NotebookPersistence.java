@@ -1,0 +1,115 @@
+/*
+ * Copyright 2025-2026 JTaccuino Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.jtaccuino.notebook;
+
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static org.jtaccuino.notebook.CellData.Type.CODE;
+
+import static org.jtaccuino.notebook.CellData.Type.MARKDOWN;
+
+public class NotebookPersistence {
+
+    public static NotebookPersistence INSTANCE = NotebookPersistence.singleton();
+
+    private static NotebookPersistence singleton() {
+        return new NotebookPersistence();
+    }
+
+    private NotebookPersistence() {
+    }
+
+    public NotebookImpl of() {
+        return new NotebookImpl(null, "Scratch", (URI) null);
+    }
+
+    public NotebookImpl of(URI uri) {
+        var jsonb = JsonbBuilder.create();
+        try (InputStreamReader reader = new InputStreamReader(uri.toURL().openStream(), StandardCharsets.UTF_8)) {
+            IpynbFormat ipynb = jsonb.fromJson(reader, IpynbFormat.class);
+            return new NotebookImpl(ipynb, NotebookUtil.getFileNamePartOf(uri.toString()), uri);
+        } catch (Exception ex) {
+            Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                jsonb.close();
+            } catch (Exception ex) {
+                Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        return null;
+    }
+
+    public void toFile(File selectedFile, List<CellData> cells) {
+        toFile(selectedFile, cells, true);
+    }
+
+    @SuppressWarnings("try")
+    public void toFile(File selectedFile, List<CellData> cells, boolean includeOutput) {
+        var config = new JsonbConfig();
+        config.setProperty(JsonbConfig.FORMATTING, true);
+        try (Jsonb jsonb = JsonbBuilder.create(config);
+                FileWriter writer = new FileWriter(selectedFile, StandardCharsets.UTF_8)) {
+            jsonb.toJson(toIpynbFormat(cells, includeOutput), writer);
+        } catch (Exception ex) {
+            Logger.getLogger(NotebookPersistence.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private IpynbFormat toIpynbFormat(List<CellData> cells, boolean includeOutput) {
+        return new IpynbFormat(
+                Map.of(
+                        "kernel_info", Map.of("name", "JTaccuino", "version", "0.1"),
+                        "language_info", Map.of("name", "Java", "version", System.getProperty("java.specification.version"))),
+                4, 5,
+                cells.stream()
+                        .filter(Predicate.not(CellData::isEmpty))
+                        .map(c -> convertToNotebookCell(c, includeOutput))
+                        .toList());
+    }
+
+    private IpynbFormat.Cell convertToNotebookCell(CellData cellData, boolean includeOutput) {
+        return switch (cellData.getType()) {
+            case CODE ->
+                new IpynbFormat.CodeCell(
+                cellData.getId().toString(),
+                cellData.getType().name().toLowerCase(Locale.ENGLISH),
+                Map.of(),
+                cellData.getSource(),
+                includeOutput ? cellData.getOutputData().stream().map(IpynbFormat.Output::from).toList() : List.of(),
+                0);
+            case MARKDOWN ->
+                new IpynbFormat.MarkdownCell(
+                cellData.getId().toString(),
+                cellData.getType().name().toLowerCase(Locale.ENGLISH),
+                Map.of(),
+                cellData.getSource());
+        };
+    }
+}

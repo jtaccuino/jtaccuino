@@ -32,6 +32,7 @@ dependencies {
     implementation 'jakarta.json.bind:jakarta.json.bind-api:' + versionJakartaJsonBindApi
 
     implementation project(':shell')
+    implementation project(':notebook')
     implementation project(':ui')
     implementation project(':extensions:deepnetts')
     implementation project(':extensions:dflib')

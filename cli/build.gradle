@@ -1,0 +1,101 @@
+/*
+ * Copyright 2026 JTaccuino Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+plugins {
+    id 'application'
+    // The CLI is published as one self-contained jar. A thin Maven artifact
+    // cannot resolve OpenJFX under a plain consumer (the POMs use a platform
+    // classifier), so jbang would fail to start it.
+    id 'com.gradleup.shadow' version '9.6.1'
+}
+
+description = 'JTaccuino headless command line notebook exporter'
+ext.publishShadow = true
+
+apply from: rootProject.file('gradle/publishing.gradle')
+
+configurations {
+    javafx {
+        description = 'Java FX libraries'
+    }
+    implementation {
+        extendsFrom configurations.javafx
+    }
+    runtime {
+        extendsFrom configurations.javafx
+    }
+}
+
+dependencies {
+    javafx 'org.openjfx:javafx-base:' + versionJavafx + ':' + rootProject.javaFxPlatform
+    javafx 'org.openjfx:javafx-graphics:' + versionJavafx + ':' + rootProject.javaFxPlatform
+    javafx 'org.openjfx:javafx-controls:' + versionJavafx + ':' + rootProject.javaFxPlatform
+
+    // The notebook engine plus the renderers and sinks. The renderers are the
+    // reason ui is here: display() finds them through the ServiceLoader, so
+    // without ui a headless export could not draw a chart or a table at all.
+    implementation project(':notebook')
+    implementation project(':ui')
+}
+
+application {
+    mainClass = 'org.jtaccuino.cli.Main'
+
+    // Matches the name the tool prints in its usage, so the installed script
+    // and the documentation agree.
+    applicationName = 'jtaccuino-cli'
+
+    // Headless JavaFX: the toolkit runs so a node can be snapshotted, but no
+    // window system, GPU or display is used. --enable-preview matches the
+    // desktop app, because some notebooks use preview features in their source.
+    applicationDefaultJvmArgs = [
+        '--enable-preview',
+        '--add-modules',
+        additional_jdk_modules,
+        '-Dglass.platform=headless',
+        '-Dprism.order=sw',
+        '--enable-native-access=ALL-UNNAMED',
+        '-Duser.language=en',
+    ]
+}
+
+run {
+    jvmArgs application.applicationDefaultJvmArgs
+}
+
+// The published CLI is the self-contained jar, so it becomes the main artifact
+// and the thin jar is kept only for local inspection.
+tasks.named('shadowJar') {
+    archiveClassifier = ''
+    // service files from every bundled module have to reach the transformer,
+    // so duplicates must be included rather than excluded before it runs
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    manifest {
+        attributes 'Main-Class': application.mainClass.get()
+        // JDK 24+ honours this when the jar is started with `java -jar`. jbang
+        // launches it with -cp instead, so it still prints the restricted
+        // method warning; use -R--enable-native-access=ALL-UNNAMED to silence it
+        attributes 'Enable-Native-Access': 'ALL-UNNAMED'
+    }
+    // NodeRenderer, MarkdownRepresentable and JShellExtension are discovered
+    // through the ServiceLoader, so the entries from every bundled module have
+    // to be concatenated rather than one copy winning
+    mergeServiceFiles()
+}
+
+tasks.named('jar') {
+    archiveClassifier = 'thin'
+}

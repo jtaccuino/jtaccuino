@@ -34,4 +34,5 @@ dependencies {
     runtimeOnly 'org.eclipse:yasson:' + versionYasson
 
     implementation project(':shell')
+    implementation project(':notebook')
 }

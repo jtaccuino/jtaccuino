@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 package org.jtaccuino.app.studio.actions;
 
 import java.io.File;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.stage.FileChooser;
 import org.jtaccuino.app.studio.WindowManager;
 import org.jtaccuino.core.ui.Sheet;
-import org.jtaccuino.core.ui.api.Notebook;
+import org.jtaccuino.notebook.Notebook;
 import org.jtaccuino.core.ui.api.SheetAction;
 import org.jtaccuino.core.ui.api.StatusDisplayer;
 
@@ -39,11 +42,26 @@ public final class ExportAction extends SheetAction {
         fileChooser.setTitle("Export Notebook File");
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Notebook Files", "*.ipynb"),
+                new FileChooser.ExtensionFilter("Markdown Files", "*.md"),
                 new FileChooser.ExtensionFilter("All Files", "*.*"));
         File selectedFile = fileChooser.showSaveDialog(WindowManager.getDefault().getMainWindow());
         if (null != selectedFile) {
-            sheet.getNotebook().export(Notebook.ExportMode.NO_OUTPUTS, selectedFile);
+            var exportMode = isMarkdownFile(selectedFile) ? Notebook.ExportMode.MARKDOWN : Notebook.ExportMode.NO_OUTPUTS;
+            try {
+                sheet.getNotebook().export(exportMode, selectedFile, sheet.getDisplaySink());
+            } catch (Exception ex) {
+                Logger.getLogger(ExportAction.class.getName()).log(Level.SEVERE, "Export failed", ex);
+                StatusDisplayer.display("Export failed: " + ex.getMessage() + ".");
+                return;
+            }
             StatusDisplayer.display("Exported notebook " + sheet.getNotebook().getDisplayName() + ".");
         }
+    }
+
+    private static boolean isMarkdownFile(File file) {
+        return Optional.ofNullable(file.getName())
+                .map(String::toLowerCase)
+                .map(name -> name.endsWith(".md"))
+                .orElse(false);
     }
 }
