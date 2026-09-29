@@ -1,0 +1,51 @@
+/*
+ * Copyright 2026 JTaccuino Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+description = 'JTaccuino notebook model, execution and markdown export engine'
+
+apply from: rootProject.file('gradle/publishing.gradle')
+
+configurations {
+    javafx {
+        description = 'Java FX libraries'
+    }
+    implementation {
+        extendsFrom configurations.javafx
+    }
+    runtime {
+        extendsFrom configurations.javafx
+    }
+}
+
+dependencies {
+    // The notebook model only needs javafx.base (properties and collections).
+    // No toolkit, no windowing, no natives: this keeps the module usable from
+    // a plain JVM, a jbang script or a headless export.
+    javafx 'org.openjfx:javafx-base:' + versionJavafx + ':' + rootProject.javaFxPlatform
+
+    // javafx.graphics is needed for the display() path, which rasterises a
+    // node to PNG. It stays headless: nothing in this module needs a window,
+    // and javafx.controls / javafx.swing are deliberately absent. The scene
+    // graph is enough because the image is produced with PixelReader rather
+    // than with SwingFXUtils, which would have dragged in javafx.swing.
+    javafx 'org.openjfx:javafx-graphics:' + versionJavafx + ':' + rootProject.javaFxPlatform
+
+    // ipynb reading and writing goes through JSON-B / JSON-P.
+    implementation 'jakarta.json:jakarta.json-api:' + versionJakartaJsonApi
+    implementation 'jakarta.json.bind:jakarta.json.bind-api:' + versionJakartaJsonBindApi
+    runtimeOnly 'org.eclipse:yasson:' + versionYasson
+
+    implementation project(':shell')
+}

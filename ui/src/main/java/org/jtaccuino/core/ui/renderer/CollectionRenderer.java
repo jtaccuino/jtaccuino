@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.Node;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import org.jtaccuino.core.ui.extensions.NodeRenderer;
-import org.jtaccuino.core.ui.extensions.NodeRenderer.Descriptor;
+import org.jtaccuino.notebook.NodeRenderer;
+import org.jtaccuino.notebook.NodeRenderer.Descriptor;
 
 @Descriptor(type = Collection.class)
 public class CollectionRenderer implements NodeRenderer<Collection<?>> {

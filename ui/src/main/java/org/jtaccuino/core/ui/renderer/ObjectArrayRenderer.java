@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package org.jtaccuino.core.ui.renderer;
 
 import java.util.Optional;
 import javafx.scene.Node;
-import org.jtaccuino.core.ui.extensions.NodeRenderer;
-import org.jtaccuino.core.ui.extensions.NodeRenderer.Descriptor;
+import org.jtaccuino.notebook.NodeRenderer;
+import org.jtaccuino.notebook.NodeRenderer.Descriptor;
 
 @Descriptor(type = Object[].class)
 public class ObjectArrayRenderer implements NodeRenderer<Object[]> {

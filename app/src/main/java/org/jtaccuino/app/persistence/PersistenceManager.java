@@ -25,7 +25,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.jtaccuino.app.common.NotebookPersistence;
+import org.jtaccuino.notebook.NotebookPersistence;
 
 public class PersistenceManager {
 

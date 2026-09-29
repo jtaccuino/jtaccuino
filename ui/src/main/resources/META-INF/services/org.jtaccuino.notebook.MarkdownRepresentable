@@ -1,0 +1,5 @@
+org.jtaccuino.core.ui.renderer.CollectionMarkdownRenderer
+org.jtaccuino.core.ui.renderer.IntArrayMarkdownRenderer
+org.jtaccuino.core.ui.renderer.LongArrayMarkdownRenderer
+org.jtaccuino.core.ui.renderer.DoubleArrayMarkdownRenderer
+org.jtaccuino.core.ui.renderer.ObjectArrayMarkdownRenderer

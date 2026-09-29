@@ -1,0 +1,124 @@
+/*
+ * Copyright 2026 JTaccuino Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+//
+// Shared publishing configuration for the artifacts meant for consumption:
+// the notebook engine (with the shell it depends on) and the headless CLI.
+// Applied explicitly by those modules; app, ui, cheatsheet and the extensions
+// stay internal.
+//
+// Everything is driven by properties so that an ordinary build never needs
+// credentials:
+//
+//   -Pgroup=...                     override the Maven group. GitHub Packages
+//                                   forces com.github.<owner>.<repo>.
+//   -PgithubRepository=owner/repo   GitHub Packages target
+//   -PsigningKey=... -PsigningPassword=...
+//                                   sign when publishing a release
+//
+// Publishable modules get a jtaccuino- prefixed artifactId. Project
+// dependencies in the generated POMs are rewritten to match, because Gradle
+// always writes the raw project name there.
+
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+def artifactPrefix = 'jtaccuino-'
+def internalArtifacts = ['shell', 'notebook', 'ui'].toSet()
+def publishShadowJar = project.findProperty('publishShadow')?.toString()?.toBoolean() ?: false
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = artifactPrefix + project.name
+            if (publishShadowJar) {
+                // the CLI ships as a self-contained jar: OpenJFX POMs resolve a
+                // platform classifier a plain Maven consumer cannot supply, so
+                // a thin artifact would not run under jbang
+                from components.shadow
+                artifact tasks.named('sourcesJar')
+                artifact tasks.named('javadocJar')
+            } else {
+                from components.java
+            }
+            pom {
+                name = artifactPrefix + project.name
+                description = project.description ?: ('JTaccuino module ' + project.name)
+                url = 'https://github.com/jtaccuino/jtaccuino'
+                licenses {
+                    license {
+                        name = 'Apache License, Version 2.0'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0'
+                        distribution = 'repo'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:https://github.com/jtaccuino/jtaccuino.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/jtaccuino/jtaccuino.git'
+                    url = 'https://github.com/jtaccuino/jtaccuino'
+                }
+                developers {
+                    developer {
+                        id = 'svenreimers'
+                        name = 'Sven Reimers'
+                    }
+                }
+            }
+            pom.withXml {
+                def root = asNode()
+                // The build adds api platform(project(':')) to every module,
+                // which makes Gradle emit an imported BOM. The platform is an
+                // internal structuring project that is not published, and every
+                // dependency already carries an explicit version, so the import
+                // would only make the POM unresolvable.
+                root.get('dependencyManagement').each { root.remove(it) }
+                root.dependencies.each { deps ->
+                    deps.dependency.each { dep ->
+                        def groupId = dep.groupId.text()
+                        def artifactId = dep.artifactId.text()
+                        if (groupId == project.group.toString() && internalArtifacts.contains(artifactId)) {
+                            dep.artifactId[0].value = artifactPrefix + artifactId
+                        }
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'GitHubPackages'
+            def repository = project.findProperty('githubRepository') ?: 'svenreimers/the-real-jtaccuino'
+            url = 'https://maven.pkg.github.com/' + repository
+            credentials {
+                username = project.findProperty('gpr.user') ?: System.getenv('GITHUB_ACTOR')
+                password = project.findProperty('gpr.key') ?: System.getenv('GITHUB_TOKEN')
+            }
+        }
+    }
+}
+
+signing {
+    def signingKey = project.findProperty('signingKey') ?: System.getenv('SIGNING_KEY')
+    def signingPassword = project.findProperty('signingPassword') ?: System.getenv('SIGNING_PASSWORD')
+    required {
+        // a local publishToMavenLocal must not fail for the lack of a key
+        signingKey != null
+    }
+    if (signingKey != null) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+    }
+    sign publishing.publications.mavenJava
+}

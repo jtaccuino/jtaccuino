@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 JTaccuino Contributors
+ * Copyright 2024-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import org.jtaccuino.app.common.NotebookPersistence;
+import org.jtaccuino.notebook.NotebookPersistence;
 import org.jtaccuino.core.ui.Sheet;
 import static org.jtaccuino.core.ui.UiUtils.createSVGToolbarButton;
-import org.jtaccuino.core.ui.api.Notebook;
+import org.jtaccuino.notebook.Notebook;
 
 public class Pad extends Application {
 

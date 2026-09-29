@@ -40,7 +40,7 @@ jobs:
         with:
           operation: 'read'
           file-path: 'app/gradle.properties'
-          keys: 'version, app_version, additional_jdk_modules'      
+          keys: 'app_version, additional_jdk_modules'      
 
       - name: Setup Java 26
         id: java26

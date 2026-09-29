@@ -206,6 +206,86 @@ suitable for projecting. Press it again to return to the normal view.
 - **File > Recent Files** reopens recently used notebooks.
 - **File > Export** writes the notebook out for sharing.
 
+<!-- page -->
+
+## Exporting a notebook
+
+**File > Export** runs the notebook and writes it out. The markdown export
+chooses the most useful representation per output:
+
+- A displayed collection or array becomes a **markdown table**.
+- `println` output stays a verbatim fenced block.
+- A chart or node is written as an image, SVG preferred over PNG.
+- Other output is kept as fenced `html` or plain text.
+
+The markdown is derived from the live objects, so a table stays a searchable
+table rather than a picture of one.
+
+## Headless export (CLI)
+
+Execute and export a notebook without the desktop app:
+
+```bash
+./gradlew :cli:installDist
+jtaccuino-cli notebook.ipynb
+```
+
+Or, once the artifact is published, without a checkout:
+
+```bash
+jbang org.jtaccuino:jtaccuino-cli:VERSION notebook.ipynb
+```
+
+Add `jbang run --enable-preview` for notebooks that use preview features.
+
+Options:
+
+- `-o, --output <file>` markdown output (default `<notebook>.md`)
+- `--ipynb <file>` also write the executed notebook
+- `--continue-on-error` keep going after a failing cell
+- `--extract-images` sidecar images instead of inline base64
+- `--image-format best|png|svg` image preference (default `best`)
+- `--cwd <dir>` working directory (default the notebook's folder)
+
+Exit codes: `0` success, `1` usage or load error, `2` a cell failed,
+`3` the export could not be written.
+
+<!-- col -->
+
+## The notebook engine as a library
+
+The `notebook` module runs and converts notebooks with no user interface. It
+depends on `shell` (JShell) plus `javafx.base` and `javafx.graphics` only, never
+on the desktop UI.
+
+```java
+var notebook = Notebooks.read(Path.of("book.ipynb"));
+var result = Notebooks.execute(notebook);
+Files.writeString(
+    Path.of("book.md"), result.toMarkdown());
+result.failedCells();
+```
+
+The result carries the live displayed objects, so the exporter can render them as
+text rather than as the picture stored for them.
+
+<!-- col -->
+
+## Module layout
+
+```
+shell     JShell wrapper and extension SPI
+  ^
+notebook  cells, .ipynb read/write, markdown
+  |       export, execution, display registry
+  +-- ui  JavaFX controls, cell skins, renderers
+  +-- app desktop application (Studio)
+  +-- cli headless exporter
+```
+
+The `notebook` artifact is the one to depend on from a script or a service; the
+`cli` is a thin executable wrapper over it.
+
 ## Links
 
 - Project and issues: https://github.com/jtaccuino/jtaccuino

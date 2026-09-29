@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 JTaccuino Contributors
+ * Copyright 2024-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextBoundsType;
-import org.jtaccuino.core.ui.api.CellData;
+import org.jtaccuino.notebook.CellData;
 
 public class SheetSkin implements Skin<Sheet> {
 
@@ -99,7 +99,7 @@ public class SheetSkin implements Skin<Sheet> {
 
     public Sheet.Cell insertCellAfter(Sheet.Cell currentCell) {
         int indexOfCurrentCell = cells.indexOf(currentCell);
-        org.jtaccuino.core.ui.api.CellData newCellData = CellData.empty(currentCell.getCellData().getType());
+        org.jtaccuino.notebook.CellData newCellData = CellData.empty(currentCell.getCellData().getType());
         sheet.getCells().add(indexOfCurrentCell + 1, newCellData);
         var newCell = switch (currentCell.getCellData().getType()) {
             case CODE ->
@@ -114,7 +114,7 @@ public class SheetSkin implements Skin<Sheet> {
 
     public void insertCellBefore(Sheet.Cell currentCell) {
         int indexOfCurrentCell = cells.indexOf(currentCell);
-        org.jtaccuino.core.ui.api.CellData newCellData = CellData.empty(currentCell.getCellData().getType());
+        org.jtaccuino.notebook.CellData newCellData = CellData.empty(currentCell.getCellData().getType());
         sheet.getCells().add(indexOfCurrentCell, newCellData);
         var newCell = javaCellFactory.createCell(newCellData, cellBox, sheet);
         cells.add(indexOfCurrentCell, newCell);

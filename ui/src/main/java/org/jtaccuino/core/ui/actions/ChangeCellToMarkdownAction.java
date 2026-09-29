@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package org.jtaccuino.core.ui.actions;
 
 import org.jtaccuino.core.ui.Sheet;
 import org.jtaccuino.core.ui.api.CellAction;
-import org.jtaccuino.core.ui.api.CellData;
+import org.jtaccuino.notebook.CellData;
 
 public class ChangeCellToMarkdownAction extends CellAction {
 

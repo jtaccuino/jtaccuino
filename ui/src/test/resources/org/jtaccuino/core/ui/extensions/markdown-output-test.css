@@ -1,0 +1,29 @@
+/* Mirrors the .markdown-cell font rules from jtaccuino.css, so this test
+   states the contract it depends on instead of relying on whichever
+   stylesheet happens to be loaded. */
+.markdown-cell {
+    -markdown-base-font-family: "Arial";
+    -markdown-base-font-size: 12px;
+
+    -markdown-heading-one-font-family: "Arial";
+    -markdown-heading-one-font-size: 24px;
+    -markdown-heading-two-font-family: "Arial";
+    -markdown-heading-two-font-size: 21px;
+    -markdown-heading-three-font-family: "Arial";
+    -markdown-heading-three-font-size: 18px;
+    -markdown-heading-four-font-family: "Arial";
+    -markdown-heading-four-font-size: 15px;
+    -markdown-heading-five-font-family: "Arial";
+    -markdown-heading-five-font-size: 13px;
+    -markdown-heading-six-font-family: "Arial";
+    -markdown-heading-six-font-size: 12px;
+
+    -markdown-monospace-font-family: "Monaspace Argon";
+    -markdown-monospace-font-size: 13px;
+    -markdown-emphasis-font-family: "Arial";
+    -markdown-emphasis-font-size: 12px;
+    -markdown-strong-emphasis-font-family: "Arial";
+    -markdown-strong-emphasis-font-size: 12px;
+    -markdown-strikethrough-font-family: "Arial";
+    -markdown-strikethrough-font-size: 12px;
+}

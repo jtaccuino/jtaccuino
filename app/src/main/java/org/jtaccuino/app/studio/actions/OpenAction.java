@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 JTaccuino Contributors
+ * Copyright 2025-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.jtaccuino.app.studio.actions;
 import java.io.File;
 import javafx.event.ActionEvent;
 import javafx.stage.FileChooser;
-import org.jtaccuino.app.common.NotebookPersistence;
+import org.jtaccuino.notebook.NotebookPersistence;
 import org.jtaccuino.core.ui.api.SheetManager;
 import org.jtaccuino.app.studio.WindowManager;
 import org.jtaccuino.core.ui.api.AbstractAction;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 JTaccuino Contributors
+ * Copyright 2024-2026 JTaccuino Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.event.EventHandler;
 import org.jtaccuino.core.ui.Sheet;
 import org.jtaccuino.core.ui.spi.SheetManagerSPI;
+import org.jtaccuino.notebook.Notebook;
 
 /**
  * Manage sheet instances and meta data. Works as a model for the different ui

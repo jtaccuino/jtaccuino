@@ -22,6 +22,8 @@ rootProject.name = 'jtaccuino'
 include('app')
 include('ui')
 include('shell')
+include('notebook')
+include('cli')
 include('cheatsheet')
 include('extensions:deepnetts')
 include('extensions:dflib')
