@@ -26,7 +26,7 @@ dependencies {
 
 def cheatSheetMarkdown = rootProject.file('docs/cheat-sheet.md')
 def cheatSheetCss = rootProject.file('docs/cheat-sheet.css')
-def cheatSheetPdf = layout.buildDirectory.file('cheat-sheet/JTaccuino-CheatSheet.pdf')
+def cheatSheetPdf = layout.buildDirectory.file(rootProject.ext.cheatSheetPdfPath)
 
 tasks.register('pdf', JavaExec) {
     group = 'documentation'

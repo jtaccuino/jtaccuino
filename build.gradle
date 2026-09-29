@@ -24,6 +24,12 @@ plugins {
 ext {
     javaFxPlatform = osdetector.os == 'osx' ? 'mac' : osdetector.os == 'windows' ? 'win' : osdetector.os
     javaFxPlatform = osdetector.arch == 'aarch_64' ? javaFxPlatform + '-aarch64' : javaFxPlatform
+
+    // Where ':cheatsheet' writes the generated cheat sheet, relative to that
+    // project's build directory. Declared here so the generating and the
+    // consuming project share a single definition; the root project is
+    // configured before any subproject, so both can read it safely.
+    cheatSheetPdfPath = 'cheat-sheet/JTaccuino-CheatSheet.pdf'
 }
 
 // Configure JavaPlatform ...
