@@ -155,6 +155,7 @@ jobs:
           ADDITIONAL_JDK_MODULES: ${{ steps.app-gradle-props.outputs.additional_jdk_modules }}                    
 
       - name: Notarize Release Build
+        id: notarize
         if: github.event_name != 'pull_request' && matrix.os == 'macos-14'
         uses: erwin1/xcode-notarizer@v1
         with:
@@ -162,6 +163,40 @@ jobs:
           apple-id: ${{ secrets.NOTARIZATION_USERNAME }}
           app-password: ${{ secrets.NOTARIZATION_PASSWORD }}
           team-id: ${{ secrets.GLUON_MACSIGN_PREFIX }}
+
+      # erwin1/xcode-notarizer only reports the generic "Processing complete" on
+      # rejection and does not expose the submission id, so a rejected build
+      # gives no reason. Retry once with notarytool directly: if the rejection
+      # was transient the retry is accepted and we staple and carry on, and
+      # otherwise the submission log with the offending binaries is printed.
+      - name: Notarize retry and log
+        if: failure() && steps.notarize.outcome == 'failure'
+        env:
+          APPLE_ID: ${{ secrets.NOTARIZATION_USERNAME }}
+          APPLE_PASSWORD: ${{ secrets.NOTARIZATION_PASSWORD }}
+          TEAM_ID: ${{ secrets.GLUON_MACSIGN_PREFIX }}
+          PKG: ${{ steps.outputfile_mac.outputs.path }}
+        run: |
+          set -uo pipefail
+          result=$(mktemp)
+          xcrun notarytool submit "$PKG" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_PASSWORD" \
+            --team-id "$TEAM_ID" \
+            --output-format json --wait --no-progress | tee "$result"
+          id=$(python3 -c "import json; print(json.load(open('$result'))['id'])")
+          status=$(python3 -c "import json; print(json.load(open('$result'))['status'])")
+          if [ "$status" = "Accepted" ]; then
+            echo "Notarization accepted on retry, stapling."
+            xcrun stapler staple "$PKG"
+            exit 0
+          fi
+          echo "::error::Notarization rejected, see the notary log below"
+          xcrun notarytool log "$id" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_PASSWORD" \
+            --team-id "$TEAM_ID"
+          exit 1
 
       - name: Archive jpackage for macos
         if: matrix.os == 'macos-14'
