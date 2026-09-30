@@ -32,6 +32,27 @@ mkdir -p target/installer/input/libs/
 unzip app/build/distributions/app-${VERSION}.zip -d target/installer/input
 cp target/installer/input/app-${VERSION}/lib/* target/installer/input/libs
 
+# ------ NATIVE JAR GUARD ---------------------------------------------------
+# Apple's notary service inspects the contents of the JARs inside the bundle
+# and rejects unsigned Mach-O binaries embedded in them. jpackage cannot sign
+# code inside a JAR, so a single dependency pulling in native libraries makes
+# the whole bundle un-notarizable.
+#
+# This happened with Maven Resolver 2.0.23: its Jetty transport resolves to
+# Jetty 12, which drags in quiche, zstd and brotli natives. Maven Central needs
+# none of them, so the transport is not used (see shell/build.gradle). Fail fast
+# here instead of shipping a bundle that cannot be notarized.
+native_jar_pattern='(jetty-quiche-native|zstd-jni|brotli4j|jna|jna-jpms)-[0-9]'
+offenders=$(find target/installer/input/libs -maxdepth 1 -name '*.jar' \
+  | grep -Ei "$native_jar_pattern" || true)
+if [ -n "$offenders" ]; then
+  echo "ERROR: the application bundle contains JARs with native libraries:" >&2
+  echo "$offenders" >&2
+  echo "They cannot be code signed inside the JAR and macOS notarization will reject the bundle." >&2
+  echo "Exclude the dependency that pulls them in, see shell/build.gradle." >&2
+  exit 1
+fi
+
 # ------ REQUIRED MODULES ---------------------------------------------------
 # Use jlink to detect all modules that are required to run the application.
 # Starting point for the jdep analysis is the set of jars being used by the
