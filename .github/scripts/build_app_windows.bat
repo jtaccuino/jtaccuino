@@ -56,9 +56,14 @@ rem In addition we need jdk.localedata if the application is localized.
 rem This can be reduced to the actually needed locales via a jlink parameter,
 rem e.g., --include-locales=en,de.
 rem
+rem java.management is needed by the dflib parquet backend, which resolves
+rem ManagementFactory through parquet-hadoop. dflib is a compileOnly dependency
+rem that is fetched at runtime via addDependency, so jdeps never sees it and the
+rem module is missing from the runtime image.
+rem
 rem Do not forget the leading ','!
 
-set manual_modules=,java.desktop,java.naming,jdk.unsupported,jdk.jshell,java.logging,java.net.http,java.sql,java.sql.rowset,java.transaction.xa,java.xml,jdk.localedata
+set manual_modules=,java.desktop,java.naming,java.management,jdk.unsupported,jdk.jshell,java.logging,java.net.http,java.sql,java.sql.rowset,java.transaction.xa,java.xml,jdk.localedata
 set incubating_modules=,jdk.incubator.vector
 echo manual modules: %manual_modules%
 echo incubating modules: %incubating_modules%
