@@ -279,7 +279,10 @@ class JavaSyntaxDecorator implements SyntaxDecorator {
     public void handleChange(CodeTextModel model, TextPos start, TextPos end, int charsTop, int linesAdded, int charsBottom) {
         this.model = model;
         if (!refreshing) {
-            executionErrors.clear();
+            if (!executionErrors.isEmpty()) {
+                executionErrors.clear();
+                Platform.runLater(this::updateErrors);
+            }
             debounce.playFromStart();
         }
     }
