@@ -84,9 +84,13 @@ echo "detected modules: ${detected_modules}"
 # that is fetched at runtime via addDependency, so jdeps never sees it and the
 # module is missing from the runtime image.
 #
+# jdk.jfr is needed by gog4j, whose org.jtaccuino.gog.jfr classes all extend
+# jdk.jfr.Event. Like dflib, gog4j is only pulled in at runtime via
+# addDependency, so jdeps does not see it either.
+#
 # Don't forget the leading ','!
 
-manual_modules=,java.desktop,java.naming,java.management,jdk.unsupported,jdk.jshell,java.logging,java.net.http,java.sql,java.sql.rowset,java.transaction.xa,java.xml,jdk.localedata
+manual_modules=,java.desktop,java.naming,java.management,jdk.jfr,jdk.unsupported,jdk.jshell,java.logging,java.net.http,java.sql,java.sql.rowset,java.transaction.xa,java.xml,jdk.localedata
 incubating_modules=,jdk.incubator.vector
 echo "manual modules: ${manual_modules}"
 echo "incubating modules: ${incubating_modules}"
