@@ -113,10 +113,8 @@ publishing {
 signing {
     def signingKey = project.findProperty('signingKey') ?: System.getenv('SIGNING_KEY')
     def signingPassword = project.findProperty('signingPassword') ?: System.getenv('SIGNING_PASSWORD')
-    required {
-        // a local publishToMavenLocal must not fail for the lack of a key
-        signingKey != null
-    }
+    // a local publishToMavenLocal must not fail for the lack of a key
+    required = signingKey != null
     if (signingKey != null) {
         useInMemoryPgpKeys(signingKey, signingPassword)
     }
