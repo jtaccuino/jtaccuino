@@ -30,8 +30,6 @@ public class DfLibExtension implements JShellExtension {
 
     private static final List<String> IMPORTS = List.of(
             "org.dflib.DataFrame",
-            "org.dflib.csv.Csv",
-            "org.dflib.csv.CsvLoader",
             "org.dflib.print.TabularPrinter"
     );
 
