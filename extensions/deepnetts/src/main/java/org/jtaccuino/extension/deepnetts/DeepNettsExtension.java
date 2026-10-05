@@ -30,8 +30,7 @@ public class DeepNettsExtension implements JShellExtension {
     );
 
     private static final List<String> DEPS = List.of(
-            "com.deepnetts:deepnetts-core-pro:3.2.0",
-            "com.deepnetts:deepnetts-license:1.0"
+            "com.deepnetts:deepnetts-core:4.0.4"
     );
 
     private static final List<String> IMPORTS = List.of(
